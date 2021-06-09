@@ -71,6 +71,8 @@
 // For Uint8 type
 #include <SDL_net.h>
 
+#include "../src/libs/enet/include/enet.h"
+
 struct PackedIP {
 	Uint32 host;
 	Uint16 port;

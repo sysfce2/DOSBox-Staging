@@ -19,6 +19,7 @@
 #include "dosbox.h"
 
 #if C_IPX
+//#define ENET_IMPLEMENTATION
 
 #include <SDL_net.h>
 
@@ -49,13 +50,19 @@ struct ipxnetaddr {
 	Uint8 netnode[6];
 } localIpxAddr;
 
-Bit32u udpPort;
+// Bit32u udpPort;
+uint16_t udpPort;
 bool isIpxServer;
 bool isIpxConnected;
 IPaddress ipxServConnIp;			// IPAddress for client connection to server
 UDPsocket ipxClientSocket;
 int UDPChannel;						// Channel used by UDP connection
 Bit8u recvBuffer[IPXBUFFERSIZE];	// Incoming packet buffer
+
+ENetAddress clientAddress;
+ENetEvent clientEvent;
+ENetPeer *clientPeer;
+ENetHost *clientHost;
 
 static RealPt ipx_callback;
 
@@ -511,63 +518,53 @@ Bitu IPX_IntHandler(void) {
 	return CBRET_NONE;
 }
 
-static void pingAck(IPaddress retAddr) {
-	IPXHeader regHeader;
-	UDPpacket regPacket;
+static void pingAck(uint8_t *retAddr)
+{
+	IPXHeader pingHeader;
 
-	SDLNet_Write16(0xffff, regHeader.checkSum);
-	SDLNet_Write16(sizeof(regHeader), regHeader.length);
-	
-	SDLNet_Write32(0, regHeader.dest.network);
-	PackIP(retAddr, &regHeader.dest.addr.byIP);
-	SDLNet_Write16(0x2, regHeader.dest.socket);
+	SDLNet_Write16(0xffff, pingHeader.checkSum);
+	SDLNet_Write16(sizeof(pingHeader), pingHeader.length);
 
-	SDLNet_Write32(0, regHeader.src.network);
-	memcpy(regHeader.src.addr.byNode.node, localIpxAddr.netnode, sizeof(regHeader.src.addr.byNode.node));
-	SDLNet_Write16(0x2, regHeader.src.socket);
-	regHeader.transControl = 0;
-	regHeader.pType = 0x0;
+	SDLNet_Write32(0, pingHeader.dest.network);
+	memcpy(pingHeader.dest.addr.byNode.node, retAddr,
+	       sizeof(pingHeader.dest.addr.byNode.node));
+	SDLNet_Write16(0x2, pingHeader.dest.socket);
 
-	regPacket.data = (Uint8 *)&regHeader;
-	regPacket.len = sizeof(regHeader);
-	regPacket.maxlen = sizeof(regHeader);
-	regPacket.channel = UDPChannel;
+	SDLNet_Write32(0, pingHeader.src.network);
+	memcpy(pingHeader.src.addr.byNode.node, localIpxAddr.netnode,
+	       sizeof(pingHeader.src.addr.byNode.node));
+	SDLNet_Write16(0x2, pingHeader.src.socket);
+	pingHeader.transControl = 0;
+	pingHeader.pType = 0x0;
 
-	const int result = SDLNet_UDP_Send(ipxClientSocket, regPacket.channel,
-	                                   &regPacket);
-	if (!result) {
-		DEBUG_LOG_MSG("IPX: Failed to acknowledge send: %s",
-		              SDLNet_GetError());
-	}
+	ENetPacket *packet = enet_packet_create(&pingHeader, sizeof(pingHeader),
+	                                        ENET_PACKET_FLAG_RELIABLE);
+	enet_peer_send(clientPeer, 0, packet);
+	enet_host_flush(clientHost);
 }
 
 static void pingSend(void) {
-	IPXHeader regHeader;
-	UDPpacket regPacket;
+	IPXHeader pingHeader;
 
-	SDLNet_Write16(0xffff, regHeader.checkSum);
-	SDLNet_Write16(sizeof(regHeader), regHeader.length);
-	
-	SDLNet_Write32(0, regHeader.dest.network);
-	regHeader.dest.addr.byIP.host = 0xffffffff;
-	regHeader.dest.addr.byIP.port = 0xffff;
-	SDLNet_Write16(0x2, regHeader.dest.socket);
+	SDLNet_Write16(0xffff, pingHeader.checkSum);
+	SDLNet_Write16(sizeof(pingHeader), pingHeader.length);
 
-	SDLNet_Write32(0, regHeader.src.network);
-	memcpy(regHeader.src.addr.byNode.node, localIpxAddr.netnode, sizeof(regHeader.src.addr.byNode.node));
-	SDLNet_Write16(0x2, regHeader.src.socket);
-	regHeader.transControl = 0;
-	regHeader.pType = 0x0;
+	SDLNet_Write32(0, pingHeader.dest.network);
+	pingHeader.dest.addr.byIP.host = 0xffffffff;
+	pingHeader.dest.addr.byIP.port = 0xffff;
+	SDLNet_Write16(0x2, pingHeader.dest.socket);
 
-	regPacket.data = (Uint8 *)&regHeader;
-	regPacket.len = sizeof(regHeader);
-	regPacket.maxlen = sizeof(regHeader);
-	regPacket.channel = UDPChannel;
+	SDLNet_Write32(0, pingHeader.src.network);
+	memcpy(pingHeader.src.addr.byNode.node, localIpxAddr.netnode,
+	       sizeof(pingHeader.src.addr.byNode.node));
+	SDLNet_Write16(0x2, pingHeader.src.socket);
+	pingHeader.transControl = 0;
+	pingHeader.pType = 0x0;
 
-	const int result = SDLNet_UDP_Send(ipxClientSocket, regPacket.channel,
-	                                   &regPacket);
-	if (!result)
-		LOG_MSG("IPX: Failed to send a ping packet: %s", SDLNet_GetError());
+	ENetPacket *packet = enet_packet_create(&pingHeader, sizeof(pingHeader),
+	                                        ENET_PACKET_FLAG_RELIABLE);
+	enet_peer_send(clientPeer, 0, packet);
+	enet_host_flush(clientHost);
 }
 
 static void receivePacket(Bit8u *buffer, Bit16s bufSize) {
@@ -577,16 +574,13 @@ static void receivePacket(Bit8u *buffer, Bit16s bufSize) {
 	Bit16u useSocket = swapByte(bufword[8]);
 	IPXHeader * tmpHeader;
 	tmpHeader = (IPXHeader *)buffer;
-
 	// Check to see if ping packet
 	if(useSocket == 0x2) {
 		// Is this a broadcast?
 		if((tmpHeader->dest.addr.byIP.host == 0xffffffff) &&
 			(tmpHeader->dest.addr.byIP.port == 0xffff)) {
 			// Yes.  We should return the ping back to the sender
-			IPaddress tmpAddr;
-			UnpackIP(tmpHeader->src.addr.byIP, &tmpAddr);
-			pingAck(tmpAddr);
+			pingAck(tmpHeader->src.addr.byNode.node);
 			return;
 		}
 	}
@@ -606,35 +600,45 @@ static void receivePacket(Bit8u *buffer, Bit16s bufSize) {
 }
 
 static void IPX_ClientLoop(void) {
-	int numrecv;
-	UDPpacket inPacket;
-	inPacket.data = (Uint8 *)recvBuffer;
-	inPacket.maxlen = IPXBUFFERSIZE;
-	inPacket.channel = UDPChannel;
-
-	// Its amazing how much simpler UDP is than TCP
-	numrecv = SDLNet_UDP_Recv(ipxClientSocket, &inPacket);
-	if(numrecv) receivePacket(inPacket.data, inPacket.len);
+	if (enet_host_service(clientHost, &clientEvent, 0) > 0) {
+		switch (clientEvent.type) {
+		case ENET_EVENT_TYPE_RECEIVE:
+			receivePacket(clientEvent.packet->data,
+			              clientEvent.packet->dataLength);
+			break;
+		case ENET_EVENT_TYPE_CONNECT:
+			LOG_MSG("Client connect?!?!");
+			break;
+		case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
+			LOG_MSG("Client connection to server timed out.");
+			break;
+		case ENET_EVENT_TYPE_DISCONNECT:
+			LOG_MSG("Client disconnect received");
+			break;
+		case ENET_EVENT_TYPE_NONE:
+			LOG_MSG("Client NONE type received");
+			break;
+		}
+	}
 }
-
 
 void DisconnectFromServer(bool unexpected) {
 	if(unexpected) LOG_MSG("IPX: Server disconnected unexpectedly");
 	if(incomingPacket.connected) {
 		incomingPacket.connected = false;
 		TIMER_DelTickHandler(&IPX_ClientLoop);
-		SDLNet_UDP_Close(ipxClientSocket);
+		enet_peer_reset(clientPeer);
 	}
 }
 
 static void sendPacket(ECBClass* sendecb) {
+	//LOG_MSG("sendPacket");
 	Bit8u outbuffer[IPXBUFFERSIZE];
 	fragmentDescriptor tmpFrag; 
 	Bit16u i, fragCount,t;
 	Bit16s packetsize;
 	Bit16u *wordptr;
-	UDPpacket outPacket;
-		
+
 	sendecb->setInUseFlag(USEFLAG_AVAILABLE);
 	packetsize = 0;
 	fragCount = sendecb->getFragCount(); 
@@ -708,15 +712,15 @@ static void sendPacket(ECBClass* sendecb) {
 	}
 	LOG_IPX("SEND crc:%2x",packetCRC(&outbuffer[0], packetsize));
 	if(!isloopback) {
-		outPacket.channel = UDPChannel;
-		outPacket.data = (Uint8 *)&outbuffer[0];
-		outPacket.len = packetsize;
-		outPacket.maxlen = packetsize;
-		// Since we're using a channel, we won't send the IP address again
-		const int result = SDLNet_UDP_Send(ipxClientSocket, UDPChannel,
-		                                   &outPacket);
-		if (result == 0) {
-			LOG_MSG("IPX: Could not send packet: %s", SDLNet_GetError());
+		ENetPacket *packet = enet_packet_create((uint8_t *)&outbuffer,
+		                                        packetsize,
+		                                        ENET_PACKET_FLAG_RELIABLE);
+		const int result = enet_peer_send(clientPeer, 0, packet);
+		enet_host_flush(clientHost);
+
+		if (result != 0) {
+			LOG_MSG("IPX: Could not send packet"); //: %s",
+			                                       //: SDLNet_GetError());
 			sendecb->setCompletionFlag(COMP_HARDWAREERROR);
 			sendecb->NotifyESR();
 			DisconnectFromServer(true);
@@ -730,49 +734,65 @@ static void sendPacket(ECBClass* sendecb) {
 
 	if(isloopback||islocalbroadcast) {
 		// Send packet back to ourselves.
-		receivePacket(&outbuffer[0],packetsize);
+		receivePacket((uint8_t *)&outbuffer, packetsize);
 		LOG_IPX("Packet back: loopback:%d, broadcast:%d",isloopback,islocalbroadcast);
 	}
+
 	sendecb->NotifyESR();
 }
 
 static bool pingCheck(IPXHeader * outHeader) {
-	char buffer[1024];
-	UDPpacket regPacket;
-	IPXHeader *regHeader;
-	regPacket.data = (Uint8 *)buffer;
-	regPacket.maxlen = sizeof(buffer);
-	regPacket.channel = UDPChannel;
-	regHeader = (IPXHeader *)buffer;
-
-	const int result = SDLNet_UDP_Recv(ipxClientSocket, &regPacket);
-	if (result != 0) {
-		memcpy(outHeader, regHeader, sizeof(IPXHeader));
+	if (enet_host_service(clientHost, &clientEvent, 0) > 0 &&
+	    clientEvent.type == ENET_EVENT_TYPE_RECEIVE) {
+		memcpy(outHeader, (IPXHeader *)clientEvent.packet->data,
+		       sizeof(IPXHeader));
 		return true;
 	}
+
 	return false;
 }
 
-bool ConnectToServer(char const *strAddr) {
-	int numsent;
-	UDPpacket regPacket;
+bool ConnectToServer(char const *strAddr)
+{
 	IPXHeader regHeader;
-	if(!SDLNet_ResolveHost(&ipxServConnIp, strAddr, (Bit16u)udpPort)) {
+	enet_address_set_host(&clientAddress, strAddr);
+	clientAddress.port = udpPort;
 
-		// Generate the MAC address.  This is made by zeroing out the first two
-		// octets and then using the actual IP address for the last 4 octets.
-		// This idea is from the IPX over IP implementation as specified in RFC 1234:
-		// http://www.faqs.org/rfcs/rfc1234.html
+	clientHost = enet_host_create(
+	        NULL /* create a client host */,
+	        1 /* only allow 1 outgoing connection */,
+	        1 /* allow up 1 channels to be used */,
+	        0 /* assume any amount of incoming bandwidth */,
+	        0 /* assume any amount of outgoing bandwidth */);
 
-		// Select an anonymous UDP port
-		ipxClientSocket = SDLNet_UDP_Open(0);
-		if(ipxClientSocket) {
-			// Bind UDP port to address to channel
-			UDPChannel = SDLNet_UDP_Bind(ipxClientSocket,-1,&ipxServConnIp);
-			//ipxClientSocket = SDLNet_TCP_Open(&ipxServConnIp);
+	if (clientHost == NULL) {
+		LOG_MSG("An error occurred while trying to create an ENet client host.");
+		enet_host_destroy(clientHost);
+		return false;
+	}
+
+	clientPeer = enet_host_connect(clientHost, &clientAddress, 1, 0);
+
+	if (clientPeer == NULL)
+		return false;
+
+	uint32_t ticks, elapsed;
+	ticks = GetTicks();
+
+	while (true) {
+		elapsed = GetTicks() - ticks;
+		if (elapsed > 5000) {
+			LOG_MSG("Timeout connecting to server at %s 1", strAddr);
+			return false;
+		}
+		//
+		if (enet_host_service(clientHost, &clientEvent, 0) > 0 &&
+		    clientEvent.type == ENET_EVENT_TYPE_CONNECT) {
+			// Enet connection succeeded, now register with server
+
+			// Build registration IPX Header
 			SDLNet_Write16(0xffff, regHeader.checkSum);
 			SDLNet_Write16(sizeof(regHeader), regHeader.length);
-
 			// Echo packet with zeroed dest and src is a server registration packet
 			SDLNet_Write32(0, regHeader.dest.network);
 			regHeader.dest.addr.byIP.host = 0x0;
@@ -784,56 +804,57 @@ bool ConnectToServer(char const *strAddr) {
 			regHeader.src.addr.byIP.port = 0x0;
 			SDLNet_Write16(0x2, regHeader.src.socket);
 			regHeader.transControl = 0;
-
-			regPacket.data = (Uint8 *)&regHeader;
-			regPacket.len = sizeof(regHeader);
-			regPacket.maxlen = sizeof(regHeader);
-			regPacket.channel = UDPChannel;
 			// Send registration string to server.  If server doesn't get
 			// this, client will not be registered
-			numsent = SDLNet_UDP_Send(ipxClientSocket, regPacket.channel, &regPacket);
-			
-			if(!numsent) {
-				LOG_MSG("IPX: Unable to connect to server: %s", SDLNet_GetError());
-				SDLNet_UDP_Close(ipxClientSocket);
-				return false;
-			} else {
-				// Wait for return packet from server.
-				// This will contain our IPX address and port num
-				Bit32u elapsed;
-				const auto ticks = GetTicks();
+			ENetPacket *packet =
+			        enet_packet_create(&regHeader, sizeof(regHeader),
+			                           ENET_PACKET_FLAG_RELIABLE);
 
-				while(true) {
-					elapsed = GetTicksSince(ticks);
-					if(elapsed > 5000) {
-						LOG_MSG("Timeout connecting to server at %s", strAddr);
-						SDLNet_UDP_Close(ipxClientSocket);
+			enet_peer_send(clientPeer, 0, packet);
+			enet_host_flush(clientHost);
 
-						return false;
-					}
-					CALLBACK_Idle();
-					const int res = SDLNet_UDP_Recv(ipxClientSocket,
-					                                &regPacket);
-					if (res != 0) {
-						memcpy(localIpxAddr.netnode, regHeader.dest.addr.byNode.node, sizeof(localIpxAddr.netnode));
-						memcpy(localIpxAddr.netnum, regHeader.dest.network, sizeof(localIpxAddr.netnum));
-						break;
-					}
+			// Receive registration IPX header with IPX node dest
+			// address
+			const auto ticks = GetTicks();
+			while (true) {
+				elapsed = GetTicksSince(ticks);
+				if (elapsed > 5000) {
+					LOG_MSG("Timeout connecting to server at %s 2",
+					        strAddr);
+					return false;
 				}
+				if (enet_host_service(clientHost, &clientEvent, 0) > 0 &&
+				    clientEvent.type == ENET_EVENT_TYPE_RECEIVE) {
+					IPXHeader *tmpHeader;
+					tmpHeader = (IPXHeader *)
+					                    clientEvent.packet->data;
 
-				LOG_MSG("IPX: Connected to server.  IPX address is %d:%d:%d:%d:%d:%d", CONVIPX(localIpxAddr.netnode));
+					memcpy(localIpxAddr.netnode,
+					       tmpHeader->dest.addr.byNode.node,
+					       sizeof(localIpxAddr.netnode));
+					memcpy(localIpxAddr.netnum,
+					       tmpHeader->dest.network,
+					       sizeof(localIpxAddr.netnum));
+					LOG_MSG("Reg netnode:");
+					for (int i = 0; i < 6; i++) {
+						LOG_MSG("%i",
+						        localIpxAddr.netnode[i]);
+					}
+					break;
 
-				incomingPacket.connected = true;
-				TIMER_AddTickHandler(&IPX_ClientLoop);
-				return true;
+				} else {
+					CALLBACK_Idle();
+				}
 			}
+
+			LOG_MSG("IPX: Connected to server");
+			incomingPacket.connected = true;
+			TIMER_AddTickHandler(&IPX_ClientLoop);
+			return true;
 		} else {
-			LOG_MSG("IPX: Unable to open socket");
+			CALLBACK_Idle();
 		}
-	} else {
-		LOG_MSG("IPX: Unable resolve connection to server");
 	}
-	return false;
 }
 
 void IPX_NetworkInit() {
@@ -945,11 +966,11 @@ public:
 					}
 					bool startsuccess;
 					if(!cmd->FindCommand(2, temp_line)) {
-						udpPort = 213;
+						udpPort = 2130;
 					} else {
 						udpPort = strtol(temp_line.c_str(), NULL, 10);
 					}
-					startsuccess = IPX_StartServer((Bit16u)udpPort);
+					startsuccess = IPX_StartServer(udpPort);
 					if(startsuccess) {
 						WriteOut("IPX Tunneling Server started\n");
 						isIpxServer = true;
@@ -987,7 +1008,7 @@ public:
 				safe_strcpy(strHost, temp_line.c_str());
 
 				if(!cmd->FindCommand(3, temp_line)) {
-					udpPort = 213;
+					udpPort = 2130;
 				} else {
 					udpPort = strtol(temp_line.c_str(), NULL, 10);
 				}
@@ -1024,14 +1045,19 @@ public:
 				}
 				if(isIpxServer) {
 					WriteOut("List of active connections:\n\n");
+					// TODO: Fix this!
+					/*
 					int i;
 					IPaddress *ptrAddr;
 					for(i=0;i<SOCKETTABLESIZE;i++) {
-						if(IPX_isConnectedToServer(i,&ptrAddr)) {
-							WriteOut("     %d.%d.%d.%d from port %d\n", CONVIP(ptrAddr->host), SDLNet_Read16(&ptrAddr->port));
-						}
+					        if(IPX_isConnectedToServer(i,&ptrAddr))
+					{ WriteOut("     %d.%d.%d.%d from port
+					%d\n", CONVIP(ptrAddr->host),
+					SDLNet_Read16(&ptrAddr->port));
+					        }
 					}
 					WriteOut("\n");
+					*/
 				}
 				return;
 			}
@@ -1115,6 +1141,11 @@ public:
 
 		if (!NetWrapper_InitializeSDLNet())
 			return;
+		
+		if (enet_initialize() != 0) {
+			LOG_MSG("An error occurred while initializing ENet.\n");
+			return;
+		}
 
 		IPX_NetworkInit();
 
@@ -1180,7 +1211,7 @@ public:
 			IPX_StopServer();
 		}
 		DisconnectFromServer(false);
-
+		enet_deinitialize();
 		DOS_DelMultiplexHandler(IPX_Multiplex);
 		RealSetVec(0x73,old_73_vector);
 		IO_WriteB(0xa1,IO_ReadB(0xa1)|8);	// disable IRQ11
@@ -1193,10 +1224,10 @@ public:
 	}
 };
 
-static IPX* test;
+static IPX *test = nullptr;
 
-void IPX_ShutDown([[maybe_unused]] Section* sec) {
-	delete test;    
+void IPX_ShutDown([[maybe_unused]] Section *sec) {
+	delete test;
 }
 
 void IPX_Init(Section* sec) {
@@ -1206,5 +1237,4 @@ void IPX_Init(Section* sec) {
 
 //Initialize static members;
 Bit16u IPX::dospage = 0;
-
 #endif
