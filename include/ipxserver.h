@@ -36,7 +36,7 @@ struct packetBuffer {
 #define CONVIP(hostvar) hostvar & 0xff, (hostvar >> 8) & 0xff, (hostvar >> 16) & 0xff, (hostvar >> 24) & 0xff
 #define CONVIPX(hostvar) hostvar[0], hostvar[1], hostvar[2], hostvar[3], hostvar[4], hostvar[5]
 
-
+bool cmp_ipxnode(uint8_t *node1, uint8_t *node2);
 void IPX_StopServer();
 bool IPX_StartServer(uint16_t portnum);
 bool IPX_isConnectedToServer(Bits tableNum, IPaddress ** ptrAddr);
