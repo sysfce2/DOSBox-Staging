@@ -21,6 +21,8 @@
 
 #include "dosbox.h"
 
+#include <array>
+
 #include "mem.h"
 
 // disable this to reduce the size of the TLB
@@ -156,27 +158,30 @@ struct PagingBlock {
 		Bitu page;
 		PhysPt addr;
 	} base;
-#if defined(USE_FULL_TLB)
-	struct {
-		HostPt read[TLB_SIZE];
-		HostPt write[TLB_SIZE];
-		PageHandler * readhandler[TLB_SIZE];
-		PageHandler * writehandler[TLB_SIZE];
-		Bit32u	phys_page[TLB_SIZE];
-	} tlb;
-#else
-	tlb_entry tlbh[TLB_SIZE];
-	tlb_entry *tlbh_banks[TLB_BANKS];
-#endif
 	struct {
 		Bitu used;
-		Bit32u entries[PAGING_LINKS];
+		std::array<Bit32u, PAGING_LINKS> entries;
 	} links;
-	Bit32u		firstmb[LINK_START];
+	std::array<Bit32u, LINK_START> firstmb;
 	bool		enabled;
 };
 
-extern PagingBlock paging; 
+extern PagingBlock paging;
+
+#if defined(USE_FULL_TLB)
+
+extern std::array<HostPt, TLB_SIZE> paging_tlb_read;
+extern std::array<HostPt, TLB_SIZE> paging_tlb_write;
+extern std::array<PageHandler *, TLB_SIZE> paging_tlb_readhandler;
+extern std::array<PageHandler *, TLB_SIZE> paging_tlb_writehandler;
+extern std::array<Bit32u, TLB_SIZE> paging_tlb_phys_page;
+
+#else
+
+extern std::array<tlb_entry, TLB_SIZE> tlbh;
+extern std::array<tlb_entry *, TLB_SIZE> tlbh_banks;
+
+#endif
 
 /* Some support functions */
 
@@ -197,25 +202,25 @@ bool mem_unalignedwrited_checked(PhysPt address,Bit32u val);
 #if defined(USE_FULL_TLB)
 
 static INLINE HostPt get_tlb_read(PhysPt address) {
-	return paging.tlb.read[address>>12];
+	return paging_tlb_read[address >> 12];
 }
 static INLINE HostPt get_tlb_write(PhysPt address) {
-	return paging.tlb.write[address>>12];
+	return paging_tlb_write[address >> 12];
 }
 static INLINE PageHandler* get_tlb_readhandler(PhysPt address) {
-	return paging.tlb.readhandler[address>>12];
+	return paging_tlb_readhandler[address >> 12];
 }
 static INLINE PageHandler* get_tlb_writehandler(PhysPt address) {
-	return paging.tlb.writehandler[address>>12];
+	return paging_tlb_writehandler[address >> 12];
 }
 
 /* Use these helper functions to access linear addresses in readX/writeX functions */
 static INLINE PhysPt PAGING_GetPhysicalPage(PhysPt linePage) {
-	return (paging.tlb.phys_page[linePage>>12]<<12);
+	return (paging_tlb_phys_page[linePage >> 12] << 12);
 }
 
 static INLINE PhysPt PAGING_GetPhysicalAddress(PhysPt linAddr) {
-	return (paging.tlb.phys_page[linAddr>>12]<<12)|(linAddr&0xfff);
+	return (paging_tlb_phys_page[linAddr >> 12] << 12) | (linAddr & 0xfff);
 }
 
 #else
