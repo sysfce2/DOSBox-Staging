@@ -50,8 +50,7 @@ public:
 
 	void TearDown() override
 	{
-		std::vector<std::string>::reverse_iterator r = sections.rbegin();
-		for (; r != sections.rend(); ++r)
+		for (auto r = sections.rbegin(); r != sections.rend(); ++r)
 			control->GetSection(*r)->ExecuteDestroy();
 	}
 

@@ -18,23 +18,6 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-/* This sample shows how to write a simple unit test for dosbox-staging using
- * Google C++ testing framework.
- *
- * Read Google Test Primer for reference of most available features, macros,
- * and guidance about writing unit tests:
- *
- * https://github.com/google/googletest/blob/master/googletest/docs/primer.md#googletest-primer
- */
-
-/* Include necessary header files; order of headers should be as follows:
- *
- * 1. Header declaring functions/classes being tested
- * 2. <gtest/gtest.h>, which declares the testing framework
- * 3. Additional system headers (if needed)
- * 4. Additional dosbox-staging headers (if needed)
- */
-
 #include "drives.h"
 
 #include <gtest/gtest.h>
@@ -44,12 +27,8 @@
 std::string run_Set_Label(char const * const input, bool cdrom) {
     char output[32] = { 0 };
     Set_Label(input, output, cdrom);
-    std::cout << "Set_Label " << "CD-ROM? " << (cdrom ? 'y' : 'n') << \
-        " Input: " << input << " Output: " << output << '\n';
     return std::string(output);
 }
-
-// Open anonymous namespace (this is Google Test requirement)
 
 namespace {
 

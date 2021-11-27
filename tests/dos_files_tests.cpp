@@ -54,36 +54,37 @@ namespace {
 
 class DOS_FilesTest : public DOSBoxTestFixture {};
 
+// These aren't passed by reference to simplify the code, so that
+// we can pass expectations as literals
 void assert_DTAExtendName(std::string input,
                           std::string expected_name,
                           std::string expected_ext)
 {
-	char *const input_str = const_cast<char *>(&input.c_str()[0]);
-	// char * const input_name = &input[0];
+	auto input_str = input.data();
 	// needs to be minimum length of the input up to the dot + 1 (null)
 	char output_filename[DOS_PATHLENGTH];
-	char *const filename = &output_filename[0];
 	char output_ext[DOS_PATHLENGTH];
-	char *const ext = &output_ext[0];
 
-	DTAExtendName(input_str, filename, ext);
+	DTAExtendName(input_str, output_filename, output_ext);
 
 	// mutates input up to dot
-	EXPECT_EQ(filename, expected_name);
-	EXPECT_EQ(ext, expected_ext);
+	EXPECT_EQ(output_filename, expected_name);
+	EXPECT_EQ(output_ext, expected_ext);
 }
 
 void assert_DOS_MakeName(char const *const input,
-                         bool exp_result,
+			 bool is_success_expected,
                          std::string exp_fullname = "",
                          int exp_drive = 0)
 {
-	Bit8u drive_result;
+	uint8_t drive_result;
 	char fullname_result[DOS_PATHLENGTH];
 	bool result = DOS_MakeName(input, fullname_result, &drive_result);
-	EXPECT_EQ(result, exp_result);
-	// if we expected success, also test these
-	if (exp_result) {
+	EXPECT_EQ(result, is_success_expected);
+	// if we expected success, also test these because they will
+	// actually be defined. otherwise we'll be testing uninitialized
+	// strings
+	if (is_success_expected) {
 		EXPECT_EQ(std::string(fullname_result), exp_fullname);
 		EXPECT_EQ(drive_result, exp_drive);
 	}
@@ -110,7 +111,7 @@ TEST_F(DOS_FilesTest, DOS_MakeName_Z_AUTOEXEC_BAT_exists)
 // ramifications across the codebase if not replicated
 TEST_F(DOS_FilesTest, DOS_MakeName_Drive_Index_Set_On_Failure)
 {
-	Bit8u drive_result;
+	uint8_t drive_result;
 	char fullname_result[DOS_PATHLENGTH];
 	bool result;
 	result = DOS_MakeName("A:\r\n", fullname_result, &drive_result);
@@ -141,6 +142,10 @@ TEST_F(DOS_FilesTest, DOS_MakeName_Uppercase)
 TEST_F(DOS_FilesTest, DOS_MakeName_CONVERTS_FWD_SLASH)
 {
 	assert_DOS_MakeName("Z:/AUTOEXEC.BAT", true, "AUTOEXEC.BAT", 25);
+	assert_DOS_MakeName("Z://AUTOEXEC.BAT", true, "AUTOEXEC.BAT", 25);
+	assert_DOS_MakeName("Z:///AUTOEXEC.BAT", true, "AUTOEXEC.BAT", 25);
+	assert_DOS_MakeName("Z:/FOLDER/", true, "FOLDER", 25);
+	assert_DOS_MakeName("Z:/FOLDER/FILE", true, "FOLDER\\FILE", 25);
 }
 
 // spaces get stripped out before processing (\t, \r, etc, are illegal chars,
@@ -152,6 +157,7 @@ TEST_F(DOS_FilesTest, DOS_MakeName_STRIP_SPACE)
 	assert_DOS_MakeName("Z: \\   A U T  OE X   EC     .BAT", true,
 	                    "AUTOEXEC.BAT", 25);
 	assert_DOS_MakeName("12345   678.123", true, "12345678.123", 25);
+	assert_DOS_MakeName("Z:\\\\A\\ B \\CDE\\ E F G\\", true, "A\\B\\CDE\\EFG", 25);
 	// except here, whitespace isn't stripped & causes failure
 	assert_DOS_MakeName("Z :\\AUTOEXEC.BAT", false);
 }
@@ -163,6 +169,10 @@ TEST_F(DOS_FilesTest, DOS_MakeName_Dir_Handling)
 	assert_DOS_MakeName("Z:\\DIR\\UNTERM", true, "DIR\\UNTERM", 25);
 	// trailing gets trimmed
 	assert_DOS_MakeName("Z:\\CODE\\TERM\\", true, "CODE\\TERM", 25);
+	assert_DOS_MakeName("Z:\\CODE\\BIN\\", true, "CODE\\BIN", 25);
+	assert_DOS_MakeName("Z:\\CODE\\BIN\\\\", true, "CODE\\BIN", 25);
+	assert_DOS_MakeName("Z:\\CODE\\BIN\\\\\\\\", true, "CODE\\BIN", 25);
+	assert_DOS_MakeName("Z:\\CODE\\\\BIN\\\\\\\\", true, "CODE\\BIN", 25);
 }
 
 TEST_F(DOS_FilesTest, DOS_MakeName_Assumes_Current_Drive_And_Dir)
@@ -255,13 +265,15 @@ TEST_F(DOS_FilesTest, DOS_MakeName_No_SlashSlash)
 // Exhaustive test of all good chars
 TEST_F(DOS_FilesTest, DOS_MakeName_GoodChars)
 {
-	unsigned char start_letter = 'A';
-	unsigned char start_number = '0';
+	const auto start_letter = 'A';
+	const auto start_number = '0';
 	std::vector<unsigned char> symbols{'$', '#',  '@',  '(',  ')', '!', '%',
 	                                   '{', '}',  '`',  '~',  '_', '-', '.',
 	                                   '*', '?',  '&',  '\'', '+', '^', 246,
 	                                   255, 0xa0, 0xe5, 0xbd, 0x9d};
+	// iterate A-Z
 	for (unsigned char li = 0; li < 26; li++) {
+		// iterate 0-9
 		for (unsigned char ni = 0; ni < 10; ni++) {
 			for (auto &c : symbols) {
 				unsigned char input_array[3] = {
@@ -349,17 +361,14 @@ TEST_F(DOS_FilesTest, DOS_FindFirst_FindFile_Nonexistant)
 TEST_F(DOS_FilesTest, DOS_DTAExtendName_Mutates_Input)
 {
 	char input_str[] = "123456789AAAA.EXT\0";
-	int initial_input_name = strlen(input_str);
-	char *const input_name = &input_str[0];
+	auto initial_input_name = strlen(input_str);
 	// needs to be minimum length of the input up to the dot + 1 (null)
 	char output_filename[14];
-	char *const filename = &output_filename[0];
 	char output_ext[4];
-	char *const ext = &output_ext[0];
 
-	DTAExtendName(input_name, filename, ext);
+	DTAExtendName(input_str, output_filename, output_ext);
 
-	EXPECT_EQ(strlen(input_name), 13);
+	EXPECT_EQ(strlen(input_str), 13);
 	EXPECT_NE(initial_input_name, strlen(input_str));
 }
 

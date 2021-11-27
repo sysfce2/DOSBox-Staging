@@ -179,40 +179,20 @@ void Program::WriteOut(const char *format, ...)
 	vsnprintf(buf,2047,format,msg);
 	va_end(msg);
 
-	Bit16u size = (Bit16u)strlen(buf);
-	dos.internal_output=true;
-	for (Bit16u i = 0; i < size; i++) {
-		Bit8u out;Bit16u s=1;
-		if (buf[i] == 0xA && last_written_character != 0xD) {
-			out = 0xD;DOS_WriteFile(STDOUT,&out,&s);
-		}
-		last_written_character = out = buf[i];
-		DOS_WriteFile(STDOUT,&out,&s);
-	}
-	dos.internal_output=false;
-
-//	DOS_WriteFile(STDOUT,(Bit8u *)buf,&size);
+	WriteOut_NoParsing(buf);
 }
 
+// This function is exists to provide a non-variadic version of WriteOut
+// so that it can be used in tests with GMock
 void Program::WriteOut(const char *format, const char *arguments)
 {
 	if (SuppressWriteOut(format))
 		return;
 
 	char buf[2048];
-	sprintf(buf,format,arguments);
+	safe_sprintf(buf,format,arguments);
 
-	Bit16u size = (Bit16u)strlen(buf);
-	dos.internal_output=true;
-	for (Bit16u i = 0; i < size; i++) {
-		Bit8u out;Bit16u s=1;
-		if (buf[i] == 0xA && last_written_character != 0xD) {
-			out = 0xD;DOS_WriteFile(STDOUT,&out,&s);
-		}
-		last_written_character = out = buf[i];
-		DOS_WriteFile(STDOUT,&out,&s);
-	}
-	dos.internal_output=false;
+	WriteOut_NoParsing(buf);
 }
 
 void Program::WriteOut_NoParsing(const char * format) {

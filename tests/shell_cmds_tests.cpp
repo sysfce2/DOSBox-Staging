@@ -81,7 +81,7 @@ private:
 void assert_DoCommand(std::string input, std::string expected_name, std::string expected_args)
 {
 	MockDOS_Shell shell;
-	char *input_c_str = const_cast<char *>(input.c_str());
+	char *input_c_str = input.data();
 	EXPECT_CALL(shell,
 	            execute_shell_cmd(StrEq(expected_name), StrEq(expected_args)))
 	        .Times(1)
@@ -94,7 +94,7 @@ TEST_F(DOS_Shell_CMDSTest, DoCommand_Separating_Chars)
 {
 	// These should all cause the parser to stop
 	std::vector<char> end_chars{
-	        32,
+	        32, // space character
 	        '/',
 	        '\t',
 	        '=',

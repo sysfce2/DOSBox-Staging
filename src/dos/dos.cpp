@@ -1374,7 +1374,13 @@ public:
 		// de-init devices, this allows DOSBox to cleanly re-initialize
 		// without throwing an inevitable `DOS: Too many devices added`
 		// exception
-		for (auto& device : Devices) device = nullptr;
+		for (auto& device : Devices) {
+			delete device;
+			// Devices is a persistent data structure, device
+			// adding works on finding the first null or throwing
+			// an exception if it's full.
+			device = nullptr;
+		}
 	}
 };
 
