@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <ctime>
 #include <limits>
+#include <filesystem>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -45,6 +46,10 @@
 #include "string_utils.h"
 #include "cross.h"
 #include "inout.h"
+
+#ifdef WIN32
+constexpr int8_t maximum_attribs = 0x3f;
+#endif
 
 bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
 //TODO Maybe care for attributes but not likely
@@ -353,7 +358,6 @@ again:
 	else
 		find_attr = 0;
 #if defined(WIN32)
-	constexpr int8_t maximum_attribs = 0x3f;
 	Bitu attribs = GetFileAttributes(temp_name);
 	if (attribs != INVALID_FILE_ATTRIBUTES)
 		find_attr |= attribs & maximum_attribs;
@@ -405,20 +409,20 @@ bool localDrive::GetFileAttr(char *name, uint16_t *attr)
 		DOS_SetError((uint16_t)GetLastError());
 		return false;
 	}
-	*attr = attribs & 0x3f;
+	*attr = attribs & maximum_attribs;
 	return true;
 #else
-	struct stat status;
-	if (stat(newname, &status) == 0) {
-		*attr = status.st_mode & S_IFDIR ? 0 : DOS_ATTR_ARCHIVE;
-		if (status.st_mode & S_IFDIR)
-			*attr |= DOS_ATTR_DIRECTORY;
-		if (!(status.st_mode & S_IWUSR))
-			*attr |= DOS_ATTR_READ_ONLY;
-		return true;
-	}
 	*attr = 0;
-	return false;
+	std::filesystem::file_status status = std::filesystem::status(newname);
+	if (!std::filesystem::exists(status) ||
+	    status.permissions() == std::filesystem::perms::unknown)
+		return false;
+	if (std::filesystem::is_directory(status))
+		*attr |= DOS_ATTR_DIRECTORY;
+	else if ((status.permissions() & std::filesystem::perms::owner_write) ==
+	         std::filesystem::perms::none)
+		*attr |= DOS_ATTR_READ_ONLY;
+	return true;
 #endif
 }
 
@@ -438,27 +442,34 @@ bool localDrive::SetFileAttr(const char *name, const uint16_t attr)
 	dirCache.EmptyCache();
 	return true;
 #else
-	struct stat status;
-	if (stat(newname, &status) == 0) {
-		if (attr & (DOS_ATTR_SYSTEM | DOS_ATTR_HIDDEN))
-			LOG_WARNING("%s: Application attempted to set system or hidden attributes for '%s' which is ignored for local drives",
-			            __FUNCTION__, newname);
-
-		if (attr & DOS_ATTR_READ_ONLY)
-			status.st_mode &= ~(S_IWUSR | S_IWGRP | S_IWOTH);
-		else
-			status.st_mode |= S_IWUSR;
-
-		if (chmod(newname, status.st_mode) < 0) {
-			DOS_SetError(DOSERR_ACCESS_DENIED);
-			return false;
-		}
-
-		return true;
+	std::filesystem::file_status status = std::filesystem::status(newname);
+	if (!std::filesystem::exists(status) ||
+	    status.permissions() == std::filesystem::perms::unknown) {
+		DOS_SetError(DOSERR_FILE_NOT_FOUND);
+		return false;
 	}
-
-	DOS_SetError(DOSERR_FILE_NOT_FOUND);
-	return false;
+	if (attr & (DOS_ATTR_SYSTEM | DOS_ATTR_HIDDEN))
+		LOG_WARNING("%s: Application attempted to set system or hidden attributes for '%s' which is ignored for local drives",
+		            __FUNCTION__, newname);
+	bool to_read_only = attr & DOS_ATTR_READ_ONLY;
+	if (to_read_only)
+		std::filesystem::permissions(newname,
+		                             std::filesystem::perms::owner_write |
+		                                     std::filesystem::perms::group_write |
+		                                     std::filesystem::perms::others_write,
+		                             std::filesystem::perm_options::remove);
+	else
+		std::filesystem::permissions(newname,
+		                             std::filesystem::perms::owner_write,
+		                             std::filesystem::perm_options::add);
+	bool read_only = (std::filesystem::status(newname).permissions() &
+	                  std::filesystem::perms::owner_write) ==
+	                 std::filesystem::perms::none;
+	if (to_read_only != read_only) {
+		DOS_SetError(DOSERR_ACCESS_DENIED);
+		return false;
+	}
+	return true;
 #endif
 }
 
