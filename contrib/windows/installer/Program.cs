@@ -15,6 +15,9 @@ namespace installer
             var dosboxVers = Environment.GetEnvironmentVariable("DOSBOX_VERSION");
             if (dosboxVers.IsEmpty()) { Console.WriteLine("DOSBOX_VERSION must be set!"); }
 
+            var outDir = Environment.GetEnvironmentVariable("DOSBOX_INSTALL_OUTDIR");
+            var outFile = Environment.GetEnvironmentVariable("DOSBOX_INSTALL_OUTFILE");
+
             Console.WriteLine($"DOSBOX_PKG_PATH is '{pkgPath}'");
             Console.WriteLine($"DOSBOX_VERSION is '{dosboxVers}'");
 
@@ -57,8 +60,8 @@ namespace installer
                                            .Add<ProgressDialog>()
                                            .Add<ExitDialog>();
 
-            //project.SourceBaseDir = "<input dir path>";
-            //project.OutDir = "<output dir path>";
+            if (outDir.IsNotEmpty()) { project.OutDir = outDir; }
+            if (outFile.IsNotEmpty()) { project.OutFileName = outFile; }
 
             ValidateAssemblyCompatibility();
 
