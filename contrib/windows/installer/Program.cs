@@ -43,6 +43,10 @@ namespace installer
             project.Version = new Version(dosboxVers);
             project.Platform = Platform.x64;
 
+            // Allow downgrades
+            project.MajorUpgrade = new MajorUpgrade();
+            project.MajorUpgrade.AllowDowngrades = true;
+
             //custom set of standard UI dialogs
             project.ManagedUI = new ManagedUI();
 

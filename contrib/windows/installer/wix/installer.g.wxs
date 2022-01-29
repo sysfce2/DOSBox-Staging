@@ -134,6 +134,8 @@
 
     <WixVariable Id="WixUILicenseRtf" Value="gpl-2.0.rtf" />
 
+    <MajorUpgrade AllowDowngrades="yes" />
+
     <CustomAction Id="WixSharp_InitRuntime_Action" BinaryKey="WixSharp_InitRuntime_Action_File" DllEntry="WixSharp_InitRuntime_Action" Return="check" Execute="immediate" />
     <CustomAction Id="Set_CancelRequestHandler_Props" Property="CancelRequestHandler" Value="UpgradeCode=[UpgradeCode];INSTALLDIR=[INSTALLDIR];UILevel=[UILevel];ProductCode=[ProductCode];ADDLOCAL=[ADDLOCAL];ADDFEATURES=[ADDFEATURES]" />
     <CustomAction Id="CancelRequestHandler" BinaryKey="WixSharp_InitRuntime_Action_File" DllEntry="CancelRequestHandler" Return="check" Impersonate="no" Execute="deferred" />
@@ -151,6 +153,7 @@
     <Property Id="UAC_WARNING" Value="Please wait for UAC prompt to appear.&#xD;&#xA;&#xD;&#xA;If it appears minimized then activate it from the taskbar." />
     <Property Id="WixSharp_InstallDialogs" Value="installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.WelcomeDialog&#xA;WixSharp.UI, Version=1.19.0.0, Culture=neutral, PublicKeyToken=3775edd25acc43c2|WixSharp.UI.Forms.InstallScopeDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.LicenceDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.SetupTypeDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.FeaturesDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.InstallDirDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.ProgressDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.ExitDialog" />
     <Property Id="WixSharp_ModifyDialogs" Value="installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.MaintenanceTypeDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.FeaturesDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.ProgressDialog&#xA;installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|WixSharpSetup.Dialogs.ExitDialog" />
+    <Property Id="REINSTALLMODE" Value="omus" />
 
     <Feature Id="Dosbox20Staging__" Title="Dosbox Staging" Absent="disallow" Level="1" Description="The Dosbox Staging binaries">
       <ComponentRef Id="Component.dosbox.exe_1901479122" />
