@@ -292,6 +292,12 @@ jobs:
         with:
           name: ${{ env.PKG_RELEASE }}
           path: ${{ env.PKG_RELEASE }}
+      
+      - name: Upload installer
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.DOSBOX_INSTALL_OUTFILE }}
+          path: contrib/windows/installer/${{ env.DOSBOX_INSTALL_OUTFILE }}.msi
 
   # This job exists only to publish an artifact with version info when building
   # from main branch, so snapshot build version will be visible on:
