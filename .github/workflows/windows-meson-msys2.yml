@@ -232,6 +232,7 @@ jobs:
         run: |
           set -x
           echo "DOSBOX_PKG_PATH=$PKG_RELEASE" >> $GITHUB_ENV
+          echo "DOSBOX_INSTALL_OUTFILE=dosbox-staging-installer-${{ matrix.conf.arch }}-${{ env.DOSBOX_VERSION }}" >> $GITHUB_ENV
            
       - name: Setup release build
         run: meson setup -Db_lto=true -Db_lto_threads=$(nproc) $BUILD_FLAGS $BUILD_RELEASE_DIR
@@ -258,16 +259,13 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Setup NuGet
-        uses: nuget/setup-nuget@v1
-
-      - name: Restore WiX packages from NuGet
+      - name: Restore wixsharp packages from NuGet
         shell: powershell
-        run: nuget restore .\vs\dosbox.sln
+        run: msbuild .\vs\dosbox.sln /t:restore /p:Platform="x64"
 
-      - name: Build installer project
+      - name: Build installer project and MSI
         shell: powershell
-        run: msbuild .\vs\dosbox.sln /t:installer /p:Configuration=Release
+        run: msbuild .\vs\dosbox.sln /t:installer /p:Configuration=Release /p:Platform="x64"
       
       - name: Windows Defender AV Scan
         shell: powershell
