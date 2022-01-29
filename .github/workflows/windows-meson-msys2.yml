@@ -227,6 +227,11 @@ jobs:
         run: |
           set -x
           echo "PKG_RELEASE=dosbox-staging-windows-msys2-${{ matrix.conf.arch }}-${{ env.DOSBOX_VERSION }}" >> $GITHUB_ENV
+      
+      - name: Inject Installer environment variables
+        run: |
+          set -x
+          echo "DOSBOX_PKG_PATH=$PKG_RELEASE" >> $GITHUB_ENV
            
       - name: Setup release build
         run: meson setup -Db_lto=true -Db_lto_threads=$(nproc) $BUILD_FLAGS $BUILD_RELEASE_DIR
