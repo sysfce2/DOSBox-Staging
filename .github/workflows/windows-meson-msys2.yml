@@ -250,6 +250,20 @@ jobs:
           mv "${PKG_RELEASE}/dosbox.exe" "${PKG_RELEASE}/dosbox_with_debugger.exe"
           install -DT "${BUILD_RELEASE_DIR}/dosbox.exe" "${PKG_RELEASE}/dosbox.exe"
       
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v1
+
+      - name: Restore WiX packages from NuGet
+        shell: powershell
+        run: nuget restore .\vs\dosbox.sln
+
+      - name: Build installer project
+        shell: powershell
+        run: msbuild .\vs\dosbox.sln /t:installer /p:Configuration=Release
+      
       - name: Windows Defender AV Scan
         shell: powershell
         run: |
