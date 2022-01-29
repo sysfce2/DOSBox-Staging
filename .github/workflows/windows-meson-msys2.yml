@@ -224,7 +224,7 @@ jobs:
           echo "DOSBOX_GIT_VERSION=$DOSBOX_GIT_VERSION" >> $GITHUB_ENV
           ###
           if ! git describe --exact-match --tags HEAD ; then
-            echo "DOSBOX_VERSION=0.0.0.${GITHUB_RUN_ID}" >> $GITHUB_ENV
+            echo "DOSBOX_VERSION=0.0.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ID}" >> $GITHUB_ENV
           else
             echo "DOSBOX_VERSION=${DOSBOX_GIT_VERSION#v}" >> $GITHUB_ENV
           fi
