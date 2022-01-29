@@ -220,13 +220,13 @@ jobs:
         run: |
           set -x
           git fetch --prune --unshallow
-          export VERSION=$(git describe --abbrev=5)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          export DOSBOX_VERSION=$(git describe --abbrev=5)
+          echo "DOSBOX_VERSION=$DOSBOX_VERSION" >> $GITHUB_ENV
       
       - name: Inject package name
         run: |
           set -x
-          echo "PKG_RELEASE=dosbox-staging-windows-msys2-${{ matrix.conf.arch }}-${{ env.VERSION }}" >> $GITHUB_ENV
+          echo "PKG_RELEASE=dosbox-staging-windows-msys2-${{ matrix.conf.arch }}-${{ env.DOSBOX_VERSION }}" >> $GITHUB_ENV
            
       - name: Setup release build
         run: meson setup -Db_lto=true -Db_lto_threads=$(nproc) $BUILD_FLAGS $BUILD_RELEASE_DIR
