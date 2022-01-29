@@ -277,11 +277,14 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $dosboxDir = "${{ github.workspace }}\${{ env.PKG_RELEASE }}"
-          & 'C:\Program Files\Windows Defender\MpCmdRun.exe' -Scan -ScanType 3 -DisableRemediation -File $dosboxDir
-          if( $LASTEXITCODE -ne 0 ) {
-              Get-Content -Path $env:TEMP\MpCmdRun.log
-              Throw "Exit $LASTEXITCODE : Windows Defender found an issue"
+          $dosboxDirs = "${{ github.workspace }}\${{ env.PKG_RELEASE }}", "${{ github.workspace }}\contrib\windows\installer\${{ env.DOSBOX_INSTALL_OUTFILE }}.msi"
+          foreach ($dosboxDir in $dosboxDirs)
+          {
+            & 'C:\Program Files\Windows Defender\MpCmdRun.exe' -Scan -ScanType 3 -DisableRemediation -File $dosboxDir
+            if( $LASTEXITCODE -ne 0 ) {
+                Get-Content -Path $env:TEMP\MpCmdRun.log
+                Throw "Exit $LASTEXITCODE : Windows Defender found an issue"
+            }
           }
 
       - name: Upload package
