@@ -220,19 +220,25 @@ jobs:
         run: |
           set -x
           git fetch --prune --unshallow
-          export DOSBOX_VERSION=$(git describe --abbrev=5)
-          echo "DOSBOX_VERSION=$DOSBOX_VERSION" >> $GITHUB_ENV
+          export DOSBOX_GIT_VERSION=$(git describe --abbrev=5)
+          echo "DOSBOX_GIT_VERSION=$DOSBOX_GIT_VERSION" >> $GITHUB_ENV
+          ###
+          if ! git describe --exact-match --tags HEAD ; then
+            echo "DOSBOX_VERSION=0.0.0.${GITHUB_RUN_ID}" >> $GITHUB_ENV
+          else
+            echo "DOSBOX_VERSION=${DOSBOX_GIT_VERSION#v}" >> $GITHUB_ENV
+          fi
       
       - name: Inject package name
         run: |
           set -x
-          echo "PKG_RELEASE=dosbox-staging-windows-msys2-${{ matrix.conf.arch }}-${{ env.DOSBOX_VERSION }}" >> $GITHUB_ENV
+          echo "PKG_RELEASE=dosbox-staging-windows-msys2-${{ matrix.conf.arch }}-${{ env.DOSBOX_GIT_VERSION }}" >> $GITHUB_ENV
       
       - name: Inject Installer environment variables
         run: |
           set -x
           echo "DOSBOX_PKG_PATH=$PKG_RELEASE" >> $GITHUB_ENV
-          echo "DOSBOX_INSTALL_OUTFILE=dosbox-staging-installer-${{ matrix.conf.arch }}-${{ env.DOSBOX_VERSION }}" >> $GITHUB_ENV
+          echo "DOSBOX_INSTALL_OUTFILE=dosbox-staging-installer-${{ matrix.conf.arch }}-${{ env.DOSBOX_GIT_VERSION }}" >> $GITHUB_ENV
            
       - name: Setup release build
         run: meson setup -Db_lto=true -Db_lto_threads=$(nproc) $BUILD_FLAGS $BUILD_RELEASE_DIR
