@@ -270,7 +270,7 @@ jobs:
           Invoke-WebRequest `
             -Uri https://github.com/oleg-shilo/wixsharp/releases/download/v1.19.0.0/WixSharp.1.19.0.0.7z `
             -OutFile .\WixSharp.7z
-          C:\Program Files\7-Zip\7z.exe x WixSharp.7z -o.\WixSharp
+          & "C:\Program Files\7-Zip\7z.exe" x WixSharp.7z -o.\WixSharp
           del .\WixSharp.7z
 
       - name: Build Installer
