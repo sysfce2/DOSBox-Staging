@@ -13,6 +13,7 @@ env:
   BUILD_FLAGS: "-Dbuildtype=release -Db_asneeded=true --force-fallback-for=fluidsynth,mt32emu -Dtry_static_libs=fluidsynth,mt32emu,opusfile,png,slirp -Dfluidsynth:try-static-deps=true"
   BUILD_RELEASE_DIR: build/release
   BUILD_DEBUGGER_DIR: build/debugger
+  INSTALLER_DIR: .\contrib\windows\installer
 
 jobs:
   build_msys2:
@@ -262,22 +263,27 @@ jobs:
           mv "${PKG_RELEASE}/dosbox.exe" "${PKG_RELEASE}/dosbox_with_debugger.exe"
           install -DT "${BUILD_RELEASE_DIR}/dosbox.exe" "${PKG_RELEASE}/dosbox.exe"
       
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
-
-      - name: Restore wixsharp packages from NuGet
+      - name: Download and extract wixsharp
         shell: powershell
-        run: msbuild .\vs\dosbox.sln /t:restore /p:Platform="x64"
+        run: |
+          cd .\${{ env.INSTALLER_DIR }}
+          Invoke-WebRequest `
+            -Uri https://github.com/oleg-shilo/wixsharp/releases/download/v1.19.0.0/WixSharp.1.19.0.0.7z `
+            -OutFile .\WixSharp.7z
+          C:\Program Files\7-Zip\7z.exe x WixSharp.7z -o.\WixSharp
+          del .\WixSharp.7z
 
-      - name: Build installer project and MSI
+      - name: Build Installer
         shell: powershell
-        run: msbuild .\vs\dosbox.sln /t:installer /p:Configuration=Release /p:Platform="x64"
+        run: |
+          cd .\${{ env.INSTALLER_DIR }}
+          .\WixSharp\cscs.exe .\Installer.cs
       
       - name: Windows Defender AV Scan
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $dosboxDirs = "${{ github.workspace }}\${{ env.PKG_RELEASE }}", "${{ github.workspace }}\contrib\windows\installer\${{ env.DOSBOX_INSTALL_OUTFILE }}.msi"
+          $dosboxDirs = "${{ github.workspace }}\${{ env.PKG_RELEASE }}", "${{ github.workspace }}\${{ env.INSTALLER_DIR }}\${{ env.DOSBOX_INSTALL_OUTFILE }}.msi"
           foreach ($dosboxDir in $dosboxDirs)
           {
             & 'C:\Program Files\Windows Defender\MpCmdRun.exe' -Scan -ScanType 3 -DisableRemediation -File $dosboxDir
