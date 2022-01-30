@@ -43,9 +43,8 @@ class Script
 
         project.ManagedUI = new ManagedUI();
         project.ManagedUI.InstallDialogs.Add(Dialogs.Welcome)
+                                        .Add(Dialogs.InstallScope)
                                         .Add(Dialogs.Licence)
-                                        .Add(Dialogs.SetupType)
-                                        .Add(Dialogs.Features)
                                         .Add(Dialogs.InstallDir)
                                         .Add(Dialogs.Progress)
                                         .Add(Dialogs.Exit);
