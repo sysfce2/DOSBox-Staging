@@ -19,13 +19,26 @@ class Script
     static public void Main(string[] args)
     {
         var pkgPath = Environment.GetEnvironmentVariable("DOSBOX_PKG_PATH");
-        if (pkgPath.IsEmpty()) { Console.WriteLine("DOSBOX_PKG_PATH must be set!"); }
+        if (pkgPath.IsEmpty()) { 
+            Console.WriteLine("DOSBOX_PKG_PATH must be set!"); 
+            Environment.Exit(1); 
+        }
 
         var dosboxVers = Environment.GetEnvironmentVariable("DOSBOX_VERSION");
-        if (dosboxVers.IsEmpty()) { Console.WriteLine("DOSBOX_VERSION must be set!"); }
+        if (dosboxVers.IsEmpty()) { 
+            Console.WriteLine("DOSBOX_VERSION must be set!"); 
+            Environment.Exit(1); 
+        }
 
         var outDir = Environment.GetEnvironmentVariable("DOSBOX_INSTALL_OUTDIR");
         var outFile = Environment.GetEnvironmentVariable("DOSBOX_INSTALL_OUTFILE");
+
+        var dosboxArch = Environment.GetEnvironmentVariable("DOSBOX_INSTALL_ARCH");
+        if (dosboxArch.IsEmpty()) { dosboxArch = "x64"; }
+        if (dosboxArch != "x64" && dosboxArch != "x86") {
+            Console.WriteLine("If set, DOSBOX_INSTALL_ARCH must be 'x86' or 'x64'");
+            Environment.Exit(1);
+        }
 
         Console.WriteLine(string.Format("DOSBOX_PKG_PATH is '{0}'", pkgPath));
         Console.WriteLine(string.Format("DOSBOX_VERSION is '{0}'", dosboxVers));
@@ -39,7 +52,7 @@ class Script
         project.LicenceFile = "gpl-2.0.rtf";
 
         project.Version = new Version(dosboxVers);
-        project.Platform = Platform.x64;
+        project.Platform = dosboxArch == "x64" ? Platform.x64 : Platform.x86;
 
         // Allow downgrades
         project.MajorUpgrade = new MajorUpgrade();
