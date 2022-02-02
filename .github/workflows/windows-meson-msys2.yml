@@ -266,7 +266,6 @@ jobs:
       - name: Download and extract wixsharp
         shell: powershell
         run: |
-          cd .\${{ env.INSTALLER_DIR }}
           Invoke-WebRequest `
             -Uri https://github.com/oleg-shilo/wixsharp/releases/download/v1.19.0.0/WixSharp.1.19.0.0.7z `
             -OutFile .\WixSharp.7z
@@ -276,8 +275,13 @@ jobs:
       - name: Build Installer
         shell: powershell
         run: |
+          $Env:CSSCRIPT_DIR = "${{ github.workspace }}\WixSharp"
+          $Env:WIXSHARP_DIR = $Env:CSSCRIPT_DIR + "\Wix_bin\bin"
+          $Env:PATH = $Env:CSSCRIPT_DIR + ";" + $Env:PATH
+          $Env:PATH = $Env:WIXSHARP_DIR + ";" + $Env:PATH
+          $Env:CSS_RESGEN = "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\ResGen.exe"
           cd .\${{ env.INSTALLER_DIR }}
-          .\WixSharp\cscs.exe .\Installer.cs
+          cscs .\Installer.cs
       
       - name: Windows Defender AV Scan
         shell: powershell
