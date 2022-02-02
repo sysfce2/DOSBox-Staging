@@ -27,7 +27,8 @@ namespace WixSharpSetup.Dialogs
         {
             banner.Image = Runtime.Session.GetResourceBitmap("WixUI_Bmp_Banner");
             agreement.Rtf = Runtime.Session.GetResourceString("WixSharp_LicenceFile");
-            accepted.Checked = Runtime.Session["LastLicenceAcceptedChecked"] == "True";
+            accepted.Checked = true;
+            accepted.Visible = false;
 
             ResetLayout();
         }
