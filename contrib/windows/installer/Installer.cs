@@ -1,14 +1,18 @@
-//css_dir .\WixSharp;
 //css_ref System.Core.dll;
 //css_ref System.Windows.Forms.dll;
+//css_ref System.Drawing.dll;
 //css_ref Wix_bin\SDK\Microsoft.Deployment.WindowsInstaller.dll;
 //css_ref WixSharp.dll;
 //css_ref WixSharp.UI.dll;
+
+//css_inc .\Dialogs\*.cs
+//css_res .\Dialogs\LicenceDialog.resx
 
 using System;
 
 using WixSharp;
 using WixSharp.Forms;
+using WixSharpSetup.Dialogs;
 
 class Script 
 {
@@ -44,7 +48,7 @@ class Script
         project.ManagedUI = new ManagedUI();
         project.ManagedUI.InstallDialogs.Add(Dialogs.Welcome)
                                         .Add(Dialogs.InstallScope)
-                                        .Add(Dialogs.Licence)
+                                        .Add<LicenceDialog>()
                                         .Add(Dialogs.InstallDir)
                                         .Add(Dialogs.Progress)
                                         .Add(Dialogs.Exit);
