@@ -22,6 +22,7 @@
 #include <string>
 
 #include "types.h"
+#include <SDL.h>
 
 #define REDUCE_JOYSTICK_POLLING
 
@@ -30,6 +31,14 @@ typedef enum {
 	GFX_CallBackStop,
 	GFX_CallBackRedraw
 } GFX_CallBackFunctions_t;
+
+enum SCREEN_TYPES	{
+	SCREEN_SURFACE,
+	SCREEN_TEXTURE,
+#if C_OPENGL
+	SCREEN_OPENGL
+#endif
+};
 
 typedef void (*GFX_CallBack_t)( GFX_CallBackFunctions_t function );
 
@@ -74,14 +83,26 @@ void GFX_ResetScreen(void);
 void GFX_RequestExit(const bool requested);
 void GFX_Start(void);
 void GFX_Stop(void);
+bool GFX_IsFullscreen(void);
 void GFX_SwitchFullScreen(void);
+void GFX_SwitchFullscreenNoReset(void);
+bool GFX_LazyFullscreenRequested(void);
+void GFX_RestoreMode(void);
 bool GFX_StartUpdate(uint8_t * &pixels, int &pitch);
 void GFX_EndUpdate( const uint16_t *changedLines );
 void GFX_GetSize(int &width, int &height, bool &fullscreen);
 void GFX_UpdateMouseState();
-void GFX_LosingFocus();
 void GFX_RegenerateWindow(Section *sec);
 bool GFX_MouseIsAvailable();
+void GFX_LosingFocus(void);
+void SetTransparency(void);
+bool OpenGL_using(void);
+SDL_Window* GFX_GetSDLWindow(void);
+SDL_Window *SetWindowMode(SCREEN_TYPES screen_type,
+                                 int width,
+                                 int height,
+                                 bool fullscreen,
+                                 bool resizable);
 
 #if defined (REDUCE_JOYSTICK_POLLING)
 void MAPPER_UpdateJoysticks(void);
