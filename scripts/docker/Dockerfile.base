@@ -1,11 +1,12 @@
-FROM debian:11-slim
+FROM debian:bookworm
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
-        cmake \
         g++ \
         build-essential \
         ccache \
         clang \
+        cmake \
+        git \
         libasound2-dev \
         libfluidsynth-dev \
         libgtest-dev \
@@ -23,6 +24,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN useradd -m -s /bin/bash dosbox-builder
 
+RUN mkdir /dosbox-staging && chown dosbox-builder:dosbox-builder /dosbox-staging
+
 USER dosbox-builder
+
+WORKDIR /dosbox-staging
 
 ENTRYPOINT [ "/bin/bash" ]
