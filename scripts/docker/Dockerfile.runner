@@ -1,0 +1,28 @@
+FROM ghcr.io/dosbox-staging/dosbox-builder:latest
+
+SHELL ["/bin/bash", "-c"]
+
+USER root
+WORKDIR /
+
+ENV GH_RUNNER_DIR=/gh_runner
+ENV GH_DL_DIR=/gh_dl
+ENV GH_RUNNER_ARCHIVE=${GH_DL_DIR}/gh-runner.tar.gz
+ARG GH_RUNNER_INIT_ARCHIVE=${GH_DL_DIR}/gh-runner-init.tar.gz
+RUN mkdir ${GH_RUNNER_DIR} ${GH_DL_DIR} && chown ${DOSBOX_USER}:${DOSBOX_USER} ${GH_RUNNER_DIR} ${GH_DL_DIR}
+
+COPY ./runner-entrypoint.sh ./runner-common.sh /
+
+RUN chmod +x /runner-*.sh
+
+USER ${DOSBOX_USER}
+
+RUN set -x; \
+    . /runner-common.sh; \
+    cpu_arch=$(get_arch); \
+    vers=$(get_runner_vers); \
+    download_init_runner "$vers" "$cpu_arch" "$GH_RUNNER_INIT_ARCHIVE"; \
+    tar -xzf "$GH_RUNNER_INIT_ARCHIVE" -C "$GH_RUNNER_DIR"; \
+    rm -f "$GH_RUNNER_INIT_ARCHIVE"
+
+ENTRYPOINT [ "/runner-entrypoint.sh" ]
