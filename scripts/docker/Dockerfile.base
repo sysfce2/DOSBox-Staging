@@ -1,0 +1,28 @@
+FROM debian:11-slim
+
+RUN apt-get install --no-install-recommends -y \
+        cmake \
+        g++ \
+        build-essential \
+        ccache \
+        clang \
+        libasound2-dev \
+        libfluidsynth-dev \
+        libgtest-dev \
+        libopusfile-dev \
+        libpng-dev \
+        libsdl2-dev \
+        libsdl2-net-dev \
+        libslirp-dev \
+        python3-setuptools \
+        meson \
+        curl \
+        jq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash dosbox-builder
+
+USER dosbox-builder
+
+ENTRYPOINT [ "/bin/bash" ]
