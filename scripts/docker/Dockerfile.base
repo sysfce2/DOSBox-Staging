@@ -1,6 +1,7 @@
 FROM debian:bookworm
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
+        ca-certificates \
         g++ \
         build-essential \
         ccache \
@@ -22,12 +23,15 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m -s /bin/bash dosbox-builder
+ENV DOSBOX_USER=dosbox-builder
+ENV DOSBOX_WORKDIR=/dosbox-staging
 
-RUN mkdir /dosbox-staging && chown dosbox-builder:dosbox-builder /dosbox-staging
+RUN useradd -m -s /bin/bash ${DOSBOX_USER}
 
-USER dosbox-builder
+RUN mkdir /dosbox-staging && chown ${DOSBOX_USER}:${DOSBOX_USER} ${DOSBOX_WORKDIR}
 
-WORKDIR /dosbox-staging
+USER ${DOSBOX_USER}
+
+WORKDIR ${DOSBOX_WORKDIR}
 
 ENTRYPOINT [ "/bin/bash" ]
