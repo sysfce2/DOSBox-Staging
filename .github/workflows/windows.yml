@@ -20,6 +20,10 @@ jobs:
           - name: MSVC 64-bit
             arch: x64
             max_warnings: 1105
+          - name: MSVC ARM 64-bit
+            arch: ARM64
+            max_warnings: -1
+
     steps:
       - name:  Backup existing vcpkg installation
         shell: pwsh
@@ -107,6 +111,9 @@ jobs:
           - name: Release build (64-bit)
             arch: x64
             vs-release-dirname: x64
+          - name: Release build (ARM 64-bit)
+            arch: ARM64
+            vs-release-dirname: ARM64
 
     steps:
 
