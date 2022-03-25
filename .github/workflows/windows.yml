@@ -79,6 +79,8 @@ jobs:
         run:   .\scripts\log-env.ps1
 
       - name:  Run tests
+        # Cross compiling, so ARM tests can't be run on host
+        if: matrix.conf.arch != 'ARM64'
         shell: pwsh
         run: |
           cd vs
