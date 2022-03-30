@@ -63,6 +63,13 @@
 #include "vga.h"
 #include "video.h"
 
+#if C_OPENGL
+#include "../hardware/voodoo.h"
+#include "../hardware/voodoo_types.h"
+#include "../hardware/voodoo_data.h"
+#include "../hardware/voodoo_opengl.h"
+#endif
+
 #include "../libs/ppscale/ppscale.h"
 
 #define MAPPERFILE "mapper-sdl2-" VERSION ".map"
@@ -1077,6 +1084,7 @@ SDL_Window* GFX_SetSDLWindowMode(uint16_t width, uint16_t height, SCREEN_TYPES s
 			return nullptr;
 		}
 		SetTransparency();
+        SDL_SetWindowResizable(sdl.window, SDL_TRUE);
         GFX_SetTitle(-1, -1, false); //refresh title.
         sdl.surface = SDL_GetWindowSurface(sdl.window);
         SDL_GetWindowSize(sdl.window, &currWidth, &currHeight);
@@ -1100,7 +1108,7 @@ SDL_Window* GFX_SetSDLWindowMode(uint16_t width, uint16_t height, SCREEN_TYPES s
      * if one is not interested in scaling.
      * On Android, desktop res is the only way.
      */
-    SDL_SetWindowResizable(sdl.window, SDL_FALSE);
+    SDL_SetWindowResizable(sdl.window, SDL_TRUE);
     if (GFX_IsFullscreen()) {
         SDL_DisplayMode displayMode;
         SDL_GetWindowDisplayMode(sdl.window, &displayMode);
@@ -3358,6 +3366,13 @@ void GFX_RegenerateWindow(Section *sec) {
 
 static void HandleVideoResize(int width, int height)
 {
+    if (sdl.desktop.lazy_fullscreen) {
+        new_height = height;
+        new_width = width;
+        voodoo_ogl_update_dimensions();
+        return;
+    }
+
 	/* Maybe a screen rotation has just occurred, so we simply resize.
 	There may be a different cause for a forced resized, though.    */
 	if (sdl.desktop.full.display_res && sdl.desktop.fullscreen) {
