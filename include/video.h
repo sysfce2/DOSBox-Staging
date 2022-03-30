@@ -96,6 +96,8 @@ void GFX_RegenerateWindow(Section *sec);
 bool GFX_MouseIsAvailable();
 void GFX_LosingFocus(void);
 void SetTransparency(void);
+void OpenGL_On();
+void OpenGL_Off();
 bool OpenGL_using(void);
 SDL_Window* GFX_GetSDLWindow(void);
 SDL_Window *SetWindowMode(SCREEN_TYPES screen_type,
