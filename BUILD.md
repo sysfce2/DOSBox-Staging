@@ -124,6 +124,29 @@ Options can be passed to the `meson setup` command using `-Doption=value`
 notation or using comma-separated notation (ie: `-Doption=value1,value2,value3`)
 when the option supports multiple values.
 
+### If your build fails
+
+1. Check if the `main` branch is also experiencing build failures
+   [on GitHub](https://github.com/dosbox-staging/dosbox-staging/actions?query=event%3Apush+is%3Acompleted+branch%3Amain).
+   If so, the maintenance team is aware of it and is working on it.
+
+2. Double-check that all your dependencies are installed. Read the
+   platform-specific documents above if needed.
+
+3. If the build fails with errors from the compiler (gcc/clang/msvc)
+   or linker, then please open a new issue.
+
+4. If Meson reports a problem with a subpackage, try resetting it
+   with `meson subprojects update --reset name-of-subpackage`. For example,
+   to reset FluidSynth: `meson subprojects update --reset fluidsynth`.
+
+5. If that doesn't help, try resetting your build area with:
+
+    ``` shell
+    git checkout -f main
+    git pull
+    git clean -fdx
+    ```
 
 ### Run unit tests
 
@@ -135,9 +158,9 @@ sudo dnf install gmock-devel gtest-devel
 ```
 ``` shell
 # Debian, Ubuntu
-sudo apt install libgtest-dev
+sudo apt install libgtest-dev libgmock-dev
 ```
-If `gtest` is not available/installed on the OS, Meson will download it
+If GTest and GMock are not installed system-wide, Meson will download them
 automatically.
 
 Build and run tests:
@@ -202,3 +225,37 @@ Build and generate report:
 meson setup build
 ninja -C build scan-build
 ```
+
+### Make a sanitizer build
+
+Recent compilers can add runtime checks for various classes of issues.
+Compared to a debug build, sanitizer builds take longer to compile
+and run slower, so are often reserved to exercise new features or
+perform a periodic whole-program checkup.
+
+ - **Linux users:**:  We recommend using Clang's latest
+stable version. If you're using a Debian or Ubuntu-based distro,
+LLVM has a helpful one-time setup script here: https://apt.llvm.org/
+
+ - **Windows users:** Start by setting up MSYS2 as described in the
+_docs/build-windows.md_document. Ensure you've opened an MSYS2 MinGW
+Clang x64 terminal before proceeding and that `clang --version`
+reports version 13.x (or greater).
+
+The following uses Clang's toolchain to create a sanitizer build
+that checks for address and behavior issues, two of the most common
+classes of issues. See Meson's list of built-in options for other
+sanitizer types.
+
+``` shell
+meson setup --native-file=.github/meson/native-clang.ini \
+  -Doptimization=0 -Db_sanitize=address,undefined build/sanitizer
+ninja -C build/sanitizer
+```
+
+The directory `build/sanitizer` will contain the compiled files, which
+will leave your normal `build/` files untouched.
+
+Run the sanitizer binary as you normally would, then exit and look for
+sanitizer mesasge in the log output.  If none exist, then your program
+is running clean.

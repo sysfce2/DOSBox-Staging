@@ -28,6 +28,7 @@
 #include "drives.h"
 #include "fs_utils.h"
 #include "shell.h"
+#include "cdrom.h"
 #include "string_utils.h"
 #include "../ints/int10.h"
 
@@ -155,8 +156,11 @@ void MOUNT::Run(void) {
 		return;
 	}
 
-	if (cmd->FindExist("-cd", false)) {
-		WriteOut(MSG_Get("PROGRAM_MOUNT_NO_OPTION"), "-cd");
+	if (cmd->FindExist("-cd", false) || cmd->FindExist("-listcd", false)) {
+		int num = SDL_CDNumDrives();
+		WriteOut(MSG_Get("PROGRAM_MOUNT_CDROMS_FOUND"), num);
+		for (int i = 0; i < num; i++)
+			WriteOut("%2d. %s\n", i, SDL_CDName(i));
 		return;
 	}
 
@@ -298,10 +302,13 @@ void MOUNT::Run(void) {
 
 		if (type == "cdrom") {
 			// Following options were relevant only for physical CD-ROM support:
-			for (auto opt : {"-usecd", "-noioctl", "-ioctl", "-ioctl_dx", "-ioctl_mci", "-ioctl_dio"}) {
+			for (auto opt : {"-noioctl", "-ioctl", "-ioctl_dx", "-ioctl_mci", "-ioctl_dio"}) {
 				if (cmd->FindExist(opt, false))
 					WriteOut(MSG_Get("MSCDEX_WARNING_NO_OPTION"), opt);
 			}
+			int num = -1;
+			cmd->FindInt("-usecd", num, true);
+			MSCDEX_SetCDInterface(CDROM_USE_SDL, num);
 
 			int error = 0;
 			newdrive  = new cdromDrive(drive,temp_line.c_str(),sizes[0],bit8size,sizes[2],0,mediaid,error);

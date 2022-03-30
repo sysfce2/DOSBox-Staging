@@ -156,7 +156,7 @@ private:
 	Voice(const Voice &) = delete;            // prevent copying
 	Voice &operator=(const Voice &) = delete; // prevent assignment
 	bool CheckWaveRolloverCondition() noexcept;
-	bool Is8Bit() const noexcept;
+	bool Is16Bit() const noexcept;
 	float GetVolScalar(const vol_scalars_array_t &vol_scalars);
 	float GetSample(const ram_array_t &ram) noexcept;
 	int32_t PopWavePos() noexcept;
@@ -230,8 +230,8 @@ private:
 	void BeginPlayback();
 	void CheckIrq();
 	void CheckVoiceIrq();
-	uint32_t Dma8Addr() noexcept;
-	uint32_t Dma16Addr() noexcept;
+	uint32_t GetDmaOffset() noexcept;
+	void UpdateDmaAddr(uint32_t offset) noexcept;
 	void DmaCallback(DmaChannel *chan, DMAEvent event);
 	void StartDmaTransfers();
 	bool IsDmaPcm16Bit() noexcept;
@@ -288,7 +288,7 @@ private:
 
 	// Register and playback rate
 	uint32_t dram_addr = 0u;
-	uint32_t playback_rate = 0u;
+	int playback_rate = 0;
 	uint16_t register_data = 0u;
 	uint8_t selected_register = 0u;
 
@@ -299,6 +299,7 @@ private:
 
 	// DMA states
 	uint16_t dma_addr = 0u;
+	uint8_t dma_addr_nibble = 0u;
 	// dma_ctrl would normally be a uint8_t as real hardware uses 8 bits,
 	// but we store the DMA terminal count status in the 9th bit
 	uint16_t dma_ctrl = 0u;
@@ -400,9 +401,9 @@ void Voice::IncrementCtrlPos(VoiceCtrl &ctrl, bool dont_loop_or_restart) noexcep
 	return;
 }
 
-bool Voice::Is8Bit() const noexcept
+bool Voice::Is16Bit() const noexcept
 {
-	return !(wave_ctrl.state & CTRL::BIT16);
+	return (wave_ctrl.state & CTRL::BIT16);
 }
 
 float Voice::GetSample(const ram_array_t &ram) noexcept
@@ -411,12 +412,13 @@ float Voice::GetSample(const ram_array_t &ram) noexcept
 	const auto addr = pos / WAVE_WIDTH;
 	const auto fraction = pos & (WAVE_WIDTH - 1);
 	const bool should_interpolate = wave_ctrl.inc < WAVE_WIDTH && fraction;
-	float sample = Is8Bit() ? Read8BitSample(ram, addr)
-	                        : Read16BitSample(ram, addr);
+	const auto is_16bit = Is16Bit();
+	float sample = is_16bit ? Read16BitSample(ram, addr)
+	                        : Read8BitSample(ram, addr);
 	if (should_interpolate) {
-		const auto next_addr = addr + 1;
-		const float next_sample = Is8Bit() ? Read8BitSample(ram, next_addr)
-		                                   : Read16BitSample(ram, next_addr);
+		const auto next_addr = addr + (1 << (is_16bit ? 1 : 0));
+		const float next_sample = is_16bit ? Read16BitSample(ram, next_addr)
+		                                   : Read8BitSample(ram, next_addr);
 		constexpr float WAVE_WIDTH_INV = 1.0 / WAVE_WIDTH;
 		sample += (next_sample - sample) *
 		          static_cast<float>(fraction) * WAVE_WIDTH_INV;
@@ -449,7 +451,7 @@ void Voice::GenerateSamples(std::vector<float> &render_buffer,
 		*val++ += sample * pan_scalar.right;
 	}
 	// Keep track of how many ms this voice has generated
-	Is8Bit() ? generated_8bit_ms++ : generated_16bit_ms++;
+	Is16Bit() ? generated_16bit_ms++ : generated_8bit_ms++;
 }
 
 // Returns the current wave position and increments the position
@@ -483,10 +485,9 @@ float Voice::Read8BitSample(const ram_array_t &ram, const int32_t addr) const no
 // Read a 16-bit sample returned as a float
 float Voice::Read16BitSample(const ram_array_t &ram, const int32_t addr) const noexcept
 {
-	// Calculate offset of the 16-bit sample
-	const auto lower = addr & 0b1100'0000'0000'0000'0000;
-	const auto upper = addr & 0b0001'1111'1111'1111'1111;
-	const auto i = static_cast<size_t>(lower | (upper << 1));
+	const auto upper = addr & 0b1100'0000'0000'0000'0000;
+	const auto lower = addr & 0b0001'1111'1111'1111'1111;
+	const auto i = static_cast<uint32_t>(upper | (lower << 1));
 	return static_cast<int16_t>(host_readw(&ram.at(i)));
 }
 
@@ -622,7 +623,7 @@ void Gus::ActivateVoices(uint8_t requested_voices)
 		active_voices = requested_voices;
 		assert(active_voices <= voices.size());
 		active_voice_mask = 0xffffffffu >> (MAX_VOICES - active_voices);
-		playback_rate = static_cast<uint32_t>(
+		playback_rate = static_cast<int>(
 		        round(1000000.0 / (1.619695497 * active_voices)));
 		audio_channel->SetFreq(playback_rate);
 	}
@@ -669,7 +670,7 @@ void Gus::BeginPlayback()
 	irq_enabled = ((register_data & 0x400) != 0);
 	audio_channel->Enable(true);
 	if (prev_logged_voices != active_voices) {
-		LOG_MSG("GUS: Activated %u voices at %u Hz", active_voices,
+		LOG_MSG("GUS: Activated %u voices at %d Hz", active_voices,
 		        playback_rate);
 		prev_logged_voices = active_voices;
 	}
@@ -715,17 +716,37 @@ void Gus::CheckVoiceIrq()
 	}
 }
 
-uint32_t Gus::Dma8Addr() noexcept
+// Returns a 24-bit offset into the GUS's memory space holding the next
+// DMA sample that will be read or written to via DMA. This offset
+// is derived from the 16-bit DMA address register.
+uint32_t Gus::GetDmaOffset() noexcept
 {
-	return static_cast<uint32_t>(dma_addr << 4);
+	uint32_t adjusted;
+	if(IsDmaXfer16Bit()) {
+		const auto upper = dma_addr & 0b1100'0000'0000'0000;
+		const auto lower = dma_addr & 0b0001'1111'1111'1111;
+		adjusted = static_cast<uint32_t>(upper | (lower << 1));
+	}
+	else {
+		adjusted = dma_addr;
+	}
+	return check_cast<uint32_t>(adjusted << 4) + dma_addr_nibble;
 }
 
-uint32_t Gus::Dma16Addr() noexcept
+// Update the current 16-bit DMA position from the the given 24-bit RAM offset 
+void Gus::UpdateDmaAddr(uint32_t offset) noexcept
 {
-	const auto lower = dma_addr & 0b0001'1111'1111'1111;
-	const auto upper = dma_addr & 0b1100'0000'0000'0000;
-	const auto combined = (lower << 1) | upper;
-	return static_cast<uint32_t>(combined << 4);
+	uint32_t adjusted;
+	if (IsDmaXfer16Bit()) {
+		const auto upper = offset & 0b1100'0000'0000'0000'0000;
+		const auto lower = offset & 0b0011'1111'1111'1111'1110;
+		adjusted = upper | (lower >> 1);
+	}
+	else {
+		adjusted = offset;
+	}
+	dma_addr = check_cast<uint16_t>(adjusted >> 4); // pack it into the 16-bit register
+	dma_addr_nibble = check_cast<uint8_t>(adjusted & 0xf); // hang onto the last nibble
 }
 
 bool Gus::PerformDmaTransfer()
@@ -739,30 +760,35 @@ bool Gus::PerformDmaTransfer()
 	        dma_channel->currcnt + 1);
 #endif
 
-	const auto offset = IsDmaXfer16Bit() ? Dma16Addr() : Dma8Addr();
+	// Get the current DMA offset relative to the block of GUS memory
+	const auto offset = GetDmaOffset();
+
+	// Get the pending DMA count from channel
 	const uint16_t desired = dma_channel->currcnt + 1;
 
-	// All of the operations below involve reading, writing, or skipping
-	// starting at the offset for N-desired samples
+	// Will the maximum transfer stay within the GUS RAM's size?
 	assert(static_cast<size_t>(offset) + desired <= ram.size());
 
-	// Copy samples via DMA from GUS memory
-	if (dma_ctrl & 0x2) {
-		dma_channel->Write(desired, &ram.at(offset));
-	}
-	// Skip DMA content
-	else if (!(dma_ctrl & 0x80)) {
-		dma_channel->Read(desired, &ram.at(offset));
-	}
-	// Copy samples via DMA into GUS memory
-	else {
-		//
-		const auto samples = dma_channel->Read(desired, &ram.at(offset));
+	// Perform the DMA transfer
+	const bool is_reading = !(dma_ctrl & 0x2);
+	const auto transfered =
+	        (is_reading ? dma_channel->Read(desired, &ram.at(offset))
+	                    : dma_channel->Write(desired, &ram.at(offset)));
+
+	// Did we get everything we asked for?
+	assert(transfered == desired);
+
+	// scale the transfer by the DMA channel's bit-depth
+	const auto bytes_transfered = transfered * (dma_channel->DMA16 + 1u);
+
+	// Update the GUS's DMA address with the current position
+	UpdateDmaAddr(check_cast<uint32_t>(offset + bytes_transfered));
+
+	// If requested, invert the loaded samples' most-significant bits
+	if (is_reading && dma_ctrl & 0x80) {
 		auto ram_pos = ram.begin() + offset;
-		const auto positions = samples *
-		                       (static_cast<size_t>(dma_channel->DMA16) + 1u);
-		const auto ram_pos_end = ram_pos + positions;
-		// adjust our start and skip size if handling 16-bit
+		const auto ram_pos_end = ram_pos + bytes_transfered;
+		// adjust our start and skip size if handling 16-bit PCM samples
 		ram_pos += IsDmaPcm16Bit() ? 1u : 0u;
 		const auto skip = IsDmaPcm16Bit() ? 2u : 1u;
 		assert(ram_pos >= ram.begin() && ram_pos <= ram_pos_end && ram_pos_end <= ram.end());
@@ -777,6 +803,7 @@ bool Gus::PerformDmaTransfer()
 		dma_ctrl |= DMA_TC_STATUS_BITMASK;
 		irq_status |= 0x80;
 		CheckIrq();
+		assert(dma_channel->tcount); // hit terminal count, we're done
 		return false;
 	}
 	return true;
@@ -823,10 +850,10 @@ void Gus::PopulateAutoExec(uint16_t port, const std::string &ultradir)
 	// maximum-limit.
 	assert(port < 0xfff);
 	assert(dma1 < 10 && dma2 < 10);
-	assert(irq1 < 10 && irq2 < 10);
+	assert(irq1 <= 12 && irq2 <= 12);
 
 	// ULTRASND variable
-	char set_ultrasnd[] = "@SET ULTRASND=HHH,D,D,I,I";
+	char set_ultrasnd[] = "@SET ULTRASND=HHH,D,D,II,II";
 	safe_sprintf(set_ultrasnd, 
 	         "@SET ULTRASND=%x,%u,%u,%u,%u", port, dma1, dma2, irq1, irq2);
 	LOG_MSG("GUS: %s", set_ultrasnd);
@@ -1153,7 +1180,7 @@ void Gus::StopPlayback()
 	voice_index = 0u;
 	active_voices = 0u;
 
-	dma_addr = 0u;
+	UpdateDmaAddr(0);
 	dram_addr = 0u;
 	register_data = 0u;
 	selected_register = 0u;
@@ -1319,6 +1346,7 @@ void Gus::WriteToRegister()
 		return;
 	case 0x42: // Gravis DRAM DMA address register
 		dma_addr = register_data;
+		dma_addr_nibble = 0u; // invalidate the nibble
 		return;
 	case 0x43: // LSW Peek/poke DRAM position
 		dram_addr = (0xf0000 & dram_addr) |

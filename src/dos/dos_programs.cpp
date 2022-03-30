@@ -46,6 +46,48 @@ extern Bit32u floppytype;
 #define WIKI_URL                   "https://github.com/dosbox-staging/dosbox-staging/wiki"
 #define WIKI_ADD_UTILITIES_ARTICLE WIKI_URL "/Add-Utilities"
 
+extern char autoexec_data[autoexec_maxsize];
+void CONFIG_ProgramStart(Program **make);
+void MIXER_ProgramStart(Program **make);
+void SHELL_ProgramStart(Program **make);
+void z_drive_getpath(std::string &path, const std::string &dirname);
+void z_drive_register(const std::string &path, const std::string &dir);
+
+void Add_VFiles(const bool add_autoexec)
+{
+	const std::string dirname = "drivez";
+	std::string path = ".";
+	path += CROSS_FILESPLIT;
+	path += dirname;
+	z_drive_getpath(path, dirname);
+	z_drive_register(path, "/");
+
+	PROGRAMS_MakeFile("ATTRIB.COM", ATTRIB_ProgramStart);
+	PROGRAMS_MakeFile("AUTOTYPE.COM", AUTOTYPE_ProgramStart);
+#if C_DEBUG
+	PROGRAMS_MakeFile("BIOSTEST.COM", BIOSTEST_ProgramStart);
+#endif
+	PROGRAMS_MakeFile("BOOT.COM", BOOT_ProgramStart);
+	PROGRAMS_MakeFile("CHOICE.COM", CHOICE_ProgramStart);
+	PROGRAMS_MakeFile("HELP.COM", HELP_ProgramStart);
+	PROGRAMS_MakeFile("IMGMOUNT.COM", IMGMOUNT_ProgramStart);
+	PROGRAMS_MakeFile("INTRO.COM", INTRO_ProgramStart);
+	PROGRAMS_MakeFile("KEYB.COM", KEYB_ProgramStart);
+	PROGRAMS_MakeFile("LOADFIX.COM", LOADFIX_ProgramStart);
+	PROGRAMS_MakeFile("LOADROM.COM", LOADROM_ProgramStart);
+	PROGRAMS_MakeFile("LS.COM", LS_ProgramStart);
+	PROGRAMS_MakeFile("MEM.COM", MEM_ProgramStart);
+	PROGRAMS_MakeFile("MOUNT.COM", MOUNT_ProgramStart);
+	PROGRAMS_MakeFile("RESCAN.COM", RESCAN_ProgramStart);
+	PROGRAMS_MakeFile("MIXER.COM", MIXER_ProgramStart);
+	PROGRAMS_MakeFile("CONFIG.COM", CONFIG_ProgramStart);
+	PROGRAMS_MakeFile("SERIAL.COM", SERIAL_ProgramStart);
+	PROGRAMS_MakeFile("COMMAND.COM", SHELL_ProgramStart);
+	if (add_autoexec)
+		VFILE_Register("AUTOEXEC.BAT", (uint8_t *)autoexec_data,
+		               (uint32_t)strlen(autoexec_data));
+}
+
 void DOS_SetupPrograms(void)
 {
 	/*Add Messages */
@@ -247,40 +289,45 @@ void DOS_SetupPrograms(void)
 		"You can run programs/files with extensions \033[31m.exe .bat\033[0m and \033[31m.com\033[0m.\n"
 		);
 	MSG_Add("PROGRAM_INTRO_CDROM_WINDOWS",
-	        "\033[2J\033[32;1mHow to mount a virtual CD-ROM Drive in DOSBox:\033[0m\n"
-	        "DOSBox provides CD-ROM emulation on several levels.\n"
+	        "\033[2J\033[32;1mHow to mount a real/virtual CD-ROM Drive in DOSBox:\033[0m\n"
+	        "DOSBox provides CD-ROM emulation on two levels.\n"
 	        "\n"
-	        "This works on all normal directories, installs MSCDEX and marks the files\n"
-	        "read-only. Usually this is enough for most games:\n"
-	        "\n"
+	        "The \033[33mbasic\033[0m level works on all normal directories, which installs MSCDEX\n"
+	        "and marks the files read-only. Usually this is enough for most games:\n"
 	        "\033[34;1mmount D C:\\example -t cdrom\033[0m\n"
-	        "\n"
 	        "If it doesn't work you might have to tell DOSBox the label of the CD-ROM:\n"
-	        "\n"
 	        "\033[34;1mmount D C:\\example -t cdrom -label CDLABEL\033[0m\n"
 	        "\n"
+	        "The \033[33mnext\033[0m level adds some low-level support.\n"
+	        "Therefore only works on CD-ROM drives:\n"
+	        "\033[34;1mmount d \033[0;31mD:\\\033[34;1m -t cdrom -usecd \033[33m0\033[0m\n"
+	        "Replace \033[0;31mD:\\\033[0m with the location of your CD-ROM.\n"
+	        "Replace the \033[33;1m0\033[0m in \033[34;1m-usecd \033[33m0\033[0m with the number reported for your CD-ROM if you type:\n"
+	        "\033[34;1mmount -listcd\033[0m\n"
+	        "\n"
 	        "Additionally, you can use imgmount to mount iso or cue/bin images:\n"
-	        "\n"
 	        "\033[34;1mimgmount D C:\\cd.iso -t cdrom\033[0m\n"
-	        "\n"
 	        "\033[34;1mimgmount D C:\\cd.cue -t cdrom\033[0m\n");
 	MSG_Add("PROGRAM_INTRO_CDROM_OTHER",
-	        "\033[2J\033[32;1mHow to mount a virtual CD-ROM Drive in DOSBox:\033[0m\n"
-	        "DOSBox provides CD-ROM emulation on several levels.\n"
+	        "\033[2J\033[32;1mHow to mount a real/virtual CD-ROM Drive in DOSBox:\033[0m\n"
+	        "DOSBox provides CD-ROM emulation on two levels.\n"
 	        "\n"
-	        "This works on all normal directories, installs MSCDEX and marks the files\n"
-	        "read-only. Usually this is enough for most games:\n"
-	        "\n"
+	        "The \033[33mbasic\033[0m level works on all normal directories, which installs MSCDEX\n"
+	        "and marks the files read-only. Usually this is enough for most games:\n"
 	        "\033[34;1mmount D ~/example -t cdrom\033[0m\n"
-	        "\n"
 	        "If it doesn't work you might have to tell DOSBox the label of the CD-ROM:\n"
-	        "\n"
 	        "\033[34;1mmount D ~/example -t cdrom -label CDLABEL\033[0m\n"
 	        "\n"
+	        "The \033[33mnext\033[0m level adds some low-level support.\n"
+	        "Therefore only works on CD-ROM drives:\n"
+	        "\033[34;1mmount d \033[0;31m~/example\033[34;1m -t cdrom -usecd \033[33m0\033[0m\n"
+	        "\n"
+	        "Replace \033[0;31m~/example\033[0m with the location of your CD-ROM.\n"
+	        "Replace the \033[33;1m0\033[0m in \033[34;1m-usecd \033[33m0\033[0m with the number reported for your CD-ROM if you type:\n"
+	        "\033[34;1mmount -listcd\033[0m\n"
+	        "\n"
 	        "Additionally, you can use imgmount to mount iso or cue/bin images:\n"
-	        "\n"
 	        "\033[34;1mimgmount D ~/cd.iso -t cdrom\033[0m\n"
-	        "\n"
 	        "\033[34;1mimgmount D ~/cd.cue -t cdrom\033[0m\n");
 	MSG_Add("PROGRAM_INTRO_SPECIAL",
 	        "\033[2J\033[32;1mSpecial keys:\033[0m\n"
@@ -409,7 +456,8 @@ void DOS_SetupPrograms(void)
 	        "Mount a directory from the host OS to a drive letter.\n"
 	        "\n"
 	        "Usage:\n"
-	        "  [color=green]mount[reset] [color=white]DRIVE[reset] [color=cyan]DIRECTORY[reset] [-t TYPE] [-freesize SIZE] [-label LABEL]\n"
+	        "  [color=green]mount[reset] [color=white]DRIVE[reset] [color=cyan]DIRECTORY[reset] [-t TYPE] [-usecd #] [-freesize SIZE] [-label LABEL]\n"
+	        "  [color=green]mount[reset] -listcd / -cd (lists all detected CD-ROM drives and their numbers)\n"
 	        "  [color=green]mount[reset] -u [color=white]DRIVE[reset]  (unmounts the DRIVE's directory)\n"
 	        "\n"
 	        "Where:\n"
@@ -554,22 +602,6 @@ void DOS_SetupPrograms(void)
 	MSG_Add("WIKI_ADD_UTILITIES_ARTICLE", WIKI_ADD_UTILITIES_ARTICLE);
 	MSG_Add("WIKI_URL", WIKI_URL);
 
-	PROGRAMS_MakeFile("ATTRIB.COM", ATTRIB_ProgramStart);
-	PROGRAMS_MakeFile("AUTOTYPE.COM", AUTOTYPE_ProgramStart);
-#if C_DEBUG
-	PROGRAMS_MakeFile("BIOSTEST.COM", BIOSTEST_ProgramStart);
-#endif
-	PROGRAMS_MakeFile("BOOT.COM", BOOT_ProgramStart);
-	PROGRAMS_MakeFile("CHOICE.COM", CHOICE_ProgramStart);
-	PROGRAMS_MakeFile("HELP.COM", HELP_ProgramStart);
-	PROGRAMS_MakeFile("IMGMOUNT.COM", IMGMOUNT_ProgramStart);
-	PROGRAMS_MakeFile("INTRO.COM", INTRO_ProgramStart);
-	PROGRAMS_MakeFile("KEYB.COM", KEYB_ProgramStart);
-	PROGRAMS_MakeFile("LOADFIX.COM", LOADFIX_ProgramStart);
-	PROGRAMS_MakeFile("LOADROM.COM", LOADROM_ProgramStart);
-	PROGRAMS_MakeFile("LS.COM", LS_ProgramStart);
-	PROGRAMS_MakeFile("MEM.COM", MEM_ProgramStart);
-	PROGRAMS_MakeFile("MOUNT.COM", MOUNT_ProgramStart);
-	PROGRAMS_MakeFile("RESCAN.COM", RESCAN_ProgramStart);
-	PROGRAMS_MakeFile("SERIAL.COM", SERIAL_ProgramStart);
+	const auto add_autoexec = false;
+	Add_VFiles(add_autoexec);
 }

@@ -553,11 +553,18 @@
     <ClCompile Include="..\src\libs\loguru\loguru.cpp">
       <Filter>src\libs\loguru</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libs\sdlcd\SDL_cdrom.c">
+      <Filter>src\libs\sdlcd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libs\sdlcd\win32\SDL_syscdrom.c">
+      <Filter>src\libs\sdlcd</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\libs\whereami\whereami.c">
       <Filter>src\libs\whereami</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libs\ghc\fs_std_impl.cpp" />
+    <ClCompile Include="..\src\libs\ghc\fs_std_impl.cpp">
       <Filter>src\libs\ghc</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\misc\ansi_code_markup.cpp">
       <Filter>src\misc</Filter>
     </ClCompile>
@@ -567,6 +574,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bios_disk.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bitops.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\byteorder.h">
@@ -1109,5 +1119,9 @@
     <Filter Include="src\libs\ghc">
       <UniqueIdentifier>{9df2bcc2-35e3-4be4-a577-dff8be565c65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\libs\sdlcd">
+      <UniqueIdentifier>{5aedba43-0ef7-4531-a907-6609a23675d8}</UniqueIdentifier>
+    </Filter>
+
   </ItemGroup>
 </Project>

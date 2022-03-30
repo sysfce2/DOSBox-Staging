@@ -33,6 +33,7 @@
 #include "mapper.h"
 #include "program_mount_common.h"
 #include "shell.h"
+#include "cdrom.h"
 #include "string_utils.h"
 #include "../ints/int10.h"
 
@@ -214,10 +215,17 @@ void IMGMOUNT::Run(void) {
     // find all file parameters, assuming that all option parameters have been removed
     while (cmd->FindCommand((unsigned int)(paths.size() + 2), temp_line) && temp_line.size()) {
         // Try to find the path on native filesystem first
-        const std::string real_path = to_native_path(temp_line);
+        const auto real_path = to_native_path(temp_line);
+        constexpr auto only_expand_files = true;
+        constexpr auto skip_native_path = true;
         if (real_path.empty()) {
-            LOG_MSG("IMGMOUNT: Path '%s' not found, maybe it's a DOS path",
-                    temp_line.c_str());
+            if (get_expanded_files(temp_line, paths, only_expand_files, skip_native_path)) {
+                temp_line = paths[0];
+                continue;
+            } else {
+                LOG_MSG("IMGMOUNT: Path '%s' not found, maybe it's a DOS path",
+                        temp_line.c_str());
+            }
         } else {
             std::string home_resolve = temp_line;
             Cross::ResolveHomedir(home_resolve);
@@ -260,9 +268,14 @@ void IMGMOUNT::Run(void) {
                 ldp->GetSystemFilename(tmp, fullname);
                 temp_line = tmp;
 
-                if (stat(temp_line.c_str(),&test)) {
-                    WriteOut(MSG_Get("PROGRAM_IMGMOUNT_FILE_NOT_FOUND"));
-                    return;
+                if (stat(temp_line.c_str(), &test)) {
+                    if (get_expanded_files(temp_line, paths, only_expand_files, skip_native_path)) {
+                        temp_line = paths[0];
+                        continue;
+                    } else {
+                        WriteOut(MSG_Get("PROGRAM_IMGMOUNT_FILE_NOT_FOUND"));
+                        return;
+                    }
                 }
 
                 LOG_MSG("IMGMOUNT: Path '%s' found on virtual drive %c:",
@@ -385,6 +398,7 @@ void IMGMOUNT::Run(void) {
             return;
         }
 
+        MSCDEX_SetCDInterface(CDROM_USE_SDL, -1);
         // create new drives for all images
         std::vector<DOS_Drive*> isoDisks;
         std::vector<std::string>::size_type i;

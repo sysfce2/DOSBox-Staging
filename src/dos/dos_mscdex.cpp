@@ -34,6 +34,7 @@
 #include "support.h"
 #include "bios_disk.h"
 #include "cpu.h"
+#include "cdrom.h"
 #include "string_utils.h"
 
 #define MSCDEX_LOG LOG(LOG_MISC,LOG_ERROR)
@@ -53,7 +54,12 @@
 #define	REQUEST_STATUS_DONE		0x0100
 #define	REQUEST_STATUS_ERROR	0x8000
 
+// Use cdrom Interface
+int useCdromInterface = CDROM_USE_SDL;
+int forceCD = -1;
+
 enum class MountType {
+	PHYSICAL,
 	ISO_IMAGE,
 	DIRECTORY,
 };
@@ -304,6 +310,14 @@ int CMscdex::AddDrive(Bit16u _drive, char* physicalPath, Bit8u& subUnit)
 	int result = 0;
 	// Get Mounttype and init needed cdrom interface
 	switch (MSCDEX_GetMountType(physicalPath)) {
+	case MountType::PHYSICAL:
+		LOG(LOG_MISC, LOG_NORMAL)("MSCDEX: Mounting physical cdrom: %s", physicalPath);
+#if defined (LINUX)
+		cdrom[numDrives] = new CDROM_Interface_Ioctl();
+#else
+		cdrom[numDrives] = new CDROM_Interface_SDL();
+#endif
+		break;
 	case MountType::ISO_IMAGE:
 		LOG(LOG_MISC,LOG_NORMAL)("MSCDEX: Mounting iso file as cdrom: %s", physicalPath);
 		cdrom[numDrives] = new CDROM_Interface_Image((Bit8u)numDrives);
@@ -316,7 +330,7 @@ int CMscdex::AddDrive(Bit16u _drive, char* physicalPath, Bit8u& subUnit)
 		break;
 	};
 
-	if (!cdrom[numDrives]->SetDevice(physicalPath)) {
+	if (!cdrom[numDrives]->SetDevice(physicalPath, forceCD)) {
 //		delete cdrom[numDrives] ; mount seems to delete it
 		return 3;
 	}
@@ -1093,9 +1107,28 @@ static Bit16u MSCDEX_IOCTL_Optput(PhysPt buffer,Bit8u drive_unit) {
 
 static MountType MSCDEX_GetMountType(const char *path)
 {
+	assert(path != NULL);
+	std::string path_string = path;
+	upcase(path_string);
+
+	const char *cdName;
+	int num = SDL_CDNumDrives();
+	// If cd drive is forced then check if its in range and return 0
+	if ((forceCD >= 0) && (forceCD < num)) {
+		LOG(LOG_ALL, LOG_ERROR)("CDROM: Using drive %d", forceCD);
+		return MountType::PHYSICAL;
+	}
+
+	// compare names
+	for (int i = 0; i < num; i++) {
+		cdName = SDL_CDName(i);
+		if (path_string == cdName)
+			return MountType::PHYSICAL;
+	};
+
 	struct stat file_stat;
 	if ((stat(path, &file_stat) == 0) && (file_stat.st_mode & S_IFREG))
-		return MountType::ISO_IMAGE; 
+		return MountType::ISO_IMAGE;
 	else
 		return MountType::DIRECTORY;
 }
@@ -1384,6 +1417,11 @@ bool MSCDEX_HasMediaChanged(Bit8u subUnit)
 		leadOut[subUnit].fr	 = 0;
 	}
 	return has_changed;
+}
+
+void MSCDEX_SetCDInterface(int int_nr, int num_cd) {
+	useCdromInterface = int_nr;
+	forceCD	= num_cd;
 }
 
 void MSCDEX_ShutDown(Section* /*sec*/) {

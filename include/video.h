@@ -85,16 +85,10 @@ void GFX_RestoreMode(void);
 bool GFX_StartUpdate(uint8_t * &pixels, int &pitch);
 void GFX_EndUpdate( const Bit16u *changedLines );
 void GFX_GetSize(int &width, int &height, bool &fullscreen);
-void GFX_LosingFocus(void);
-void SetTransparency(void);
-bool OpenGL_using(void);
-SDL_Window* GFX_GetSDLWindow(void);
-SDL_Window *SetWindowMode(SCREEN_TYPES screen_type,
-                                 int width,
-                                 int height,
-                                 bool fullscreen,
-                                 bool resizable);
-
+void GFX_RegenerateWindow(Section *sec);
+void GFX_LosingFocus();
+bool OpenGL_using();
+SDL_Window* GFX_GetSDLWindow();
 
 #if defined (REDUCE_JOYSTICK_POLLING)
 void MAPPER_UpdateJoysticks(void);

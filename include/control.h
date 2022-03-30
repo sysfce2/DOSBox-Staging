@@ -29,6 +29,7 @@
 
 #include "programs.h"
 #include "setup.h"
+#include "std_filesystem.h"
 
 enum class Verbosity : int8_t {
 	//                     Splash | Welcome | Early Stdout |
@@ -52,6 +53,7 @@ private:
 public:
 	std::vector<std::string> startup_params = {};
 	std::vector<std::string> configfiles = {};
+	std::vector<std_fs::path> configFilesCanonical = {};
 
 	Config(CommandLine *cmd)
 	        : cmdline(cmd),

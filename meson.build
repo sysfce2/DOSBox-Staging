@@ -354,6 +354,20 @@ if host_machine.system() == 'darwin'
     warning('''Core Foundation support disabled: compiler can't detect/use Apple Frameworks''')
   endif
 
+  # SDL CD dependency
+  coreservices_dep = dependency('appleframeworks',
+                                modules : ['CoreServices'],
+                                required : false)
+  if coreservices_dep.found()
+    if cxx.check_header('CoreServices/CoreServices.h')
+      conf_data.set('C_CORESERVICES', 1)
+    else
+      warning('''Core Services support disabled: header is unsable''')
+    endif
+  else
+    warning('''Core Services support disabled: compiler can't detect/use Apple Frameworks''')
+  endif
+
   # Apple Silicon has 16k pages
   pagesize_cmd = run_command('pagesize')
   if pagesize_cmd.returncode() != 0
@@ -397,6 +411,7 @@ subdir('src/libs/decoders')
 subdir('src/libs/nuked')
 subdir('src/libs/ppscale')
 subdir('src/libs/residfp')
+subdir('src/libs/sdlcd')
 subdir('src/libs/whereami')
 
 # internal libs
@@ -439,6 +454,7 @@ executable('dosbox', dosbox_sources,
                            threads_dep,
                            libghc_dep,
                            libloguru_dep,
+                           libsdlcd_dep,
                            libwhereami_dep]
                           + internal_deps,
            include_directories : incdir,
@@ -450,7 +466,8 @@ libdosbox = static_library('dosbox', ['src/dosbox.cpp', version_file],
                                         threads_dep,
                                         sdl2_dep,
                                         libghc_dep,
-                                        libloguru_dep]
+                                        libloguru_dep,
+                                        libsdlcd_dep]
                                       + internal_deps)
 
 dosbox_dep = declare_dependency(link_with : libdosbox)
@@ -478,4 +495,4 @@ install_data('AUTHORS', 'README', 'THANKS', install_dir : doc_dir)
 
 subdir('contrib/linux')
 subdir('contrib/icons')
-subdir('contrib/translations')
+subdir('contrib/resources')

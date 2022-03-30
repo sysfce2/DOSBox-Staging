@@ -456,6 +456,8 @@
     <ClCompile Include="..\src\shell\shell_misc.cpp" />
     <ClCompile Include="..\src\libs\ghc\fs_std_impl.cpp" />
     <ClCompile Include="..\src\libs\loguru\loguru.cpp" />
+    <ClCompile Include="..\src\libs\sdlcd\SDL_cdrom.c" />
+    <ClCompile Include="..\src\libs\sdlcd\win32\SDL_syscdrom.c" />
     <ClCompile Include="..\src\libs\whereami\whereami.c" />
     <ClCompile Include="..\src\platform\visualc\version.cpp" />
   </ItemGroup>
@@ -466,6 +468,7 @@
     <ClInclude Include="..\include\ansi_code_markup.h" />
     <ClInclude Include="..\include\bios.h" />
     <ClInclude Include="..\include\bios_disk.h" />
+    <ClInclude Include="..\include\bitops.h" />
     <ClInclude Include="..\include\byteorder.h" />
     <ClInclude Include="..\include\callback.h" />
     <ClInclude Include="..\include\compiler.h" />

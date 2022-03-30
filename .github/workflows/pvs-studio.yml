@@ -11,7 +11,7 @@ jobs:
     name: PVS-Studio static analyzer
     runs-on: ubuntu-20.04
     env:
-      debfile: pvs-studio-7.16.55312.179-amd64.deb
+      debfile: pvs-studio-7.17.56957.190-amd64.deb
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           set -xeu
-          sudo apt-get install -y strace $(cat .github/packages/ubuntu-20.04-apt.txt)
+          sudo apt-get install -y strace $(cat packages/ubuntu-20.04-apt.txt)
           sudo pip3 install --upgrade meson ninja
           sudo dpkg -i "pvs-package/pvs.deb"
           pvs-studio-analyzer credentials "${{ secrets.PvsStudioName }}" "${{ secrets.PvsStudioKey }}"
@@ -103,7 +103,7 @@ jobs:
 
       - name: Summarize report
         env:
-          MAX_BUGS: 262
+          MAX_BUGS: 263
         run: |
           echo "Full report is included in build Artifacts"
           echo
