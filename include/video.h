@@ -87,6 +87,8 @@ void GFX_EndUpdate( const Bit16u *changedLines );
 void GFX_GetSize(int &width, int &height, bool &fullscreen);
 void GFX_RegenerateWindow(Section *sec);
 void GFX_LosingFocus();
+void OpenGL_On();
+void OpenGL_Off();
 bool OpenGL_using();
 SDL_Window* GFX_GetSDLWindow();
 

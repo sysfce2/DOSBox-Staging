@@ -833,6 +833,13 @@ static void remove_window()
 	}
 }
 
+void SetTransparency() {
+	Section_prop *section = static_cast<Section_prop *>(control->GetSection("sdl"));
+	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
+	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
+	SDL_SetWindowOpacity(sdl.window, alpha);
+}
+
 static SDL_Window *SetWindowMode(SCREEN_TYPES screen_type,
                                  int width,
                                  int height,
@@ -875,6 +882,7 @@ static SDL_Window *SetWindowMode(SCREEN_TYPES screen_type,
 			LOG_ERR("SDL: %s", SDL_GetError());
 			return nullptr;
 		}
+		SetTransparency();
 
 		if (resizable) {
 			SDL_AddEventWatch(watch_sdl_events, sdl.window);
@@ -966,19 +974,35 @@ SDL_Window* SetWindow(int width, int height) {
     return sdl.window;
 }
 
-void SetTransparency() {
-	Section_prop *section = static_cast<Section_prop *>(control->GetSection("sdl"));
-	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
-	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
-	SDL_SetWindowOpacity(sdl.window, alpha);
-}
-
-bool OpenGL_using(void) {
+bool OpenGL_using() {
 #if C_OPENGL
     return (sdl.desktop.want_type==SCREEN_OPENGL?true:false);
 #else
     return false;
 #endif
+}
+
+static std::string prev_output = "";
+void OpenGL_On() {
+    if (OpenGL_using()) {
+        prev_output.clear();
+        return;
+    }
+    Section* tsec = control->GetSection("sdl");
+    prev_output = static_cast<Section_prop *>(tsec)->Get_string("output");
+    tsec->HandleInputline("output=opengl");
+    GFX_RegenerateWindow(tsec);
+}
+
+void OpenGL_Off() {
+    if (!OpenGL_using() || !prev_output.size()) {
+        prev_output.clear();
+        return;
+    }
+    Section* tsec = control->GetSection("sdl");
+    tsec->HandleInputline("output="+prev_output);
+    GFX_RegenerateWindow(tsec);
+    prev_output.clear();
 }
 
 SDL_Window* GFX_SetSDLWindowMode(uint16_t width, uint16_t height, SCREEN_TYPES screen_type)
