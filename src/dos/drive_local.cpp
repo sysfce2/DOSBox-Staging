@@ -147,7 +147,7 @@ int lock_file_region(int fd, int cmd, struct flock *fl, long long start, unsigne
   if (cmd == F_SETLK64 || cmd == F_GETLK64) {
     struct flock64 fl64;
     int result;
-    LOG(LOG_DOSMISC,LOG_DEBUG)("Large file locking start=%llx, len=%lx\n", start, len);
+    DEBUG_LOG_MSG("Large file locking start=%llx, len=%lx\n", start, len);
     fl64.l_type = fl->l_type;
     fl64.l_whence = fl->l_whence;
     fl64.l_pid = fl->l_pid;
@@ -226,7 +226,7 @@ bool share(int fd, int mode, uint32_t flags) {
   if(ret == -1 && errno == EINVAL)
 #endif
       lock_file_region(fd, F_SETLK, &fl, 0x100000000LL, 1);
-  LOG(LOG_DOSMISC, LOG_DEBUG)("internal SHARE: locking: fd %d, type %d whence %d pid %d\n", fd, fl.l_type, fl.l_whence, fl.l_pid);
+  DEBUG_LOG_MSG("internal SHARE: locking: fd %d, type %d whence %d pid %d\n", fd, fl.l_type, fl.l_whence, fl.l_pid);
 
   return true;
 }
@@ -270,7 +270,7 @@ bool localDrive::FileOpen(DOS_File **file, char *name, Bit32u flags)
 		uint16_t unix_mode = (flags&0xf)==OPEN_READ||(flags&0xf)==OPEN_READ_NO_MOD?O_RDONLY:((flags&0xf)==OPEN_WRITE?O_WRONLY:O_RDWR);
 		int fd = open(newname, unix_mode);
 		if (fd<0 || !share(fd, unix_mode & O_ACCMODE, flags)) {close(fd);return false;}
-		fhandle = fdopen(fd, (flags&0xf)==OPEN_WRITE?_HT("wb"):type);
+		fhandle = fdopen(fd, (flags&0xf)==OPEN_WRITE?"wb":type);
 #endif
 	} else {
 		fhandle=fopen(newname,type);
