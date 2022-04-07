@@ -433,6 +433,19 @@ bool DOS_SeekFile(Bit16u entry,Bit32u * pos,Bit32u type,bool fcb) {
 	return Files[handle]->Seek(pos,type);
 }
 
+bool DOS_LockFile(uint16_t entry,uint8_t mode,uint32_t pos,uint32_t size) {
+	uint32_t handle=RealHandle(entry);
+	if (handle>=DOS_FILES) {
+		DOS_SetError(DOSERR_INVALID_HANDLE);
+		return false;
+	}
+	if (!Files[handle] || !Files[handle]->IsOpen()) {
+		DOS_SetError(DOSERR_INVALID_HANDLE);
+		return false;
+	}
+	return Files[handle]->LockFile(mode,pos,size);
+}
+
 bool DOS_CloseFile(Bit16u entry, bool fcb, Bit8u * refcnt) {
 	Bit32u handle = fcb?entry:RealHandle(entry);
 	if (handle>=DOS_FILES) {
@@ -585,7 +598,7 @@ bool DOS_OpenFile(char const * name,Bit8u flags,Bit16u * entry,bool fcb) {
 		return true;
 	} else {
 		//Test if file exists, but opened in read-write mode (and writeprotected)
-		if(((flags&3) != OPEN_READ) && Drives[drive]->FileExists(fullname))
+		if((((flags&3) != OPEN_READ) || (enable_share && !strncmp(Drives[drive]->GetInfo(),"local directory ",16))) && Drives[drive]->FileExists(fullname))
 			DOS_SetError(DOSERR_ACCESS_DENIED);
 		else {
 			if(!PathExists(name)) DOS_SetError(DOSERR_PATH_NOT_FOUND); 

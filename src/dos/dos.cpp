@@ -41,6 +41,7 @@
 
 DOS_Block dos;
 DOS_InfoBlock dos_infoblock;
+bool enable_share = true;
 uint16_t countryNo = 0;
 unsigned int result_errorcode = 0;
 
@@ -1149,10 +1150,22 @@ static Bitu DOS_21Handler(void) {
 			break;
 		}
 	case 0x5c:			/* FLOCK File region locking */
-		DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
-		reg_ax = dos.errorcode;
-		CALLBACK_SCF(true);
-		break;
+        {
+            uint32_t pos=((unsigned int)reg_cx << 16u) + reg_dx;
+            uint32_t size=((unsigned int)reg_si << 16u) + reg_di;
+            if (!enable_share) {
+               DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
+               reg_ax = dos.errorcode;
+               CALLBACK_SCF(true);
+            } else if (DOS_LockFile(reg_bx,reg_al,pos, size)) {
+                reg_ax=0;
+                CALLBACK_SCF(false);
+            } else {
+                reg_ax=dos.errorcode;
+                CALLBACK_SCF(true);
+            }
+            break;
+        }
 	case 0x5d:					/* Network Functions */
 		if(reg_al == 0x06) {
 			SegSet16(ds,DOS_SDA_SEG);
@@ -1511,6 +1524,7 @@ public:
 			dos.version.major = new_version.major;
 			dos.version.minor = new_version.minor;
 		}
+		enable_share = section->Get_bool("share");
 	}
 	~DOS(){
 		for (Bit16u i = 0; i < DOS_DRIVES; i++)	delete Drives[i];

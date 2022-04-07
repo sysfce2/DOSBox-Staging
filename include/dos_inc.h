@@ -100,8 +100,8 @@ extern DOS_File * Files[DOS_FILES];
 extern DOS_Drive * Drives[DOS_DRIVES];
 extern DOS_Device * Devices[DOS_DEVICES];
 
+extern bool enable_share;
 extern Bit8u dos_copybuf[0x10000];
-
 
 void DOS_SetError(Bit16u code);
 
@@ -115,6 +115,7 @@ void DOS_SetupFiles (void);
 bool DOS_ReadFile(Bit16u handle,Bit8u * data,Bit16u * amount, bool fcb = false);
 bool DOS_WriteFile(Bit16u handle,Bit8u * data,Bit16u * amount,bool fcb = false);
 bool DOS_SeekFile(Bit16u handle,Bit32u * pos,Bit32u type,bool fcb = false);
+bool DOS_LockFile(uint16_t entry,uint8_t mode,uint32_t pos,uint32_t size);
 bool DOS_CloseFile(Bit16u handle,bool fcb = false,Bit8u * refcnt = NULL);
 bool DOS_FlushFile(Bit16u handle);
 bool DOS_DuplicateEntry(Bit16u entry,Bit16u * newentry);

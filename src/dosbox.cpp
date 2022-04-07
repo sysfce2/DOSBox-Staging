@@ -996,6 +996,9 @@ void DOSBOX_Init() {
 	                  "A single number is treated as the major version.\n"
 	                  "Common settings are 3.3, 5.0, 6.22, and 7.1.");
 
+	Pbool = secprop->Add_bool("share", when_idle, true);
+	Pbool->Set_help("Enable SHARE support, including file- and record-locking.");
+
 	pint = secprop->Add_int("country", when_idle, 0);
 	pint->Set_help("Set DOS country code which will affect country-specific\n"
 	               "information such as date, time, and decimal formats.\n"

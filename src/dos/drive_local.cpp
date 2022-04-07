@@ -32,6 +32,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#ifndef WIN32
+#include <utime.h>
+#include <sys/file.h>
+#else
+#include <fcntl.h>
+#include <sys/utime.h>
+#include <sys/locking.h>
+#endif
+#include <sys/stat.h>
 
 #ifdef _MSC_VER
 #include <sys/utime.h>
@@ -46,7 +55,9 @@
 #include "cross.h"
 #include "inout.h"
 
-bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
+constexpr int file_access_tries = 3;
+
+bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u attributes) {
 //TODO Maybe care for attributes but not likely
 	char newname[CROSS_LEN];
 	safe_strcpy(newname, basedir);
@@ -63,7 +74,24 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 
 	}
 	
-	FILE * hand = fopen_wrap(temp_name,"wb+");
+	FILE * hand = nullptr;
+    if (enable_share && !existing_file) {
+#if defined(WIN32)
+		int attribs = FILE_ATTRIBUTE_NORMAL;
+		if (attributes&3) attribs = attributes&3;
+		HANDLE handle = CreateFile(temp_name, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, attribs, NULL);
+		if (handle == INVALID_HANDLE_VALUE) return false;
+		int nHandle = _open_osfhandle((intptr_t)handle, _O_RDONLY);
+		if (nHandle == -1) {CloseHandle(handle);return false;}
+		hand = fdopen(nHandle, "wb+");
+#else
+		int fd = open(temp_name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		if (fd<0) {close(fd);return false;}
+		hand = fdopen(fd, "wb+");
+#endif
+	} else {
+		hand=fopen(temp_name,"wb+");
+	}
 	if (!hand) {
 		LOG_MSG("Warning: file creation failed: %s",newname);
 		return false;
@@ -109,6 +137,101 @@ DOS_File *FindOpenFile(const DOS_Drive *drive, const char *name)
 	return nullptr;
 }
 
+#ifndef WIN32
+int lock_file_region(int fd, int cmd, struct flock *fl, long long start, unsigned long len)
+{
+  fl->l_whence = SEEK_SET;
+  fl->l_pid = 0;
+  //if (start == 0x100000000LL) start = len = 0; //first handle magic file lock value
+#ifdef F_SETLK64
+  if (cmd == F_SETLK64 || cmd == F_GETLK64) {
+    struct flock64 fl64;
+    int result;
+    LOG(LOG_DOSMISC,LOG_DEBUG)("Large file locking start=%llx, len=%lx\n", start, len);
+    fl64.l_type = fl->l_type;
+    fl64.l_whence = fl->l_whence;
+    fl64.l_pid = fl->l_pid;
+    fl64.l_start = start;
+    fl64.l_len = len;
+    result = fcntl( fd, cmd, &fl64 );
+    fl->l_type = fl64.l_type;
+    fl->l_start = (long) fl64.l_start;
+    fl->l_len = (long) fl64.l_len;
+    return result;
+  }
+#endif
+  if (start == 0x100000000LL)
+    start = 0x7fffffff;
+  fl->l_start = start;
+  fl->l_len = len;
+  return fcntl( fd, cmd, fl );
+}
+
+#define COMPAT_MODE	0x00
+#define DENY_ALL	0x01
+#define DENY_WRITE	0x02
+#define DENY_READ	0x03
+#define DENY_NONE	0x04
+#define FCB_MODE	0x07
+bool share(int fd, int mode, uint32_t flags) {
+  struct flock fl;
+  int ret;
+  int share_mode = ( flags >> 4 ) & 0x7;
+  fl.l_type = F_WRLCK;
+  /* see whatever locks are possible */
+
+#ifdef F_GETLK64
+  ret = lock_file_region( fd, F_GETLK64, &fl, 0x100000000LL, 1 );
+  if ( ret == -1 && errno == EINVAL )
+#endif
+  ret = lock_file_region( fd, F_GETLK, &fl, 0x100000000LL, 1 );
+  if ( ret == -1 ) return true;
+
+  /* file is already locked? then do not even open */
+  /* a Unix read lock prevents writing;
+     a Unix write lock prevents reading and writing,
+     but for DOS compatibility we allow reading for write locks */
+  if ((fl.l_type == F_RDLCK && mode != O_RDONLY) || (fl.l_type == F_WRLCK && mode != O_WRONLY))
+    return false;
+
+  switch ( share_mode ) {
+  case COMPAT_MODE:
+    if (fl.l_type == F_WRLCK) return false;
+  case DENY_NONE:
+    return true;                   /* do not set locks at all */
+  case DENY_WRITE:
+    if (fl.l_type == F_WRLCK) return false;
+    if (mode == O_WRONLY) return true; /* only apply read locks */
+    fl.l_type = F_RDLCK;
+    break;
+  case DENY_READ:
+    if (fl.l_type == F_RDLCK) return false;
+    if (mode == O_RDONLY) return true; /* only apply write locks */
+    fl.l_type = F_WRLCK;
+    break;
+  case DENY_ALL:
+    if (fl.l_type == F_WRLCK || fl.l_type == F_RDLCK) return false;
+    fl.l_type = mode == O_RDONLY ? F_RDLCK : F_WRLCK;
+    break;
+  case FCB_MODE:
+    if ((flags & 0x8000) && (fl.l_type != F_WRLCK)) return true;
+    /* else fall through */
+  default:
+    LOG(LOG_DOSMISC,LOG_WARN)("internal SHARE: unknown sharing mode %x\n", share_mode);
+    return false;
+    break;
+  }
+#ifdef F_SETLK64
+  ret = lock_file_region(fd, F_SETLK64, &fl, 0x100000000LL, 1);
+  if(ret == -1 && errno == EINVAL)
+#endif
+      lock_file_region(fd, F_SETLK, &fl, 0x100000000LL, 1);
+  LOG(LOG_DOSMISC, LOG_DEBUG)("internal SHARE: locking: fd %d, type %d whence %d pid %d\n", fd, fl.l_type, fl.l_whence, fl.l_pid);
+
+  return true;
+}
+#endif
+
 bool localDrive::FileOpen(DOS_File **file, char *name, Bit32u flags)
 {
 	const char *type = nullptr;
@@ -133,7 +256,25 @@ bool localDrive::FileOpen(DOS_File **file, char *name, Bit32u flags)
 	if (open_file)
 		open_file->Flush();
 
-	FILE* fhandle = fopen(newname, type);
+	FILE* fhandle;
+	if (enable_share) {
+#if defined(WIN32)
+		int ohFlag = (flags&0xf)==OPEN_READ||(flags&0xf)==OPEN_READ_NO_MOD?GENERIC_READ:((flags&0xf)==OPEN_WRITE?GENERIC_WRITE:GENERIC_READ|GENERIC_WRITE);
+		int shhFlag = (flags&0x70)==0x10?0:((flags&0x70)==0x20?FILE_SHARE_READ:((flags&0x70)==0x30?FILE_SHARE_WRITE:FILE_SHARE_READ|FILE_SHARE_WRITE));
+		HANDLE handle = CreateFile(newname, ohFlag, shhFlag, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (handle == INVALID_HANDLE_VALUE) return false;
+		int nHandle = _open_osfhandle((intptr_t)handle, _O_RDONLY);
+		if (nHandle == -1) {CloseHandle(handle);return false;}
+		fhandle = fdopen(nHandle, (flags&0xf)==OPEN_WRITE?"wb":type);
+#else
+		uint16_t unix_mode = (flags&0xf)==OPEN_READ||(flags&0xf)==OPEN_READ_NO_MOD?O_RDONLY:((flags&0xf)==OPEN_WRITE?O_WRONLY:O_RDWR);
+		int fd = open(newname, unix_mode);
+		if (fd<0 || !share(fd, unix_mode & O_ACCMODE, flags)) {close(fd);return false;}
+		fhandle = fdopen(fd, (flags&0xf)==OPEN_WRITE?_HT("wb"):type);
+#endif
+	} else {
+		fhandle=fopen(newname,type);
+	}
 
 #ifdef DEBUG
 	std::string open_msg;
@@ -635,6 +776,22 @@ bool localFile::Read(uint8_t *data, uint16_t *size)
 		return false;
 	}
 
+#if defined(WIN32)
+    if (file_access_tries>0) {
+        HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
+        uint32_t bytesRead;
+        for (int tries = file_access_tries; tries; tries--) {							// Try specified number of times
+            if (ReadFile(hFile,static_cast<LPVOID>(data), (uint32_t)*size, (LPDWORD)&bytesRead, NULL)) {
+                *size = (uint16_t)bytesRead;
+                return true;
+            }
+            Sleep(25);																	// If failed (should be region locked), wait 25 millisecs
+        }
+        DOS_SetError((uint16_t)GetLastError());
+        *size = 0;
+        return false;
+    }
+#endif
 	// Seek if we last wrote
 	if (last_action == WRITE)
 		if (ftell_and_check())
@@ -666,6 +823,29 @@ bool localFile::Write(uint8_t *data, uint16_t *size)
 		DOS_SetError(DOSERR_ACCESS_DENIED);
 		return false;
 	}
+#if defined(WIN32)
+    if (file_access_tries>0) {
+        HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
+        if (*size == 0)
+            if (SetEndOfFile(hFile)) {
+                return true;
+            } else {
+                DOS_SetError((uint16_t)GetLastError());
+                return false;
+            }
+        uint32_t bytesWritten;
+        for (int tries = file_access_tries; tries; tries--) {							// Try three times
+            if (WriteFile(hFile, data, (uint32_t)*size, (LPDWORD)&bytesWritten, NULL)) {
+                *size = (uint16_t)bytesWritten;
+                return true;
+            }
+            Sleep(25);																	// If failed (should be region locked? (not documented in MSDN)), wait 25 millisecs
+        }
+        DOS_SetError((uint16_t)GetLastError());
+        *size = 0;
+        return false;
+    }
+#endif
 
 	// Seek if we last read
 	if (last_action == READ)
@@ -703,6 +883,118 @@ bool localFile::Write(uint8_t *data, uint16_t *size)
 	return true;    // always return true, even if partially written
 }
 
+#ifndef WIN32
+bool toLock(int fd, bool is_lock, uint32_t pos, uint16_t size) {
+    struct flock larg;
+    unsigned long mask = 0xC0000000;
+    int flag = fcntl(fd, F_GETFL);
+    larg.l_type = is_lock ? (flag & O_RDWR || flag & O_WRONLY ? F_WRLCK : F_RDLCK) : F_UNLCK;
+    larg.l_start = pos;
+    larg.l_len = size;
+    larg.l_len &= ~mask;
+    if ((larg.l_start & mask) != 0)
+        larg.l_start = (larg.l_start & ~mask) | ((larg.l_start & mask) >> 2);
+    int ret;
+#ifdef F_SETLK64
+    ret = lock_file_region (fd,F_SETLK64,&larg,pos,size);
+    if (ret == -1 && errno == EINVAL)
+#endif
+    ret = lock_file_region (fd,F_SETLK,&larg,larg.l_start,larg.l_len);
+    return ret != -1;
+}
+#endif
+
+bool localFile::LockFile(uint8_t mode, uint32_t pos, uint16_t size) {
+#if defined(WIN32)
+    static bool lockWarn = true;
+	HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
+    if (file_access_tries>0) {
+        if (mode > 1) {
+            DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
+            return false;
+        }
+        if (!mode)																		// Lock, try 3 tries
+            for (int tries = file_access_tries; tries; tries--) {
+                if (::LockFile(hFile, pos, 0, size, 0)) {
+                    if (lockWarn && ::LockFile(hFile, pos, 0, size, 0)) {
+                        lockWarn = false;
+                        char caption[512];
+                        strcat(strcpy(caption, "Windows reference: "), dynamic_cast<localDrive*>(Drives[GetDrive()])->GetBasedir());
+                        MessageBox(NULL, "Record locking seems incorrectly implemented!\nConsult ...", caption, MB_OK|MB_ICONSTOP);
+                    }
+                    return true;
+                }
+                Sleep(25);																// If failed, wait 25 millisecs
+            }
+        else if (::UnlockFile(hFile, pos, 0, size, 0))									// This is a somewhat permanet condition!
+            return true;
+        DOS_SetError((uint16_t)GetLastError());
+        return false;
+    }
+	BOOL bRet;
+#else
+	bool bRet;
+#endif
+
+	switch (mode)
+	{
+#if defined(WIN32)
+	case 0: bRet = ::LockFile (hFile, pos, 0, size, 0); break;
+	case 1: bRet = ::UnlockFile(hFile, pos, 0, size, 0); break;
+#else
+	case 0: bRet = toLock(fileno(fhandle), true, pos, size); break;
+	case 1: bRet = toLock(fileno(fhandle), false, pos, size); break;
+#endif
+	default:
+		DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
+		return false;
+	}
+	//LOG_MSG("::LockFile %s", name);
+
+	if (!bRet)
+	{
+#if defined(WIN32)
+		switch (GetLastError())
+		{
+		case ERROR_ACCESS_DENIED:
+		case ERROR_LOCK_VIOLATION:
+		case ERROR_NETWORK_ACCESS_DENIED:
+		case ERROR_DRIVE_LOCKED:
+		case ERROR_SEEK_ON_DEVICE:
+		case ERROR_NOT_LOCKED:
+		case ERROR_LOCK_FAILED:
+			DOS_SetError(0x21);
+			break;
+		case ERROR_INVALID_HANDLE:
+			DOS_SetError(DOSERR_INVALID_HANDLE);
+			break;
+		case ERROR_INVALID_FUNCTION:
+		default:
+			DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
+			break;
+		}
+#else
+		switch (errno)
+		{
+		case EINTR:
+		case ENOLCK:
+		case EAGAIN:
+			DOS_SetError(0x21);
+			break;
+		case EBADF:
+			DOS_SetError(DOSERR_INVALID_HANDLE);
+			break;
+		case EINVAL:
+		default:
+			DOS_SetError(DOSERR_FUNCTION_NUMBER_INVALID);
+			break;
+		}
+#endif
+	}
+	return bRet;
+}
+
+extern const char* RunningProgram;
 bool localFile::Seek(uint32_t *pos_addr, uint32_t type)
 {
 	int seektype;
@@ -715,6 +1007,20 @@ bool localFile::Seek(uint32_t *pos_addr, uint32_t type)
 		return false;//ERROR
 	}
 
+#if defined(WIN32)
+    if (file_access_tries>0) {
+        HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
+        int32_t dwPtr = SetFilePointer(hFile, *pos_addr, NULL, type);
+        if (dwPtr == INVALID_SET_FILE_POINTER && !strcmp(RunningProgram, "BTHORNE"))	// Fix for Black Thorne
+            dwPtr = SetFilePointer(hFile, 0, NULL, DOS_SEEK_END);
+        if (dwPtr != INVALID_SET_FILE_POINTER) {										// If success
+            *pos_addr = (uint32_t)dwPtr;
+            return true;
+        }
+        DOS_SetError((uint16_t)GetLastError());
+        return false;
+    }
+#endif
 	// The inbound position is actually an int32_t being passed through a
 	// uint32_t* pointer (pos_addr), so reinterpret the underlying memory as
 	// such to prevent rollover into the unsigned range.
@@ -832,6 +1138,9 @@ bool localFile::UpdateDateTimeFromHost()
 
 void localFile::Flush()
 {
+#if defined(WIN32)
+    if (file_access_tries>0) return;
+#endif
 	if (last_action != WRITE)
 		return;
 
