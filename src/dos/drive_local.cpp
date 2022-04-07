@@ -55,9 +55,11 @@
 #include "cross.h"
 #include "inout.h"
 
+#if defined(WIN32)
 constexpr int file_access_tries = 3;
+#endif
 
-bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u attributes) {
+bool localDrive::FileCreate(DOS_File * * file,char * name,[[maybe_unused]]Bit16u attributes) {
 //TODO Maybe care for attributes but not likely
 	char newname[CROSS_LEN];
 	safe_strcpy(newname, basedir);
@@ -197,6 +199,7 @@ bool share(int fd, int mode, uint32_t flags) {
   switch ( share_mode ) {
   case COMPAT_MODE:
     if (fl.l_type == F_WRLCK) return false;
+   [[fallthrough]];
   case DENY_NONE:
     return true;                   /* do not set locks at all */
   case DENY_WRITE:
@@ -215,7 +218,7 @@ bool share(int fd, int mode, uint32_t flags) {
     break;
   case FCB_MODE:
     if ((flags & 0x8000) && (fl.l_type != F_WRLCK)) return true;
-    /* else fall through */
+    [[fallthrough]];
   default:
     LOG(LOG_DOSMISC,LOG_WARN)("internal SHARE: unknown sharing mode %x\n", share_mode);
     return false;
@@ -826,13 +829,14 @@ bool localFile::Write(uint8_t *data, uint16_t *size)
 #if defined(WIN32)
     if (file_access_tries>0) {
         HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
-        if (*size == 0)
+        if (*size == 0) {
             if (SetEndOfFile(hFile)) {
                 return true;
             } else {
                 DOS_SetError((uint16_t)GetLastError());
                 return false;
             }
+        }
         uint32_t bytesWritten;
         for (int tries = file_access_tries; tries; tries--) {							// Try three times
             if (WriteFile(hFile, data, (uint32_t)*size, (LPDWORD)&bytesWritten, NULL)) {
@@ -1011,9 +1015,9 @@ bool localFile::Seek(uint32_t *pos_addr, uint32_t type)
     if (file_access_tries>0) {
         HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fhandle));
         int32_t dwPtr = SetFilePointer(hFile, *pos_addr, NULL, type);
-        if (dwPtr == INVALID_SET_FILE_POINTER && !strcmp(RunningProgram, "BTHORNE"))	// Fix for Black Thorne
+        if (dwPtr == (int32_t)INVALID_SET_FILE_POINTER && !strcmp(RunningProgram, "BTHORNE"))	// Fix for Black Thorne
             dwPtr = SetFilePointer(hFile, 0, NULL, DOS_SEEK_END);
-        if (dwPtr != INVALID_SET_FILE_POINTER) {										// If success
+        if (dwPtr != (int32_t)INVALID_SET_FILE_POINTER) {										// If success
             *pos_addr = (uint32_t)dwPtr;
             return true;
         }
