@@ -25,11 +25,14 @@
 #include "inout.h"
 #include "setup.h"
 #include "support.h"
+#include "render.h"
 #include "video.h"
 
 #define SEQ_REGS 0x05
 #define GFX_REGS 0x09
 #define ATT_REGS 0x15
+
+void ttf_switch_on(bool ss=true), ttf_switch_off(bool ss=true), ttf_reset();
 
 std::vector<VideoModeBlock> ModeList_VGA = {
   //     mode     type     sw    sh    tw  th  cw ch  pt pstart    plength htot  vtot  hde  vde    special flags
@@ -1698,7 +1701,15 @@ dac_text16:
 	//  Load text mode font
 	if (CurMode->type==M_TEXT) {
 		INT10_ReloadFont();
-	}
+#if defined(USE_TTF)
+        if (ttf.inUse)
+            ttf_reset();
+        else
+            ttf_switch_on(false);
+	} else {
+        ttf_switch_off(false);
+#endif
+    }
 	return true;
 }
 

@@ -36,6 +36,7 @@
 #include "hardware.h"
 #include "support.h"
 #include "shell.h"
+#include "sdlmain.h"
 #include "string_utils.h"
 #include "vga.h"
 
@@ -45,6 +46,11 @@
 
 Render_t render;
 ScalerLineHandler_t RENDER_DrawLine;
+
+#if defined(USE_TTF)
+bool resetreq=false;
+void resetFontSize();
+#endif
 
 static void RENDER_CallBack( GFX_CallBackFunctions_t function );
 
@@ -165,7 +171,7 @@ bool RENDER_StartUpdate(void) {
 		return false;
 	}
 	render.frameskip.count=0;
-	if (render.scale.inMode == scalerMode8) {
+	if (render.scale.inMode == scalerMode8 && sdl.desktop.want_type != SCREEN_TTF) {
 		Check_Palette();
 	}
 	render.scale.inLine = 0;
@@ -176,7 +182,7 @@ bool RENDER_StartUpdate(void) {
 	Scaler_ChangedLines[0] = 0;
 	Scaler_ChangedLineIndex = 0;
 	/* Clearing the cache will first process the line to make sure it's never the same */
-	if (GCC_UNLIKELY( render.scale.clearCache) ) {
+	if (GCC_UNLIKELY( render.scale.clearCache) && !ttf.inUse) {
 //		LOG_MSG("Clearing cache");
 		//Will always have to update the screen with this one anyway, so let's update already
 		if (GCC_UNLIKELY(!GFX_StartUpdate( render.scale.outWrite, render.scale.outPitch )))
@@ -273,7 +279,7 @@ static Bitu MakeAspectTable(Bitu skip,Bitu height,double scaley,Bitu miny) {
 }
 
 
-static void RENDER_Reset( void ) {
+void RENDER_Reset( void ) {
 	Bitu width=render.src.width;
 	Bitu height=render.src.height;
 	bool dblw=render.src.dblw;
@@ -549,6 +555,9 @@ forcenormal:
 	/* Signal the next frame to first reinit the cache */
 	render.scale.clearCache = true;
 	render.active=true;
+#if defined(USE_TTF)
+    if (sdl.desktop.want_type == SCREEN_TTF && resetreq) resetFontSize();
+#endif
 }
 
 static void RENDER_CallBack( GFX_CallBackFunctions_t function ) {

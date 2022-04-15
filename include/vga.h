@@ -202,6 +202,7 @@ struct VGA_Draw {
 		uint8_t eline = 0;
 		Bit8u count = 0;
 		uint8_t delay = 0;
+		bool blinkon = 0;
 		Bit8u enabled = 0;
 	} cursor = {};
 	Drawmode mode = {};

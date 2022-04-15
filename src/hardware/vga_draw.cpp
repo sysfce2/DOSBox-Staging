@@ -29,6 +29,7 @@
 #include "support.h"
 #include "vga.h"
 #include "video.h"
+#include "timer.h"
 
 //#undef C_DEBUG
 //#define C_DEBUG 1
@@ -1075,6 +1076,50 @@ static void VGA_VerticalTimer(uint32_t /*val*/)
 		draw_skip = vga.draw.delay.htotal * static_cast<double>(vga.draw.vblank_skip);
 		vga.draw.address += vga.draw.address_add * vga.draw.vblank_skip / vga.draw.address_line_total;
 	}
+
+#if defined(USE_TTF)
+    if (ttf.inUse) {
+        GFX_StartUpdate(render.scale.outWrite, render.scale.outPitch);
+        vga.draw.blink = ((vga.draw.blinking & (GetTicks()/300)) || !vga.draw.blinking) ? true : false;	// eventually blink about thrice per second
+        vga.draw.cursor.address = vga.config.cursor_start*2;
+        Bitu vidstart = vga.config.real_start + vga.draw.bytes_skip;
+        vidstart *= 2;
+        ttf_cell* draw = newAttrChar;
+        ttf_cell* drawc = curAttrChar;
+        int width, height, res;
+        uint16_t uname[4];
+
+        if (CurMode->type==M_TEXT) {
+            bool dbw, dex, bd[txtMaxCols];
+            for (Bitu row=0;row < ttf.lins;row++) {
+                const uint16_t* vidmem = (uint16_t*)VGA_Text_Memwrap(vidstart);	// pointer to chars+attribs (EGA/VGA planar memory)
+                uint16_t last = 0;
+                for (int i=0; i<txtMaxCols; i++) bd[i] = false;
+                dbw=dex=false;
+                for (Bitu col=0;col < ttf.cols;col++) {
+                    *draw = ttf_cell();
+                    (*draw).selected = (*drawc).selected;
+                    (*draw).chr = *vidmem & 0xFF;
+                    Bitu attr = (*vidmem >> 8u) & 0xFFu;
+                    vidmem++;
+                    Bitu background = attr >> 4;
+                    if (vga.draw.blinking)									// if blinking is enabled bit7 is not mapped to attributes
+                        background &= 7;
+                    // choose foreground color if blinking not set for this cell or blink on
+                    Bitu foreground = (vga.draw.blink || (!(attr&0x80))) ? (attr&0xf) : background;
+                    // How about underline?
+                    (*draw).fg = foreground;
+                    (*draw).bg = background;
+                    draw++;
+                    drawc++;
+                }
+                vidstart += vga.draw.address_add;
+            }
+        }
+        RENDER_EndUpdate(false);
+        return;
+    }
+#endif
 
 	// add the draw event
 	switch (vga.draw.mode) {

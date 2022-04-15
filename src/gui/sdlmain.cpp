@@ -63,8 +63,6 @@
 #include "vga.h"
 #include "video.h"
 
-#include "../libs/ppscale/ppscale.h"
-
 #define MAPPERFILE "mapper-sdl2-" VERSION ".map"
 
 #if C_OPENGL
@@ -214,56 +212,6 @@ constexpr uint32_t AMASK = 0xff000000;
 #endif
 #endif // !MACOSX
 
-enum MouseControlType {
-	CaptureOnClick = 1 << 0,
-	CaptureOnStart = 1 << 1,
-	Seamless       = 1 << 2,
-	NoMouse        = 1 << 3
-};
-
-enum SCREEN_TYPES	{
-	SCREEN_SURFACE,
-	SCREEN_TEXTURE,
-#if C_OPENGL
-	SCREEN_OPENGL
-#endif
-};
-
-enum class FRAME_MODE {
-	UNSET,
-	CFR,        // constant frame rate, as defined by the emulated system
-	VFR,        // variable frame rate, as defined by the emulated system
-	SYNCED_CFR, // constant frame rate, synced with the display's refresh rate
-	THROTTLED_VFR, // variable frame rate, throttled to the display's rate
-};
-
-enum class HOST_RATE_MODE {
-	AUTO,
-	SDI, // serial digital interface
-	VRR, // variable refresh rate
-	CUSTOM,
-};
-
-enum class SCALING_MODE { NONE, NEAREST, PERFECT };
-
-enum class VSYNC_STATE {
-	UNSET = -2,
-	ADAPTIVE = -1,
-	OFF = 0,
-	ON = 1,
-};
-
-// A vsync preference consists of three parts:
-//  - What the user asked for
-//  - What the host reports vsync as after setting it
-//  - What the actual resulting state is after setting it
-struct VsyncPreference {
-	VSYNC_STATE requested = VSYNC_STATE::UNSET;
-	VSYNC_STATE reported = VSYNC_STATE::UNSET;
-	VSYNC_STATE resultant = VSYNC_STATE::UNSET;
-	int16_t benchmarked_rate = 0;
-};
-
 // Size and ratio constants
 // ------------------------
 constexpr int SMALL_WINDOW_PERCENT = 50;
@@ -274,221 +222,14 @@ static SDL_Point FALLBACK_WINDOW_DIMENSIONS = {640, 480};
 constexpr SDL_Point RATIOS_FOR_STRETCHED_PIXELS = {4, 3};
 constexpr SDL_Point RATIOS_FOR_SQUARE_PIXELS = {8, 5};
 
-enum PRIORITY_LEVELS {
-	PRIORITY_LEVEL_AUTO,
-	PRIORITY_LEVEL_PAUSE,
-	PRIORITY_LEVEL_LOWEST,
-	PRIORITY_LEVEL_LOWER,
-	PRIORITY_LEVEL_NORMAL,
-	PRIORITY_LEVEL_HIGHER,
-	PRIORITY_LEVEL_HIGHEST
-};
-
-class PPScale {
-public:
-	PPScale(const int source_w,
-	        const int source_h,
-	        const double aspect_ratio,
-	        const bool source_is_doubled,
-	        const int canvas_w,
-	        const int canvas_h)
-
-	{
-		assert(source_w > 0);
-		assert(source_h > 0);
-		assert(canvas_w > 0);
-		assert(canvas_h > 0);
-		assert(aspect_ratio > 0.1);
-
-		// divide the source if it's been doubled
-		effective_source_w = source_w / (source_is_doubled ? 2 : 1);
-		effective_source_h = source_h / (source_is_doubled ? 2 : 1);
-
-		// call the pixel-perfect library to get the scale factors
-		constexpr double aspect_weight = 1.14; // pixel-perfect constant
-		const int err = pp_getscale(effective_source_w, effective_source_h,
-		                            aspect_ratio, canvas_w, canvas_h,
-		                            aspect_weight, &scale_x, &scale_y);
-
-		// if the scaling failed, ensure the the multipliers are valid
-		if (err) {
-			scale_x = 1;
-			scale_y = 1;
-		}
-		// calculate the output dimensions
-		output_w = effective_source_w * scale_x;
-		output_h = effective_source_h * scale_y;
-		assert(output_w > 0);
-		assert(output_h > 0);
-	}
-	// default constructor
-	PPScale() {}
-
-	int effective_source_w = 0;
-	int effective_source_h = 0;
-	int output_w = 0;
-	int output_h = 0;
-private:
-	int scale_x = 0;
-	int scale_y = 0;
-};
-
 /* Alias for indicating, that new window should not be user-resizable: */
 constexpr bool FIXED_SIZE = false;
 
-// Texture buffer and presentation functions and type-defines
-using update_frame_buffer_f = void(const uint16_t *);
-using present_frame_f = bool();
-static void update_frame_texture([[maybe_unused]] const uint16_t *changedLines);
-static bool present_frame_texture();
-#if C_OPENGL
-static void update_frame_gl_pbo([[maybe_unused]] const uint16_t *changedLines);
-static void update_frame_gl_fb(const uint16_t *changedLines);
-static bool present_frame_gl();
-#endif
-static void update_frame_surface(const uint16_t *changedLines);
-constexpr void update_frame_noop([[maybe_unused]] const uint16_t *) { /* no-op */ }
-static inline bool present_frame_noop() { return true; }
+#include "sdlmain.h"
 
-struct SDL_Block {
-	bool initialized = false;
-	bool active = false; // If this isn't set don't draw
-	bool updating = false;
-	bool update_display_contents = true;
-	bool resizing_window = false;
-	bool wait_on_error = false;
-	SCALING_MODE scaling_mode = SCALING_MODE::NONE;
-	struct {
-		int width = 0;
-		int height = 0;
-		double scalex = 1.0;
-		double scaley = 1.0;
-		double pixel_aspect = 1.0;
-		uint16_t previous_mode = 0;
-		bool has_changed = false;
-		GFX_CallBack_t callback = nullptr;
-		bool width_was_doubled = false;
-		bool height_was_doubled = false;
-	} draw = {};
-	struct {
-		struct {
-			int width = 0;
-			int height = 0;
-			bool fixed = false;
-			bool display_res = false;
-		} full = {};
-		struct {
-			int width = 0;
-			int height = 0;
-			bool resizable = false;
-			bool show_decorations = true;
-			bool adjusted_initial_size = false;
-			int initial_x_pos = -1;
-			int initial_y_pos = -1;
-		} window = {};
-		struct {
-			int width = 0;
-			int height = 0;
-		} requested_window_bounds = {};
-
-		Bit8u bpp = 0;
-		bool fullscreen = false;
-		// This flag indicates, that we are in the process of switching
-		// between fullscreen or window (as oppososed to changing
-		// rendering size due to rotating screen, emulation state, or
-		// user resizing the window).
-		bool switching_fullscreen = false;
-		// Lazy window size init triggers updating window size and
-		// position when leaving fullscreen for the first time.
-		// See FinalizeWindowState function for details.
-		bool lazy_init_window_size = false;
-		HOST_RATE_MODE host_rate_mode = HOST_RATE_MODE::AUTO;
-		double preferred_host_rate = 0.0;
-		bool want_resizable_window = false;
-		SDL_WindowEventID last_size_event = {};
-		SCREEN_TYPES type = SCREEN_SURFACE;
-		SCREEN_TYPES want_type = SCREEN_SURFACE;
-	} desktop = {};
-	struct {
-		VsyncPreference when_windowed = {};
-		VsyncPreference when_fullscreen = {};
-		VSYNC_STATE current = VSYNC_STATE::ON;
-		int skip_us = 0;
-	} vsync = {};
-#if C_OPENGL
-	struct {
-		SDL_GLContext context;
-		int pitch = 0;
-		void *framebuf = nullptr;
-		GLuint buffer;
-		GLuint texture;
-		GLuint displaylist;
-		GLint max_texsize;
-		bool bilinear;
-		bool pixel_buffer_object = false;
-		bool npot_textures_supported = false;
-		bool use_shader;
-		GLuint program_object;
-		const char *shader_src;
-		struct {
-			GLint texture_size;
-			GLint input_size;
-			GLint output_size;
-			GLint frame_count;
-		} ruby = {};
-		GLuint actual_frame_count;
-		GLfloat vertex_data[2*3];
-	} opengl = {};
-#endif // C_OPENGL
-	struct {
-		PRIORITY_LEVELS focus;
-		PRIORITY_LEVELS nofocus;
-	} priority = {};
-	SDL_Rect clip = {0, 0, 0, 0};
-	SDL_Surface *surface = nullptr;
-	SDL_Window *window = nullptr;
-	SDL_Renderer *renderer = nullptr;
-	std::string render_driver = "";
-	int display_number = 0;
-	struct {
-		SDL_Surface *input_surface = nullptr;
-		SDL_Texture *texture = nullptr;
-		SDL_PixelFormat *pixelFormat = nullptr;
-	} texture = {};
-	struct {
-		present_frame_f *present = present_frame_noop;
-		update_frame_buffer_f *update = update_frame_noop;
-		FRAME_MODE desired_mode = FRAME_MODE::UNSET;
-		FRAME_MODE mode = FRAME_MODE::UNSET;
-		double period_ms = 0.0; // in ms, for use with PIC timers
-		int period_us = 0;      // same but in us, for use with chrono
-		int period_us_early = 0;
-		int period_us_late = 0;
-	} frame = {};
-	struct {
-		int xsensitivity = 0;
-		int ysensitivity = 0;
-		int sensitivity = 0;
-		MouseControlType control_choice = Seamless;
-		bool middle_will_release = true;
-		bool has_focus = false;
-	} mouse = {};
-	PPScale pp_scale = {};
-	SDL_Rect updateRects[1024];
-	bool window_resolution_specified = false;
-	bool use_max_resolution = false;
-	SDL_Point max_resolution = {-1, -1};
-#if defined (WIN32)
-	// Time when sdl regains focus (Alt+Tab) in windowed mode
-	int64_t focus_ticks = 0;
-#endif
-	// State of Alt keys for certain special handlings
-	SDL_EventType laltstate = SDL_KEYUP;
-	SDL_EventType raltstate = SDL_KEYUP;
-};
+SDL_Block sdl;
 
 static bool first_window = true;
-static SDL_Block sdl;
 
 static SDL_Point restrict_to_max_resolution(int width, int height);
 static PPScale calc_pp_scale(int width, int heigth);
@@ -822,6 +563,11 @@ check_surface:
 		flags|=GFX_SCALING;
 		flags&=~(GFX_CAN_8|GFX_CAN_15|GFX_CAN_16);
 		break;
+#if defined(USE_TTF)
+    case SCREEN_TTF:
+        flags = GFX_CAN_32 | GFX_SCALING;
+        break;
+#endif
 	default:
 		goto check_surface;
 		break;
@@ -950,7 +696,7 @@ static void log_display_properties(int in_x,
 	        out_x, out_y, out_par);
 }
 
-static SDL_Point get_initial_window_position_or_default(int default_val)
+SDL_Point get_initial_window_position_or_default(int default_val)
 {
 	int x, y;
 	if (sdl.desktop.window.initial_x_pos >= 0 &&
@@ -1731,6 +1477,7 @@ static PPScale calc_pp_scale(const int avw, const int avh)
 	               is_draw_size_doubled(), avw, avh);
 }
 
+Bitu OUTPUT_TTF_SetSize(int width, int height);
 Bitu GFX_SetSize(int width,
                  int height,
                  const Bitu flags,
@@ -1763,6 +1510,17 @@ Bitu GFX_SetSize(int width,
 	sdl.draw.pixel_aspect = pixel_aspect;
 	sdl.draw.callback = callback;
 	sdl.draw.previous_mode = CurMode->type;
+#if defined(USE_TTF)
+    if (sdl.desktop.want_type==SCREEN_TTF) {
+#if C_OPENGL && defined(MACOSX) && !defined(C_SDL2)
+        sdl.opengl.framebuf = calloc(sdl.draw.width*sdl.draw.height, 4);
+        sdl.desktop.type = SCREEN_OPENGL;
+#else
+        sdl.desktop.type = SCREEN_SURFACE;
+#endif'
+        return OUTPUT_TTF_SetSize(width, height);
+    }
+#endif
 
 	const auto wants_vsync = get_vsync_preference().requested != VSYNC_STATE::OFF;
 
@@ -2199,6 +1957,10 @@ dosurface:
 		break; // SCREEN_OPENGL
 	}
 #endif // C_OPENGL
+#if defined(USE_TTF)
+    case SCREEN_TTF:
+        break;
+#endif
 	}
 
 	update_vsync_state();
@@ -2376,6 +2138,10 @@ void GFX_SwitchFullScreen()
 	sdl.desktop.switching_fullscreen = false;
 }
 
+void GFX_SwitchFullscreenNoReset(void) {
+    sdl.desktop.fullscreen=!sdl.desktop.fullscreen;
+}
+
 static void SwitchFullScreen(bool pressed)
 {
 	if (pressed)
@@ -2434,12 +2200,24 @@ bool GFX_StartUpdate(uint8_t * &pixels, int &pitch)
 		pitch = sdl.surface->pitch;
 		sdl.updating = true;
 		return true;
+#if defined(USE_TTF)
+    case SCREEN_TTF:
+        break;
+#endif
 	}
 	return false;
 }
 
 void GFX_EndUpdate(const uint16_t *changedLines)
 {
+#if defined(USE_TTF)
+    if (ttf.inUse) {
+        sdl.updating = false;
+        void GFX_EndTextLines(bool force=false);
+        GFX_EndTextLines();
+        return;
+    }
+#endif
 	sdl.frame.update(changedLines);
 
 	const auto frame_is_new = sdl.update_display_contents && sdl.updating;
@@ -2591,6 +2369,10 @@ Bitu GFX_GetRGB(Bit8u red,Bit8u green,Bit8u blue) {
 #if C_OPENGL
 	case SCREEN_OPENGL:
 		return ((blue << 0) | (green << 8) | (red << 16)) | (255 << 24);
+#endif
+#if defined(USE_TTF)
+    case SCREEN_TTF:
+        break;
 #endif
 	}
 	return 0;
@@ -2845,7 +2627,7 @@ static bool detect_resizable_window()
 #endif // C_OPENGL
 }
 
-static bool wants_stretched_pixels()
+bool wants_stretched_pixels()
 {
 	const auto render_section = static_cast<Section_prop *>(
 	        control->GetSection("render"));
@@ -3147,7 +2929,7 @@ static void setup_window_sizes_from_conf(const char *windowresolution_val,
 {
 	// TODO: Deprecate SURFACE output and remove this.
 	// For now, let the DOS-side determine the window's resolution.
-	if (sdl.desktop.want_type == SCREEN_SURFACE)
+	if (sdl.desktop.want_type == SCREEN_SURFACE || sdl.desktop.want_type == SCREEN_TTF)
 		return;
 
 	// Can the window be resized?
@@ -3262,11 +3044,20 @@ static SDL_Rect calc_viewport_pp(int win_width, int win_height)
 		return calc_viewport_fit(width, height);
 }
 
-static void set_output(Section *sec, bool should_stretch_pixels)
+void set_transparency(const Section_prop * section) {
+	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
+	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
+	SDL_SetWindowOpacity(sdl.window, alpha);
+}
+
+void set_output(Section *sec, bool should_stretch_pixels)
 {
 	// Apply the user's mouse settings
 	const auto section = static_cast<const Section_prop *>(sec);
 	std::string output = section->Get_string("output");
+#if defined(USE_TTF)
+	ttf.inUse = false;
+#endif
 
 	if (output == "surface") {
 		sdl.desktop.want_type = SCREEN_SURFACE;
@@ -3296,6 +3087,13 @@ static void set_output(Section *sec, bool should_stretch_pixels)
 		sdl.desktop.want_type = SCREEN_OPENGL;
 		sdl.scaling_mode = SCALING_MODE::PERFECT;
 		sdl.opengl.bilinear = false;
+#endif
+#if defined(USE_TTF)
+	} else if (output == "ttf") {
+		sdl.desktop.want_type = SCREEN_TTF;
+		sdl.scaling_mode = SCALING_MODE::NONE;
+        void OUTPUT_TTF_Select(int fsize);
+        OUTPUT_TTF_Select(0);
 #endif
 	} else {
 		LOG_WARNING("SDL: Unsupported output device %s, switching back to surface",
@@ -3450,9 +3248,7 @@ static void set_output(Section *sec, bool should_stretch_pixels)
 	if (!SetDefaultWindowMode())
 		E_Exit("Could not initialize video: %s", SDL_GetError());
 
-	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
-	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
-	SDL_SetWindowOpacity(sdl.window, alpha);
+	set_transparency(section);
 }
 
 //extern void UI_Run(bool);
@@ -4248,6 +4044,9 @@ void Config_Add_SDL() {
 	  "opengl",
 	  "openglnb",
 	  "openglpp",
+#endif
+#if defined(USE_TTF)
+      "ttf",
 #endif
 	  0 };
 
