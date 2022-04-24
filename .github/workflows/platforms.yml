@@ -81,16 +81,16 @@ jobs:
                 apt-get -qq update  < /dev/null > /dev/null
                 apt-get -qq install git curl findutils procps tar zstd screenfetch \
                                     < /dev/null > /dev/null
-                apt-get -qq install cmake g++ build-essential ccache libasound2-dev libgtest-dev \
-                                    libopusfile-dev libsdl2-dev python3-setuptools python3-pip \
-                                    < /dev/null > /dev/null
+                apt-get -qq install cmake g++ build-essential ccache libasound2-dev libfreetype-dev \
+                                    libgtest-dev libopusfile-dev libsdl2-dev python3-setuptools \
+                                    python3-pip < /dev/null > /dev/null
                 pip3 install meson ninja
                 ;;
               fedora*)
                 dnf -q -y update
                 dnf -q -y install git which curl findutils procps-ng tar zstd screenfetch
-                dnf -q -y install cmake desktop-file-utils gcc gcc-c++ gmock-devel gtest-devel \
-                                  libappstream-glib libatomic meson opusfile-devel SDL2-devel
+                dnf -q -y install cmake desktop-file-utils freetype-devel gcc gcc-c++ gmock-devel \
+                                  gtest-devel libappstream-glib libatomic meson opusfile-devel SDL2-devel
                 ;;
               alpine*)
                 apk update
@@ -108,6 +108,7 @@ jobs:
             meson setup \
                   --wrap-mode=nofallback \
                   -Duse_fluidsynth=false \
+                  -Duse_freetype=false \
                   -Duse_sdl2_net=false \
                   -Duse_opengl=false \
                   -Duse_mt32emu=false \
