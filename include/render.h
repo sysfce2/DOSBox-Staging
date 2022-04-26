@@ -31,6 +31,10 @@
 //Enable this for scalers to support 0 input for empty lines
 //#define RENDER_NULL_INPUT
 
+#if defined(C_FREETYPE)
+#define USE_TTF 1
+#endif
+
 struct RenderPal_t {
 	struct {
 		uint8_t red = 0;
@@ -94,6 +98,74 @@ struct Render_t {
 	bool aspect = true;
 	bool fullFrame = true;
 };
+
+#if defined(USE_TTF)
+#include "SDL_ttf.h"
+#define txtMaxCols 255
+#define txtMaxLins 88
+typedef struct {
+	bool	inUse;
+	TTF_Font *SDL_font;
+	TTF_Font *SDL_fontb;
+	TTF_Font *SDL_fonti;
+	TTF_Font *SDL_fontbi;
+	bool	DOSBox;								// is DOSBox-X internal TTF loaded, pointsizes should be even to look really nice
+	int		pointsize;
+	int		height;								// height of character cell
+	int		width;								// width
+	unsigned int		cursor;
+	unsigned int		lins;								// number of lines 24-60
+	unsigned int		cols;								// number of columns 80-160
+	bool	fullScrn;							// in fake fullscreen
+	int		offX;								// horizontal offset to center content
+	int		offY;								// vertical ,,
+} Render_ttf;
+
+struct ttf_cell {
+    uint16_t        chr;                        // unicode code point OR just the raw code point. set to ' ' (0x20) for empty space.
+    unsigned int    fg:4;                       // foreground color (one of 16)
+    unsigned int    bg:4;                       // background color (one of 16)
+    unsigned int    doublewide:1;               // double-wide (e.g. PC-98 JIS), therefore skip next character cell.
+    unsigned int    blink:1;                    // blink attribute
+    unsigned int    boxdraw:1;                  // box-drawing attribute
+    unsigned int    underline:1;                // underline attribute
+    unsigned int    unicode:1;                  // chr is unicode code point
+    unsigned int    skipped:1;                  // adjacent (ignored) cell to a doublewide
+    unsigned int    selected:1;
+
+    ttf_cell() {
+        chr = 0x20;
+        fg = 7;
+        bg = 0;
+        doublewide = 0;
+        blink = 0;
+        boxdraw = 0;
+        underline = 0;
+        unicode = 0;
+        skipped = 0;
+        selected = 0;
+    }
+
+    bool operator==(const ttf_cell &lhs) const {
+        return  chr         == lhs.chr &&
+                fg          == lhs.fg &&
+                bg          == lhs.bg &&
+                doublewide  == lhs.doublewide &&
+                blink       == lhs.blink &&
+                skipped     == lhs.skipped &&
+                underline   == lhs.underline &&
+                unicode     == lhs.unicode;
+    }
+    bool operator!=(const ttf_cell &lhs) const {
+        return !(*this == lhs);
+    }
+};
+// FIXME: Perhaps the TTF output code should just render unicode code points and vga_draw should do the code page conversion
+
+extern ttf_cell curAttrChar[];					// currently displayed textpage
+extern ttf_cell newAttrChar[];					// to be replaced by
+extern Render_ttf ttf;
+#endif
 
 extern Render_t render;
 extern ScalerLineHandler_t RENDER_DrawLine;

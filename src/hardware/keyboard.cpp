@@ -82,6 +82,12 @@ void KEYBOARD_ClrBuffer(void) {
 	keyb.scheduled=false;
 }
 
+void KEYBOARD_Clear() {
+	keyb.repeat.key  = KBD_NONE;
+	keyb.repeat.wait = 0;
+	KEYBOARD_ClrBuffer();
+}
+
 static void KEYBOARD_AddBuffer(uint8_t data) {
 	if (keyb.used>=KEYBUFSIZE) {
 		LOG(LOG_KEYBOARD,LOG_NORMAL)("Buffer full, dropping code");

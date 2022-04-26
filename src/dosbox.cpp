@@ -651,7 +651,140 @@ void DOSBOX_Init() {
 	secprop->AddInitFunction(&DMA_Init);//done
 	secprop->AddInitFunction(&VGA_Init);
 	secprop->AddInitFunction(&KEYBOARD_Init);
+	secprop=control->AddSection_prop("ttf",&Null_Init,true);
 
+	const char* switchoutputs[] = {
+	  "surface",
+	  "texture",
+	  "texturenb",
+	  "texturepp",
+#if C_OPENGL
+	  "opengl",
+	  "openglnb",
+	  "openglpp",
+#endif
+        0 };
+
+	Pstring = secprop->Add_string("font", always, "");
+    Pstring->Set_help("Specifies a TrueType font to use for the TTF output. If not specified, the built-in TrueType font will be used.\n"
+                    "Either a font name or full font path can be specified. If file ends with the .TTF extension then the extension can be omitted.\n"
+                    "For a font name or relative path, directories such as the working directory and default system font directory will be searched.\n"
+                    "For example, setting it to \"consola\" or \"consola.ttf\" will use Consola font (included in Windows); similar for other TTF fonts.\n"
+                    "Additionally, OTF fonts (e.g. OratorStd.otf), .FON fonts (e.g. vgasys.fon), and .TTC fonts (e.g. msgothic.ttc) are also supported.\n"
+                    "To display Chinese/Japanese/Korean text in these code pages, a font with CJK characters is needed (e.g. GNU Unifont or Sarasa Gothic).");
+
+	Pstring = secprop->Add_string("fontbold", always, "");
+    Pstring->Set_help("You can optionally specify a bold TrueType font for use with the TTF output that will render the bold text style.\n"
+                    "It requires a word processor be set with the wp option, and this actual bold font will be used for the bold style.\n"
+                    "For example, setting it to \"consolab\" or \"consolab.ttf\" will use the Consolab font; similar for other TTF fonts.");
+
+	Pstring = secprop->Add_string("fontital", always, "");
+    Pstring->Set_help("You can optionally specify an italic TrueType font for use with the TTF output that will render the italic text style.\n"
+                    "It requires a word processor be set with the wp option, and this actual italic font will be used for the italic style.\n"
+                    "For example, setting it to \"consolai\" or \"consolai.ttf\" will use the Consolai font; similar for other TTF fonts.");
+
+	Pstring = secprop->Add_string("fontboit", always, "");
+    Pstring->Set_help("You can optionally specify a bold italic TrueType font for use with the TTF output that will render the bold italic text style.\n"
+                    "It requires a word processor be set with the wp option, and this actual bold-italic font will be used for the bold-italic style.\n"
+                    "For example, setting it to \"consolaz\" or \"consolaz.ttf\" will use the Consolaz font; similar for other TTF fonts.");
+
+	Pstring = secprop->Add_string("colors", always, "");
+    Pstring->Set_help("Specifies a color scheme to use for the TTF output by supply all 16 color values in RGB: (r,g,b) or hexadecimal as in HTML: #RRGGBB\n"
+                    "The original DOS colors (0-15): #000000 #0000aa #00aa00 #00aaaa #aa0000 #aa00aa #aa5500 #aaaaaa #555555 #5555ff #55ff55 #55ffff #ff5555 #ff55ff #ffff55 #ffffff\n"
+                    "gray scaled color scheme: (0,0,0)  #0e0e0e  (75,75,75) (89,89,89) (38,38,38) (52,52,52) #717171 #c0c0c0 #808080 (28,28,28) (150,150,150) (178,178,178) (76,76,76) (104,104,104) (226,226,226) (255,255,255)\n"
+                    "An optional leading \"+\" sign allows the preset color scheme to be used when switching from another output.");
+
+	Pstring = secprop->Add_string("outputswitch", always,
+#if C_OPENGL
+    "opengl"
+#else
+    "texture"
+#endif
+    );
+    Pstring->Set_help("Specifies the output that DOSBox-X should switch to from the TTF output when a graphical mode is requested, or auto for automatic selection.");
+    Pstring->Set_values(switchoutputs);
+
+	Pint = secprop->Add_int("winperc", always, 60);
+    Pint->Set_help("Specifies the window percentage for the TTF output (100 = full screen). Ignored if the ptsize setting is specified.");
+
+	Pint = secprop->Add_int("ptsize", always, 0);
+    Pint->Set_help("Specifies the font point size for the TTF output. If specified (minimum: 9), it will override the winperc setting.");
+
+	Pint = secprop->Add_int("lins", always, 0);
+    Pint->Set_help("Specifies the number of rows on the screen for the TTF output (0 = default).");
+
+	Pint = secprop->Add_int("cols", always, 0);
+    Pint->Set_help("Specifies the number of columns on the screen for the TTF output (0 = default).");
+
+	Pbool = secprop->Add_bool("righttoleft", always, false);
+    Pbool->Set_help("If set, DOSBox-X will display text from right to left instead of left to right on the screen for the TTF output.\n"
+                    "This is especially useful for languages which use right-to-left scripts (such as Arabic and Hebrew).");
+
+	Pstring = secprop->Add_string("wp", always, "");
+    Pstring->Set_help("You can specify a word processor for the TTF output and optionally also a version number for the word processor.\n"
+                    "Supported word processors are WP=WordPerfect, WS=WordStar, XY=XyWrite, FE=FastEdit, and an optional version number.\n"
+                    "For example, WP6 will set the word processor as WordPerfect 6, and XY4 will set the word processor as XyWrite 4.\n"
+                    "Word processor-specific features like on-screen text styles and 512-character font will be enabled based on this.");
+
+	Pint = secprop->Add_int("wpbg", always, -1);
+    Pint->SetMinMax(-1,15);
+    Pint->Set_help("You can optionally specify a color to match the background color of the specified word processor for the TTF output.\n"
+                   "Use the DOS color number (0-15: 0=Black, 1=Blue, 2=Green, 3=Cyan, 4=Red, 5=Magenta, 6=Yellow, 7=White, etc) for this.");
+
+	Pint = secprop->Add_int("wpfg", always, 7);
+    Pint->SetMinMax(-1,7);
+    Pint->Set_help("You can optionally specify a color to match the foreground color of the specified word processor for the TTF output.\n"
+                   "Use the DOS color number (0-7: 0=Black, 1=Blue, 2=Green, 3=Cyan, 4=Red, 5=Magenta, 6=Yellow, 7=White) for this.");
+
+	Pbool = secprop->Add_bool("bold", always, true);
+    Pbool->Set_help("If set, DOSBox-X will display bold text in visually (requires a word processor be set) for the TTF output.\n"
+                    "This is done either with the actual bold font specified by the fontbold option, or by making it bold automatically.");
+
+	Pbool = secprop->Add_bool("italic", always, true);
+    Pbool->Set_help("If set, DOSBox-X will display italicized text visually (requires a word processor be set) for the TTF output.\n"
+                    "This is done either with the actual italic font specified by the fontital option, or by slanting the characters automatically.");
+
+	Pbool = secprop->Add_bool("underline", always, true);
+    Pbool->Set_help("If set, DOSBox-X will display underlined text visually (requires a word processor be set) for the TTF output.");
+
+	Pbool = secprop->Add_bool("strikeout", always, false);
+    Pbool->Set_help("If set, DOSBox-X will display strikeout text visually (requires a word processor be set) for the TTF output.");
+
+	Pbool = secprop->Add_bool("char512", always, true);
+    Pbool->Set_help("If set, DOSBox-X will display the 512-character font if possible (requires a word processor be set) for the TTF output.");
+
+	Pbool = secprop->Add_bool("printfont", always, true);
+    Pbool->Set_help("If set, DOSBox-X will force to use the current TrueType font (set via font option) for printing in addition to displaying.");
+
+	Pbool = secprop->Add_bool("autodbcs", when_idle, true);
+    Pbool->Set_help("If set, DOSBox-X enables Chinese/Japanese/Korean DBCS (double-byte) characters when these code pages are active by default.\n"
+                    "Only applicable when using a DBCS code page (932: Japanese, 936: Simplified Chinese; 949: Korean; 950: Traditional Chinese)\n"
+                    "This applies to both the display and printing of these characters (see the [printer] section for details of the latter).");
+
+	Pbool = secprop->Add_bool("autoboxdraw", when_idle, true);
+    Pbool->Set_help("If set, DOSBox-X will auto-detect ASCII box-drawing characters for CJK (Chinese/Japanese/Korean) support in the TTF output.\n"
+                    "Only applicable when using a DBCS code page (932: Japanese, 936: Simplified Chinese; 949: Korean; 950: Traditional Chinese)\n"
+                    "This applies to both the display and printing of these characters (see the [printer] section for details of the latter).");
+
+	Pbool = secprop->Add_bool("halfwidthkana", when_idle, true);
+    Pbool->Set_help("If set, DOSBox-X enables half-width Katakana to replace upper ASCII characters for the Japanese code page (932) of a non-PC98 machine type in the TTF output.");
+
+	Pstring = secprop->Add_string("blinkc", always, "true");
+    Pstring->Set_help("If set to true, the cursor blinks for the TTF output; setting it to false will turn the blinking off.\n"
+                      "You can also change the blinking rate by setting an integer between 1 (fastest) and 7 (slowest), or 0 for no cursor.");
+
+	Pbool = secprop->Add_bool("gbk",when_idle,false);
+	Pbool->Set_help("Enables the GBK extension (in addition to the standard GB2312 charset) for the Simplified Chinese TTF output or DOS/V emulation.");
+
+	Pbool = secprop->Add_bool("chinasea",when_idle,false);
+	Pbool->Set_help("Enables the ChinaSea and Big5-2003 extension (in addition to the standard Big5-1984 charset) for the Traditional Chinese TTF output.\n"
+                     "A TTF/OTF font containing such characters (such as the included SarasaGothicFixed TTF font) is needed to correctly render ChinaSea characters.");
+
+	Pbool = secprop->Add_bool("uao",when_idle,false);
+	Pbool->Set_help("Enables the Big5 Unicode-At-On (UAO) extension instead of the Big5 HKSCS extension for the hidden code page 951 of the Traditional Chinese TTF output.");
+
+	Pbool = secprop->Add_bool("dosvfunc", only_at_start, false);
+    Pbool->Set_help("If set, enables FEP control to function for Japanese DOS/V applications, and changes the blinking of character attributes to high brightness.");
 
 #if defined(PCI_FUNCTIONALITY_ENABLED)
 	secprop=control->AddSection_prop("pci",&PCI_Init,false); //PCI bus

@@ -4,6 +4,7 @@ libgui_sources = files([
   'sdl_gui.cpp',
   'sdlmain.cpp',
   'sdl_mapper.cpp',
+  'truetype.cpp',
 ])
 
 libgui = static_library('gui', libgui_sources,

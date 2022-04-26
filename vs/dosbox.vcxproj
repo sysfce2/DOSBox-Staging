@@ -349,6 +349,7 @@
     <ClCompile Include="..\src\gui\sdlmain.cpp" />
     <ClCompile Include="..\src\gui\sdl_gui.cpp" />
     <ClCompile Include="..\src\gui\sdl_mapper.cpp" />
+    <ClCompile Include="..\src\gui\truetype.cpp" />
     <ClCompile Include="..\src\hardware\adlib.cpp" />
     <ClCompile Include="..\src\hardware\cmos.cpp" />
     <ClCompile Include="..\src\hardware\dc_silencer.cpp" />

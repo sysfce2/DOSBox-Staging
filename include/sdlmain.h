@@ -36,14 +36,6 @@
 // Texture buffer and presentation functions and type-defines
 using update_frame_buffer_f = void(const uint16_t *);
 using present_frame_f = bool();
-static void update_frame_texture([[maybe_unused]] const uint16_t *changedLines);
-static bool present_frame_texture();
-#if C_OPENGL
-static void update_frame_gl_pbo([[maybe_unused]] const uint16_t *changedLines);
-static void update_frame_gl_fb(const uint16_t *changedLines);
-static bool present_frame_gl();
-#endif
-static void update_frame_surface(const uint16_t *changedLines);
 constexpr void update_frame_noop([[maybe_unused]] const uint16_t *) { /* no-op */ }
 static inline bool present_frame_noop() { return true; }
 
@@ -58,8 +50,9 @@ enum SCREEN_TYPES	{
 	SCREEN_SURFACE,
 	SCREEN_TEXTURE,
 #if C_OPENGL
-	SCREEN_OPENGL
+	SCREEN_OPENGL,
 #endif
+	SCREEN_TTF
 };
 
 enum class FRAME_MODE {

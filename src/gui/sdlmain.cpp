@@ -230,6 +230,15 @@ static SDL_Point FALLBACK_WINDOW_DIMENSIONS = {640, 480};
 constexpr SDL_Point RATIOS_FOR_STRETCHED_PIXELS = {4, 3};
 constexpr SDL_Point RATIOS_FOR_SQUARE_PIXELS = {8, 5};
 
+static void update_frame_texture([[maybe_unused]] const uint16_t *changedLines);
+static bool present_frame_texture();
+#if C_OPENGL
+static void update_frame_gl_pbo([[maybe_unused]] const uint16_t *changedLines);
+static void update_frame_gl_fb(const uint16_t *changedLines);
+static bool present_frame_gl();
+#endif
+static void update_frame_surface(const uint16_t *changedLines);
+
 /* Alias for indicating, that new window should not be user-resizable: */
 constexpr bool FIXED_SIZE = false;
 
@@ -568,6 +577,11 @@ check_surface:
 		flags|=GFX_SCALING;
 		flags&=~(GFX_CAN_8|GFX_CAN_15|GFX_CAN_16);
 		break;
+#if defined(USE_TTF)
+	case SCREEN_TTF:
+		flags = GFX_CAN_32 | GFX_SCALING;
+		break;
+#endif
 	default:
 		goto check_surface;
 		break;
@@ -689,7 +703,7 @@ static void log_display_properties(int in_x,
 	        out_x, out_y, out_par);
 }
 
-static SDL_Point get_initial_window_position_or_default(int default_val)
+SDL_Point get_initial_window_position_or_default(int default_val)
 {
 	int x, y;
 	if (sdl.desktop.window.initial_x_pos >= 0 &&
@@ -1458,6 +1472,8 @@ static PPScale calc_pp_scale(const int avw, const int avh)
 	               is_draw_size_doubled(), avw, avh);
 }
 
+void OUTPUT_TTF_Select(int fsize);
+Bitu OUTPUT_TTF_SetSize(int width, int height);
 Bitu GFX_SetSize(int width,
                  int height,
                  const Bitu flags,
@@ -1490,6 +1506,17 @@ Bitu GFX_SetSize(int width,
 	sdl.draw.pixel_aspect = pixel_aspect;
 	sdl.draw.callback = callback;
 	sdl.draw.previous_mode = CurMode->type;
+#if defined(USE_TTF)
+	if (sdl.desktop.want_type==SCREEN_TTF) {
+#if C_OPENGL && defined(MACOSX) && !defined(C_SDL2)
+		sdl.opengl.framebuf = calloc(sdl.draw.width*sdl.draw.height, 4);
+		sdl.desktop.type = SCREEN_OPENGL;
+#else
+		sdl.desktop.type = SCREEN_SURFACE;
+#endif
+		return OUTPUT_TTF_SetSize(width, height);
+	}
+#endif
 
 	const auto wants_vsync = get_vsync_preference().requested != VSYNC_STATE::OFF;
 
@@ -1926,6 +1953,10 @@ dosurface:
 		break; // SCREEN_OPENGL
 	}
 #endif // C_OPENGL
+#if defined(USE_TTF)
+	case SCREEN_TTF:
+		break;
+#endif
 	}
 
 	update_vsync_state();
@@ -2102,6 +2133,10 @@ void GFX_SwitchFullScreen()
 	sdl.desktop.switching_fullscreen = false;
 }
 
+void GFX_SwitchFullscreenNoReset(void) {
+	sdl.desktop.fullscreen=!sdl.desktop.fullscreen;
+}
+
 static void SwitchFullScreen(bool pressed)
 {
 	if (pressed)
@@ -2160,12 +2195,24 @@ bool GFX_StartUpdate(uint8_t * &pixels, int &pitch)
 		pitch = sdl.surface->pitch;
 		sdl.updating = true;
 		return true;
+#if defined(USE_TTF)
+	case SCREEN_TTF:
+		break;
+#endif
 	}
 	return false;
 }
 
 void GFX_EndUpdate(const uint16_t *changedLines)
 {
+#if defined(USE_TTF)
+	if (ttf.inUse) {
+		sdl.updating = false;
+		void GFX_EndTextLines(bool force=false);
+		GFX_EndTextLines();
+		return;
+	}
+#endif
 	sdl.frame.update(changedLines);
 
 	const auto frame_is_new = sdl.update_display_contents && sdl.updating;
@@ -2317,6 +2364,10 @@ Bitu GFX_GetRGB(uint8_t red,uint8_t green,uint8_t blue) {
 #if C_OPENGL
 	case SCREEN_OPENGL:
 		return ((blue << 0) | (green << 8) | (red << 16)) | (255 << 24);
+#endif
+#if defined(USE_TTF)
+	case SCREEN_TTF:
+		break;
 #endif
 	}
 	return 0;
@@ -2571,7 +2622,7 @@ static bool detect_resizable_window()
 #endif // C_OPENGL
 }
 
-static bool wants_stretched_pixels()
+bool wants_stretched_pixels()
 {
 	const auto render_section = static_cast<Section_prop *>(
 	        control->GetSection("render"));
@@ -2877,7 +2928,7 @@ static void setup_window_sizes_from_conf(const char *windowresolution_val,
 {
 	// TODO: Deprecate SURFACE output and remove this.
 	// For now, let the DOS-side determine the window's resolution.
-	if (sdl.desktop.want_type == SCREEN_SURFACE)
+	if (sdl.desktop.want_type == SCREEN_SURFACE || sdl.desktop.want_type == SCREEN_TTF)
 		return;
 
 	// Can the window be resized?
@@ -2994,11 +3045,20 @@ static SDL_Rect calc_viewport_pp(int win_width, int win_height)
 		return calc_viewport_fit(width, height);
 }
 
-static void set_output(Section *sec, bool should_stretch_pixels)
+void set_transparency(const Section_prop * section) {
+	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
+	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
+	SDL_SetWindowOpacity(sdl.window, alpha);
+}
+
+void set_output(Section *sec, bool should_stretch_pixels)
 {
 	// Apply the user's mouse settings
 	const auto section = static_cast<const Section_prop *>(sec);
 	std::string output = section->Get_string("output");
+#if defined(USE_TTF)
+	ttf.inUse = false;
+#endif
 
 	if (output == "surface") {
 		sdl.desktop.want_type = SCREEN_SURFACE;
@@ -3028,6 +3088,12 @@ static void set_output(Section *sec, bool should_stretch_pixels)
 		sdl.desktop.want_type = SCREEN_OPENGL;
 		sdl.scaling_mode = SCALING_MODE::PERFECT;
 		sdl.opengl.bilinear = false;
+#endif
+#if defined(USE_TTF)
+	} else if (output == "ttf") {
+		sdl.desktop.want_type = SCREEN_TTF;
+		sdl.scaling_mode = SCALING_MODE::NONE;
+		OUTPUT_TTF_Select(0);
 #endif
 	} else {
 		LOG_WARNING("SDL: Unsupported output device %s, switching back to surface",
@@ -3182,9 +3248,7 @@ static void set_output(Section *sec, bool should_stretch_pixels)
 	if (!SetDefaultWindowMode())
 		E_Exit("Could not initialize video: %s", SDL_GetError());
 
-	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
-	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
-	SDL_SetWindowOpacity(sdl.window, alpha);
+	set_transparency(section);
 }
 
 //extern void UI_Run(bool);
@@ -3988,6 +4052,9 @@ void Config_Add_SDL() {
 	  "opengl",
 	  "openglnb",
 	  "openglpp",
+#endif
+#if defined(USE_TTF)
+	  "ttf",
 #endif
 	  0 };
 
