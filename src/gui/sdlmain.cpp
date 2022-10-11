@@ -221,15 +221,6 @@ constexpr uint32_t AMASK = 0xff000000;
 #endif
 #endif // !MACOSX
 
-enum MouseControlType {
-	CaptureOnClick = 1 << 0,
-	CaptureOnStart = 1 << 1,
-	Seamless       = 1 << 2,
-	NoMouse        = 1 << 3
-};
-
-enum class SCALING_MODE { NONE, NEAREST, PERFECT };
-
 // Size and ratio constants
 // ------------------------
 constexpr int SMALL_WINDOW_PERCENT = 50;
@@ -284,11 +275,6 @@ static bool isDebuggerEvent(const SDL_Event &event)
 		return event.window.windowID == SDL_GetWindowID(pdc_window);
 	}
 	return false;
-}
-
-SDL_Window *GFX_GetSDLWindow(void)
-{
-	return sdl.window;
 }
 #endif
 
@@ -1330,11 +1316,6 @@ SDL_Window* GFX_GetSDLWindow(void) {
     return sdl.window;
 }
 
-SDL_Window* SetWindow(int width, int height) {
-    sdl.window = SetWindowMode(SCREEN_OPENGL, width, height, false, false);
-    return sdl.window;
-}
-
 bool OpenGL_using(void) {
 #if C_OPENGL
     return (sdl.desktop.want_type==SCREEN_OPENGL?true:false);
@@ -1347,7 +1328,6 @@ static std::string prev_output = "";
 void OpenGL_On() {
     if (OpenGL_using()) {
         prev_output.clear();
-        return;
     }
     Section* tsec = control->GetSection("sdl");
     prev_output = static_cast<Section_prop *>(tsec)->Get_string("output");
@@ -1431,7 +1411,8 @@ SDL_Window* GFX_SetSDLWindowMode(uint16_t width, uint16_t height, SCREEN_TYPES s
         sdl.window = SDL_CreateWindow("",
                                       x>-1?x:pos.x,
                                       y>-1?y:pos.y,
-                                      width, height,
+                                      width,
+                                      height,
                                       flags);
 		if (!sdl.window) {
 			LOG_ERR("SDL: %s", SDL_GetError());
@@ -1451,7 +1432,6 @@ SDL_Window* GFX_SetSDLWindowMode(uint16_t width, uint16_t height, SCREEN_TYPES s
         }
 #endif
         sdl.surface = SDL_GetWindowSurface(sdl.window);
-
 
         return sdl.window;
     }
@@ -3579,13 +3559,6 @@ static void SetPriorityLevels(const std::string_view active_pref,
 	sdl.priority.inactive = to_level(inactive_pref);
 }
 
-void SetTransparency() {
-	Section_prop *section = static_cast<Section_prop *>(control->GetSection("sdl"));
-	const auto transparency = clamp(section->Get_int("transparency"), 0, 90);
-	const auto alpha = static_cast<float>(100 - transparency) / 100.0f;
-	SDL_SetWindowOpacity(sdl.window, alpha);
-}
-
 static void GUI_StartUp(Section *sec)
 {
 	sec->AddDestroyFunction(&GUI_ShutDown);
@@ -3866,12 +3839,14 @@ void GFX_RegenerateWindow(Section *sec) {
 
 static void HandleVideoResize(int width, int height)
 {
+#if C_OPENGL
     if (sdl.desktop.lazy_fullscreen) {
         new_height = height;
         new_width = width;
         voodoo_ogl_update_dimensions();
         return;
     }
+#endif
 
 	/* Maybe a screen rotation has just occurred, so we simply resize.
 	There may be a different cause for a forced resized, though.    */
@@ -4735,6 +4710,12 @@ void GFX_GetSize(int &width, int &height, bool &fullscreen)
 	fullscreen = sdl.desktop.fullscreen;
 }
 
+bool GFX_IsFullScreenSetting()
+{
+	return control->cmdline->FindExist("-fullscreen") ||
+		   static_cast<Section_prop *>(control->GetSection("sdl"))->Get_bool("fullscreen");
+}
+
 extern "C" int SDL_CDROMInit(void);
 int sdl_main(int argc, char *argv[])
 {
@@ -4914,8 +4895,7 @@ int sdl_main(int argc, char *argv[])
 		/* Some extra SDL Functions */
 		Section_prop * sdl_sec=static_cast<Section_prop *>(control->GetSection("sdl"));
 
-		if (control->cmdline->FindExist("-fullscreen") ||
-		    sdl_sec->Get_bool("fullscreen")) {
+		if (GFX_IsFullScreenSetting()) {
 			if(!sdl.desktop.fullscreen) { //only switch if not already in fullscreen
 				GFX_SwitchFullScreen();
 			}

@@ -55,14 +55,6 @@ enum MouseControlType {
 	NoMouse        = 1 << 3
 };
 
-enum SCREEN_TYPES	{
-	SCREEN_SURFACE,
-	SCREEN_TEXTURE,
-#if C_OPENGL
-	SCREEN_OPENGL
-#endif
-};
-
 enum class FRAME_MODE {
 	UNSET,
 	CFR,        // constant frame rate, as defined by the emulated system
