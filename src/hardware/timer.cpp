@@ -29,7 +29,54 @@
 #include "mixer.h"
 #include "setup.h"
 
-const std::chrono::steady_clock::time_point system_start_time = std::chrono::steady_clock::now();
+using namespace std::chrono;
+
+static auto get_interval_since_start()
+{
+	static const auto start = steady_clock::now();
+	return steady_clock::now() - start;
+}
+
+int64_t GetTicks()
+{
+	return duration_cast<milliseconds>(get_interval_since_start()).count();
+}
+
+int64_t GetTicksUs()
+{
+	return duration_cast<microseconds>(get_interval_since_start()).count();
+}
+
+int GetTicksDiff(const int64_t new_ticks, const int64_t old_ticks)
+{
+	assert(new_ticks >= old_ticks);
+	assert((new_ticks - old_ticks) <= std::numeric_limits<int>::max());
+	return static_cast<int>(new_ticks - old_ticks);
+}
+
+int GetTicksSince(const int64_t old_ticks)
+{
+	const auto now = GetTicks();
+	assert((now - old_ticks) <= std::numeric_limits<int>::max());
+	return GetTicksDiff(now, old_ticks);
+}
+
+int GetTicksUsSince(const int64_t old_ticks)
+{
+	const auto now = GetTicksUs();
+	assert((now - old_ticks) <= std::numeric_limits<int>::max());
+	return GetTicksDiff(now, old_ticks);
+}
+
+void Delay(const int ms)
+{
+	std::this_thread::sleep_for(milliseconds(ms));
+}
+
+void DelayUs(const int us)
+{
+	std::this_thread::sleep_for(microseconds(us));
+}
 
 /*
  Bit 4 and 5    Access mode :

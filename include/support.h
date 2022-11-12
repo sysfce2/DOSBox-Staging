@@ -217,9 +217,10 @@ void set_thread_name(std::thread &thread, const char *name);
 constexpr uint8_t DOS_DATE_months[] = {0,  31, 28, 31, 30, 31, 30,
                                        31, 31, 30, 31, 30, 31};
 
-bool is_date_valid(const uint32_t year, const uint32_t month, const uint32_t day);
+bool is_date_valid(const int year, const int month, const int day);
 
-bool is_time_valid(const uint32_t hour, const uint32_t minute, const uint32_t second);
+bool is_time_valid(const int hour, const int minute, const int second,
+                   const int centisecond = 0);
 
 struct FILE_closer {
 	void operator()(FILE *f) noexcept;

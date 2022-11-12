@@ -17,31 +17,30 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "bios.h"
+#include "dosbox.h"
 
+#include <atomic>
+#include <chrono>
+#include <ctime>
+
+#include "bios.h"
 #include "callback.h"
 #include "cpu.h"
-#include "dosbox.h"
-#include "inout.h"
-#include "math_utils.h"
-#include "pic.h"
 #include "hardware.h"
 #include "inout.h"
+#include "inout.h"
 #include "joystick.h"
+#include "math_utils.h"
 #include "mem.h"
 #include "mouse.h"
 #include "pci_bus.h"
 #include "pic.h"
 #include "regs.h"
+#include "pci_bus.h"
+#include "pic.h"
+#include "regs.h"
 #include "serialport.h"
 #include "setup.h"
-#include <time.h>
-
-#if defined(HAVE_CLOCK_GETTIME) && !defined(WIN32)
-// time.h is already included
-#else
-#include <sys/timeb.h>
-#endif
 
 // Reference:
 // - Ralf Brown's Interrupt List
@@ -328,7 +327,7 @@ static Bitu INT1A_Handler(void) {
 	switch (reg_ah) {
 	case 0x00: /* Get System time */
 	{
-		uint32_t ticks = mem_readd(BIOS_TIMER);
+		const auto ticks = BIOS_GetClockTicks();
 		reg_al = mem_readb(BIOS_24_HOURS_FLAG);
 		mem_writeb(BIOS_24_HOURS_FLAG, 0); // reset the "flag"
 		reg_cx = (uint16_t)(ticks >> 16);
@@ -336,7 +335,7 @@ static Bitu INT1A_Handler(void) {
 		break;
 	}
 	case 0x01:	/* Set System time */
-		mem_writed(BIOS_TIMER,(reg_cx<<16)|reg_dx);
+		BIOS_SetClockTicks((reg_cx << 16) | reg_dx);
 		break;
 	case 0x02:	/* GET REAL-TIME CLOCK TIME (AT,XT286,PS) */
 		IO_Write(0x70,0x04);		//Hours
@@ -499,96 +498,157 @@ static Bitu INT11_Handler(void) {
 	reg_ax=mem_readw(BIOS_CONFIGURATION);
 	return CBRET_NONE;
 }
-/* 
- * Define the following define to 1 if you want dosbox to check 
- * the system time every 5 seconds and adjust 1/2 a second to sync them.
- */
-#ifndef DOSBOX_CLOCKSYNC
-#define DOSBOX_CLOCKSYNC 0
-#endif
 
-static void BIOS_HostTimeSync() {
-	uint32_t milli = 0;
-	// TODO investigate if clock_gettime and ftime can be replaced
-	// by using C++11 chrono
-#if defined(HAVE_CLOCK_GETTIME) && !defined(WIN32)
-	struct timespec tp;
-	clock_gettime(CLOCK_REALTIME,&tp);
-
-	struct tm *loctime;
-	loctime = localtime(&tp.tv_sec);
-	milli = (uint32_t) (tp.tv_nsec / 1000000);
-#else
-	/* Setup time and date */
-	struct timeb timebuffer;
-	ftime(&timebuffer);
-
-	struct tm *loctime;
-	loctime = localtime (&timebuffer.time);
-	milli = (uint32_t) timebuffer.millitm;
-#endif
-	/*
-	loctime->tm_hour = 23;
-	loctime->tm_min = 59;
-	loctime->tm_sec = 45;
-	loctime->tm_mday = 28;
-	loctime->tm_mon = 2-1;
-	loctime->tm_year = 2007 - 1900;
-	*/
-
-	dos.date.day=(uint8_t)loctime->tm_mday;
-	dos.date.month=(uint8_t)loctime->tm_mon+1;
-	dos.date.year=(uint16_t)loctime->tm_year+1900;
-
-	uint32_t ticks=(uint32_t)(((double)(
-		loctime->tm_hour*3600*1000+
-		loctime->tm_min*60*1000+
-		loctime->tm_sec*1000+
-		milli))*(((double)PIT_TICK_RATE/65536.0)/1000.0));
-	mem_writed(BIOS_TIMER,ticks);
+uint32_t BIOS_GetClockTicks()
+{
+	return mem_readd(BIOS_TIMER);
 }
 
-static Bitu INT8_Handler(void) {
-	/* Increase the bios tick counter */
-	uint32_t value = mem_readd(BIOS_TIMER) + 1;
-	if(value >= 0x1800B0) {
-		// time wrap at midnight
-		mem_writeb(BIOS_24_HOURS_FLAG,mem_readb(BIOS_24_HOURS_FLAG)+1);
-		value=0;
-	}
+static std::chrono::time_point<std::chrono::system_clock> get_system_clock()
+{
+	return std::chrono::system_clock::now();
+}
 
-#if DOSBOX_CLOCKSYNC
-	static bool check = false;
-	if((value %50)==0) {
-		if(((value %100)==0) && check) {
-			check = false;
-			time_t curtime;struct tm *loctime;
-			curtime = time (NULL);loctime = localtime (&curtime);
-			uint32_t ticksnu = (uint32_t)((loctime->tm_hour * 3600 +
-			                           loctime->tm_min * 60 + loctime->tm_sec) *
-			                          (double)PIT_TICK_RATE / 65536.0);
-			int32_t bios = value;int32_t tn = ticksnu;
-			int32_t diff = tn - bios;
-			if(diff>0) {
-				if(diff < 18) { diff  = 0; } else diff = 9;
-			} else {
-				if(diff > -18) { diff = 0; } else diff = -9;
-			}
-	     
-			value += diff;
-		} else if((value%100)==50) check = true;
-	}
-#endif
-	mem_writed(BIOS_TIMER,value);
+static time_t get_system_time_t()
+{
+	using sys_clock = std::chrono::system_clock;
+	return sys_clock::to_time_t(get_system_clock());
+}
 
-	/* decrement FDD motor timeout counter; roll over on earlier PC, stop at zero on later PC */
-	uint8_t val = mem_readb(BIOS_DISK_MOTOR_TIMEOUT);
-	if (val || !IS_EGAVGA_ARCH) mem_writeb(BIOS_DISK_MOTOR_TIMEOUT,val-1);
-	/* clear FDD motor bits when counter reaches zero */
-	if (val == 1) mem_writeb(BIOS_DRIVE_RUNNING,mem_readb(BIOS_DRIVE_RUNNING) & 0xF0);
+static std::chrono::minutes get_timezone_offset()
+{
+	const auto now = get_system_time_t();
+
+	auto to_nearest_minute = [&](auto tmcall) {
+		const auto *t = tmcall(&now);
+		return 60 * t->tm_hour + t->tm_min;
+	};
+	const auto local_minutes = to_nearest_minute(localtime);
+	const auto utc_minutes   = to_nearest_minute(gmtime);
+	const auto offset        = local_minutes - utc_minutes;
+	return std::chrono::minutes(offset);
+}
+
+// The PC clock ticks at 18.2 Hz, which comes from the 315 Mhz
+// oscillator being divided down by:
+// 1. The NTSC Sub Carrier /22 divider, and
+// 2. The NTSC Color Burst /4 divider, and
+// 3. The PIT /3 divider, and
+// 4. The clock tick /65536 divider
+// Ref: https://en.wikipedia.org/wiki/Crystal_oscillator_frequencies
+constexpr auto pc_315_mhz_oscillator = 315'000'000;
+constexpr auto pc_clock_tick_divider = 22 * 4 * 3 * 65536;
+using clock_ticks =
+        std::chrono::duration<int, std::ratio<pc_clock_tick_divider, pc_315_mhz_oscillator>>;
+
+static int get_host_ticks()
+{
+	static const auto timezone_offset = get_timezone_offset();
+
+	const auto now = get_system_clock() + timezone_offset;
+
+	const auto since_epoch = now.time_since_epoch();
+
+	using namespace std::chrono;
+	constexpr auto seconds_per_day = 60 * 60 * 24;
+	using days = duration<int, std::ratio<seconds_per_day>>;
+	auto today = since_epoch - floor<days>(since_epoch);
+	return duration_cast<clock_ticks>(today).count();
+}
+
+bool BIOS_SetDate(const int year, const int month, const int day)
+{
+	if (!is_date_valid(year, month, day))
+		return false;
+
+	dos.date.day   = static_cast<uint8_t>(day);
+	dos.date.month = static_cast<uint8_t>(month);
+	dos.date.year  = static_cast<uint16_t>(year);
+	return true;
+}
+
+void BIOS_SetDateToHost()
+{
+	// Convert the system time to local time
+	const auto stime = get_system_time_t();
+	const auto ltime = *localtime(&stime);
+
+	// Extract the year, month, and day
+	const auto year  = ltime.tm_year + 1900; // tm_year is 1900-based
+	const auto month = ltime.tm_mon + 1;     // tm_mon is 0-based
+	const auto day   = ltime.tm_mday;
+
+	[[maybe_unused]] const auto was_set = BIOS_SetDate(year, month, day);
+	assert(was_set == true);
+}
+
+bool BIOS_SetTime(const int hour, const int minute, const int second,
+                  const int centisecond)
+{
+	if (!is_time_valid(hour, minute, second, centisecond))
+		return false;
+
+	using namespace std::chrono;
+	using centiseconds = duration<int, std::ratio<1, 100>>;
+
+	const auto hms = hours(hour) + minutes(minute) + seconds(second) +
+	                 centiseconds(centisecond);
+
+	const auto ticks = duration_cast<clock_ticks>(hms).count();
+	BIOS_SetClockTicks(ticks);
+	return true;
+}
+
+void BIOS_SetTimeToHost()
+{
+	BIOS_SetClockTicks(get_host_ticks());
+}
+
+// Decrement FDD motor timeout counter
+static void decrement_fdd_motor_timeout()
+{
+	const auto val = mem_readb(BIOS_DISK_MOTOR_TIMEOUT);
+
+	// roll over on earlier PC, stop at zero on later PC
+	if (val || !IS_EGAVGA_ARCH)
+		mem_writeb(BIOS_DISK_MOTOR_TIMEOUT, val - 1);
+
+	// clear FDD motor bits when counter reaches zero
+	if (val == 1)
+		mem_writeb(BIOS_DRIVE_RUNNING, mem_readb(BIOS_DRIVE_RUNNING) & 0xF0);
+}
+
+static int datum_ticks         = 0;
+static int host_ticks_at_datum = 0;
+void BIOS_SetClockTicks(const int ticks)
+{
+	datum_ticks         = ticks;
+	host_ticks_at_datum = get_host_ticks();
+	mem_writed(BIOS_TIMER, ticks);
+}
+
+static Bitu INT8_Handler()
+{
+	const auto elapsed_host_ticks = get_host_ticks() - host_ticks_at_datum;
+
+	const auto previous_ticks = BIOS_GetClockTicks();
+	const auto current_ticks  = datum_ticks + elapsed_host_ticks;
+
+	const auto elapsed = current_ticks - static_cast<int>(previous_ticks);
+
+	// Did we pass into the morning during the last tick?
+	if (elapsed < 0) {
+		mem_writeb(BIOS_24_HOURS_FLAG, mem_readb(BIOS_24_HOURS_FLAG) + 1);
+	}
+	// Did we lose some time?
+	if (elapsed > 1) {
+		LOG_WARNING("CLOCK: Absent for %d ticks", elapsed - 1);
+	}
+	mem_writed(BIOS_TIMER, current_ticks);
+
+	decrement_fdd_motor_timeout();
 	return CBRET_NONE;
 }
-#undef DOSBOX_CLOCKSYNC
 
 static Bitu INT1C_Handler(void) {
 	return CBRET_NONE;
@@ -1180,8 +1240,6 @@ public:
 		//	pop dx,ax,ds
 		//	iret
 
-		mem_writed(BIOS_TIMER,0);			//Calculate the correct time
-
 		/* INT 11 Get equipment list */
 		callback[1].Install(&INT11_Handler,CB_IRET,"Int 11 Equipment");
 		callback[1].Set_RealVec(0x11);
@@ -1441,7 +1499,9 @@ public:
 		size_extended=IO_Read(0x71);
 		IO_Write(0x70,0x31);
 		size_extended|=(IO_Read(0x71) << 8);
-		BIOS_HostTimeSync();
+
+		BIOS_SetClockTicks(get_host_ticks());
+		BIOS_SetDateToHost();
 	}
 	~BIOS(){
 		/* abort DAC playing */

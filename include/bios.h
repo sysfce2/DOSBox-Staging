@@ -123,6 +123,17 @@ constexpr uint8_t MAX_SCAN_CODE = 115;
 
 //#define MAX_SWAPPABLE_DISKS 20
 
+bool BIOS_SetDate(const int year, const int month, const int day);
+void BIOS_SetDateToHost();
+
+bool BIOS_SetTime(const int hour, const int minute, const int second,
+                  const int centisecond = 0);
+void BIOS_SetTimeToHost();
+
+// Set or get the DOS clock in terms of PIT ticks
+void BIOS_SetClockTicks(const int ticks);
+uint32_t BIOS_GetClockTicks();
+
 void BIOS_ZeroExtendedSize(bool in);
 void char_out(uint8_t chr,uint32_t att,uint8_t page);
 void INT10_StartUp(void);

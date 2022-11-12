@@ -1765,49 +1765,50 @@ void DOS_Shell::CMD_DATE(char *args)
 		return;
 	}
 	if (ScanCMDBool(args, "H")) {
-		// synchronize date with host
-		const time_t curtime = time(nullptr);
-		struct tm datetime;
-		cross::localtime_r(&curtime, &datetime);
-		reg_ah = 0x2b; // set system date
-		reg_cx = static_cast<uint16_t>(datetime.tm_year + 1900);
-		reg_dh = static_cast<uint8_t>(datetime.tm_mon + 1);
-		reg_dl = static_cast<uint8_t>(datetime.tm_mday);
-		CALLBACK_RunRealInt(0x21);
+		BIOS_SetDateToHost();
 		return;
 	}
 	// check if a date was passed in command line
-	uint32_t newday, newmonth, newyear;
-	char date_separator_placeholder_1, date_separator_placeholder_2;
-	int n;
+	int newday   = 0;
+	int newmonth = 0;
+	int newyear  = 0;
+
+	char date_separator_placeholder_1 = ' ';
+	char date_separator_placeholder_2 = ' ';
+
+	int n = 0;
 	switch (date_format) {
 	case 1:
-		n = sscanf(args, "%u%c%u%c%u", &newday, &date_separator_placeholder_1,
-		           &newmonth, &date_separator_placeholder_2, &newyear);
+		n = sscanf(args,
+		           "%d%c%d%c%d",
+		           &newday,
+		           &date_separator_placeholder_1,
+		           &newmonth,
+		           &date_separator_placeholder_2,
+		           &newyear);
 		break;
 	case 2:
-		n = sscanf(args, "%u%c%u%c%u", &newyear, &date_separator_placeholder_1,
-		           &newmonth, &date_separator_placeholder_2, &newday);
+		n = sscanf(args,
+		           "%d%c%d%c%d",
+		           &newyear,
+		           &date_separator_placeholder_1,
+		           &newmonth,
+		           &date_separator_placeholder_2,
+		           &newday);
 		break;
 	default:
-		n = sscanf(args, "%u%c%u%c%u", &newmonth,
-		           &date_separator_placeholder_1, &newday,
-		           &date_separator_placeholder_2, &newyear);
+		n = sscanf(args,
+		           "%d%c%d%c%d",
+		           &newmonth,
+		           &date_separator_placeholder_1,
+		           &newday,
+		           &date_separator_placeholder_2,
+		           &newyear);
 	}
 	if (n == 5 && date_separator_placeholder_1 == date_separator &&
 	    date_separator_placeholder_2 == date_separator) {
-		if (!is_date_valid(newyear, newmonth, newday))
+		if (!BIOS_SetDate(newyear, newmonth, newday)) {
 			WriteOut(MSG_Get("SHELL_CMD_DATE_ERROR"));
-		else {
-			reg_cx = static_cast<uint16_t>(newyear);
-			reg_dh = static_cast<uint8_t>(newmonth);
-			reg_dl = static_cast<uint8_t>(newday);
-
-			reg_ah = 0x2b; // set system date
-			CALLBACK_RunRealInt(0x21);
-			if (reg_al == 0xff) {
-				WriteOut(MSG_Get("SHELL_CMD_DATE_ERROR"));
-			}
 		}
 		return;
 	}
@@ -1850,44 +1851,38 @@ void DOS_Shell::CMD_TIME(char * args) {
 		return;
 	}
 	if (ScanCMDBool(args, "H")) {
-		// synchronize time with host
-		const time_t curtime = time(NULL);
-		struct tm datetime;
-		cross::localtime_r(&curtime, &datetime);
-		reg_ah = 0x2d; // set system time
-		reg_ch = static_cast<uint8_t>(datetime.tm_hour);
-		reg_cl = static_cast<uint8_t>(datetime.tm_min);
-		reg_dh = static_cast<uint8_t>(datetime.tm_sec);
-		CALLBACK_RunRealInt(0x21);
+		BIOS_SetTimeToHost();
 		return;
 	}
-	uint32_t newhour, newminute, newsecond;
-	char time_separator_placeholder_1, time_separator_placeholder_2;
-	if (sscanf(args, "%u%c%u%c%u", &newhour, &time_separator_placeholder_1,
-	           &newminute, &time_separator_placeholder_2, &newsecond) == 5 &&
+	int newhour   = 0;
+	int newminute = 0;
+	int newsecond = 0;
+
+	char time_separator_placeholder_1 = ' ';
+	char time_separator_placeholder_2 = ' ';
+	if (sscanf(args,
+	           "%d%c%d%c%d",
+	           &newhour,
+	           &time_separator_placeholder_1,
+	           &newminute,
+	           &time_separator_placeholder_2,
+	           &newsecond) == 5 &&
 	    time_separator_placeholder_1 == time_separator &&
 	    time_separator_placeholder_2 == time_separator) {
-		if (!is_time_valid(newhour, newminute, newsecond))
+		if (!BIOS_SetTime(newhour, newminute, newsecond)) {
 			WriteOut(MSG_Get("SHELL_CMD_TIME_ERROR"));
-		else {
-			reg_ch = static_cast<uint8_t>(newhour);
-			reg_cl = static_cast<uint8_t>(newminute);
-			reg_dh = static_cast<uint8_t>(newsecond);
-
-			reg_ah = 0x2d; // set system time
-			CALLBACK_RunRealInt(0x21);
-			if (reg_al == 0xff) {
-				WriteOut(MSG_Get("SHELL_CMD_TIME_ERROR"));
-			}
 		}
 		return;
 	}
 	bool timeonly = ScanCMDBool(args, "T");
 
 	reg_ah = 0x2c; // get system time
+
+	LOG_MSG("get system time");
+
 	CALLBACK_RunRealInt(0x21);
 	/*
-	                reg_dl= // 1/100 seconds
+	                reg_dl= // 1/100 seconds (centiseconds)
 	                reg_dh= // seconds
 	                reg_cl= // minutes
 	                reg_ch= // hours

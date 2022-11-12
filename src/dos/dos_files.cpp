@@ -1284,7 +1284,7 @@ uint8_t DOS_FCBIncreaseSize(uint16_t seg,uint16_t offset) {
 	if (pos+towrite>size) size=pos+towrite;
 	//time doesn't keep track of endofday
 	date = DOS_PackDate(dos.date.year,dos.date.month,dos.date.day);
-	uint32_t ticks = mem_readd(BIOS_TIMER);
+	uint32_t ticks = BIOS_GetClockTicks();
 	uint32_t seconds = (ticks*10)/182;
 	uint16_t hour = (uint16_t)(seconds/3600);
 	uint16_t min = (uint16_t)((seconds % 3600)/60);

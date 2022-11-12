@@ -321,9 +321,9 @@ void GFX_SetTitle(const int32_t new_num_cycles, const bool is_paused = false)
 	char title_buf[200] = {0};
 
 #if !defined(NDEBUG)
-	#define APP_NAME_STR "DOSBox Staging (debug build)"
+#	define APP_NAME_STR "DOSBox Staging (debug build)"
 #else
-	#define APP_NAME_STR "DOSBox Staging"
+#	define APP_NAME_STR "DOSBox Staging"
 #endif
 
 	auto &num_cycles      = sdl.title_bar.num_cycles;
@@ -336,17 +336,25 @@ void GFX_SetTitle(const int32_t new_num_cycles, const bool is_paused = false)
 
 	if (cycles_ms_str.empty()) {
 		cycles_ms_str   = MSG_GetRaw("TITLEBAR_CYCLES_MS");
-		hint_paused_str = std::string(" ") + MSG_GetRaw("TITLEBAR_HINT_PAUSED");
+		hint_paused_str = std::string(" ") +
+		                  MSG_GetRaw("TITLEBAR_HINT_PAUSED");
 	}
 
 	if (CPU_CycleAutoAdjust)
-		safe_sprintf(title_buf, "%8s - max %d%% - " APP_NAME_STR "%s",
-		             RunningProgram, num_cycles,
-		             is_paused ? hint_paused_str.c_str() : hint_mouse_str.c_str());
+		safe_sprintf(title_buf,
+		             "%8s - max %d%% - " APP_NAME_STR "%s",
+		             RunningProgram,
+		             num_cycles,
+		             is_paused ? hint_paused_str.c_str()
+		                       : hint_mouse_str.c_str());
 	else
-		safe_sprintf(title_buf, "%8s - %d %s - " APP_NAME_STR "%s",
-		             RunningProgram, num_cycles, cycles_ms_str.c_str(),
-		             is_paused ? hint_paused_str.c_str() : hint_mouse_str.c_str());
+		safe_sprintf(title_buf,
+		             "%8s - %d %s - " APP_NAME_STR "%s",
+		             RunningProgram,
+		             num_cycles,
+		             cycles_ms_str.c_str(),
+		             is_paused ? hint_paused_str.c_str()
+		                       : hint_mouse_str.c_str());
 
 	SDL_SetWindowTitle(sdl.window, title_buf);
 }
@@ -2342,17 +2350,13 @@ void GFX_SetMouseHint(const MouseHint hint_id)
 	auto create_hint_str = [](const char *requested_name) {
 		char hint_buffer[200] = {0};
 
-		safe_sprintf(hint_buffer,
-		             MSG_GetRaw(requested_name),
-		             PRIMARY_MOD_NAME);
+		safe_sprintf(hint_buffer, MSG_GetRaw(requested_name), PRIMARY_MOD_NAME);
 		return prexix + hint_buffer;
 	};
 
 	auto &hint_str = sdl.title_bar.hint_mouse_str;
 	switch (hint_id) {
-	case MouseHint::None:
-		hint_str.clear();
-		break;
+	case MouseHint::None: hint_str.clear(); break;
 	case MouseHint::NoMouse:
 		hint_str = prexix + MSG_GetRaw("TITLEBAR_HINT_NOMOUSE");
 		break;
@@ -4387,27 +4391,25 @@ static std::vector<std::string> Get_SDL_TextureRenderers()
 
 static void messages_add_sdl()
 {
-	MSG_Add("TITLEBAR_CYCLES_MS",    "cycles/ms");
-	MSG_Add("TITLEBAR_HINT_PAUSED",  "(PAUSED)");
+	MSG_Add("TITLEBAR_CYCLES_MS", "cycles/ms");
+	MSG_Add("TITLEBAR_HINT_PAUSED", "(PAUSED)");
 	MSG_Add("TITLEBAR_HINT_NOMOUSE", "no-mouse mode");
-	MSG_Add("TITLEBAR_HINT_CAPTURED_HOTKEY",
-	        "mouse captured, %s+F10 to release");
+	MSG_Add("TITLEBAR_HINT_CAPTURED_HOTKEY", "mouse captured, %s+F10 to release");
 	MSG_Add("TITLEBAR_HINT_CAPTURED_HOTKEY_MIDDLE",
 	        "mouse captured, %s+F10 or middle-click to release");
-	MSG_Add("TITLEBAR_HINT_RELEASED_HOTKEY",
-	        "to capture the mouse press %s+F10");
+	MSG_Add("TITLEBAR_HINT_RELEASED_HOTKEY", "to capture the mouse press %s+F10");
 	MSG_Add("TITLEBAR_HINT_RELEASED_HOTKEY_MIDDLE",
 	        "to capture the mouse press %s+F10 or middle-click");
 	MSG_Add("TITLEBAR_HINT_RELEASED_HOTKEY_ANY_BUTTON",
 	        "to capture the mouse press %s+F10 or click any button");
-	MSG_Add("TITLEBAR_HINT_SEAMLESS_HOTKEY",
-	        "seamless mouse, %s+F10 to capture");
+	MSG_Add("TITLEBAR_HINT_SEAMLESS_HOTKEY", "seamless mouse, %s+F10 to capture");
 	MSG_Add("TITLEBAR_HINT_SEAMLESS_HOTKEY_MIDDLE",
 	        "seamless mouse, %s+F10 or middle-click to capture");
 }
 
-void config_add_sdl() {
-	Section_prop *sdl_sec=control->AddSection_prop("sdl", &GUI_StartUp);
+void config_add_sdl()
+{
+	Section_prop *sdl_sec = control->AddSection_prop("sdl", &GUI_StartUp);
 	sdl_sec->AddInitFunction(&MAPPER_StartUp);
 	Prop_bool *Pbool; // use pbool for new properties
 	Prop_bool *pbool;

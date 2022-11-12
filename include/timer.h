@@ -103,51 +103,13 @@ void TIMER_DelTickHandler(TIMER_TickHandler handler);
 /* This will add 1 milliscond to all timers */
 void TIMER_AddTick(void);
 
-extern const std::chrono::steady_clock::time_point system_start_time;
-
-static inline int64_t GetTicks()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-	               std::chrono::steady_clock::now() - system_start_time)
-	        .count();
-}
-
-static inline int64_t GetTicksUs()
-{
-	return std::chrono::duration_cast<std::chrono::microseconds>(
-	               std::chrono::steady_clock::now() - system_start_time)
-	        .count();
-}
-
-static inline int GetTicksDiff(const int64_t new_ticks, const int64_t old_ticks)
-{
-	assert(new_ticks >= old_ticks);
-	assert((new_ticks - old_ticks) <= std::numeric_limits<int>::max());
-	return static_cast<int>(new_ticks - old_ticks);
-}
-
-static inline int GetTicksSince(const int64_t old_ticks)
-{
-	const auto now = GetTicks();
-	assert((now - old_ticks) <= std::numeric_limits<int>::max());
-	return GetTicksDiff(now, old_ticks);
-}
-
-static inline int GetTicksUsSince(const int64_t old_ticks)
-{
-	const auto now = GetTicksUs();
-	assert((now - old_ticks) <= std::numeric_limits<int>::max());
-	return GetTicksDiff(now, old_ticks);
-}
-
-static inline void Delay(const int milliseconds)
-{
-	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-}
-
-static inline void DelayUs(const int microseconds)
-{
-	std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
-}
+// Returns intervals in millisecond or microsecond since start
+int64_t GetTicks();
+int64_t GetTicksUs();
+int GetTicksDiff(const int64_t new_ticks, const int64_t old_ticks);
+int GetTicksSince(const int64_t old_ticks);
+int GetTicksUsSince(const int64_t old_ticks);
+void Delay(const int milliseconds);
+void DelayUs(const int microseconds);
 
 #endif

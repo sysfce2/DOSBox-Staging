@@ -586,22 +586,24 @@ bool make_readonly(const std_fs::path &p)
 	return (!ec);
 }
 
-bool is_date_valid(const uint32_t year, const uint32_t month, const uint32_t day)
+bool is_date_valid(const int year, const int month, const int day)
 {
-	if (year < 1980 || month > 12 || month == 0 || day == 0)
+	if (year < 1980 || month <= 0 || month > 12 || day <= 0)
 		return false;
 	// February has 29 days on leap-years and 28 days otherwise.
 	const bool is_leap_year = !(year % 4) && (!(year % 400) || (year % 100));
-	if (month == 2 && day > (uint32_t)(is_leap_year ? 29 : DOS_DATE_months[month]))
+	if (month == 2 && day > (is_leap_year ? 29 : DOS_DATE_months[month]))
 		return false;
 	if (month != 2 && day > DOS_DATE_months[month])
 		return false;
 	return true;
 }
 
-bool is_time_valid(const uint32_t hour, const uint32_t minute, const uint32_t second)
+bool is_time_valid(const int hour, const int minute, const int second,
+                   const int centisecond)
 {
-	if (hour > 23 || minute > 59 || second > 59)
+	if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 ||
+	    second > 59 || centisecond < 0 || centisecond > 99)
 		return false;
 	return true;
 }

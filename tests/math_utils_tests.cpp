@@ -324,4 +324,281 @@ TEST(clamp_to_int32, unsigned_literals)
 	EXPECT_EQ(clamp_to_int32(10'000'000'000u), INT32_MAX);
 }
 
+TEST(in_range, value_in_bounds)
+{
+	// small positive and negative bounds
+	auto result = in_range<-1, 0>(-1);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1, 0>(0);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1, 1>(0);
+	EXPECT_TRUE(result);
+
+	result = in_range<0, 1>(0);
+	EXPECT_TRUE(result);
+
+	result = in_range<0, 1>(1);
+	EXPECT_TRUE(result);
+
+	// large positive and negative bounds
+	result = in_range<-1'000'000'000, 1'000'000'000>(-999'999'999);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1'000'000'000, 1'000'000'000>(0);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1'000'000'000, 1'000'000'000>(999'999'999);
+	EXPECT_TRUE(result);
+
+	// positive-only bounds
+	result = in_range<1, 2>(1);
+	EXPECT_TRUE(result);
+
+	result = in_range<1, 2>(2);
+	EXPECT_TRUE(result);
+
+	result = in_range<1, 3>(2);
+	EXPECT_TRUE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(999'000'000);
+	EXPECT_TRUE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(999'500'000);
+	EXPECT_TRUE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(1'000'000'000);
+	EXPECT_TRUE(result);
+
+	// negative-only bounds
+	result = in_range<-2, -1>(-2);
+	EXPECT_TRUE(result);
+
+	result = in_range<-3, -1>(-2);
+	EXPECT_TRUE(result);
+
+	result = in_range<-2, -1>(-1);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-1'000'000'000);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-999'500'000);
+	EXPECT_TRUE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-999'000'000);
+	EXPECT_TRUE(result);
+}
+
+TEST(in_range, value_out_of_bounds)
+{
+	// small positive and negative bounds
+	auto result = in_range<-1, 1>(-2);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1, 0>(1);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1, 1>(2);
+	EXPECT_FALSE(result);
+
+	// large positive and negative bounds
+	result = in_range<-1'000'000'000, 1'000'000'000>(-1'000'000'001);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1'000'000'000, 1'000'000'000>(1'000'000'001);
+	EXPECT_FALSE(result);
+
+	// positive-only bounds
+	result = in_range<1, 3>(0);
+	EXPECT_FALSE(result);
+
+	result = in_range<1, 2>(3);
+	EXPECT_FALSE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(998'999'999);
+	EXPECT_FALSE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(-1'000'000'000);
+	EXPECT_FALSE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(1'000'000'001);
+	EXPECT_FALSE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(INT32_MAX);
+	EXPECT_FALSE(result);
+
+	result = in_range<999'000'000, 1'000'000'000>(INT32_MIN);
+	EXPECT_FALSE(result);
+
+	// negative-only bounds
+	result = in_range<-3, -1>(-4);
+	EXPECT_FALSE(result);
+
+	result = in_range<-2, -1>(-3);
+	EXPECT_FALSE(result);
+
+	result = in_range<-2, -1>(0);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-1'000'000'001);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-998'999'999);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(INT32_MAX);
+	EXPECT_FALSE(result);
+
+	result = in_range<-1'000'000'000, -999'000'000>(-INT32_MAX);
+	EXPECT_FALSE(result);
+}
+
+TEST(in_range, small_types_value_in_bounds)
+{
+	// small positive and negative bounds
+	auto result = in_range<-1, 1>(static_cast<uint8_t>(0u));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1, 0>(static_cast<uint8_t>(0u));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1, 1>(static_cast<int8_t>(1));
+	EXPECT_TRUE(result);
+
+	// large positive and negative bounds
+	result = in_range<-1000, 1000>(static_cast<int16_t>(-1000));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1000, 1000>(static_cast<uint16_t>(0));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1000, 1000>(static_cast<uint16_t>(1000));
+	EXPECT_TRUE(result);
+
+	// positive-only bounds
+	result = in_range<1, 3>(static_cast<uint8_t>(1u));
+	EXPECT_TRUE(result);
+
+	result = in_range<1, 2>(static_cast<uint8_t>(2u));
+	EXPECT_TRUE(result);
+
+	result = in_range<999, 1000>(static_cast<uint16_t>(999u));
+	EXPECT_TRUE(result);
+
+	result = in_range<0, 1000>(static_cast<int16_t>(500));
+	EXPECT_TRUE(result);
+
+	result = in_range<999, 1000>(static_cast<uint16_t>(1000u));
+	EXPECT_TRUE(result);
+
+	result = in_range<20000, 40000>(static_cast<int16_t>(INT16_MAX));
+	EXPECT_TRUE(result);
+
+	result = in_range<60000, 80000>(static_cast<uint16_t>(UINT16_MAX));
+	EXPECT_TRUE(result);
+
+	result = in_range<0, INT16_MAX>(static_cast<int16_t>(0));
+	EXPECT_TRUE(result);
+
+	result = in_range<0, INT16_MAX>(static_cast<int16_t>(INT16_MAX / 2));
+	EXPECT_TRUE(result);
+
+	result = in_range<0, INT16_MAX>(static_cast<int16_t>(INT16_MAX));
+	EXPECT_TRUE(result);
+
+	// negative-only bounds
+	result = in_range<-3, -1>(static_cast<int8_t>(-2));
+	EXPECT_TRUE(result);
+
+	result = in_range<-2, -1>(static_cast<int8_t>(-2));
+	EXPECT_TRUE(result);
+
+	result = in_range<-2, -1>(static_cast<int8_t>(-1));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1000, -999>(static_cast<int16_t>(-1000));
+	EXPECT_TRUE(result);
+
+	result = in_range<-1000, -999>(static_cast<int16_t>(-999));
+	EXPECT_TRUE(result);
+
+	result = in_range<-40000, -20000>(static_cast<int16_t>(INT16_MIN));
+	EXPECT_TRUE(result);
+
+	result = in_range<INT16_MIN, 0>(static_cast<int16_t>(INT16_MIN));
+	EXPECT_TRUE(result);
+
+	result = in_range<INT16_MIN, 0>(static_cast<int16_t>(INT16_MIN / 2));
+	EXPECT_TRUE(result);
+
+	result = in_range<INT16_MIN, 0>(static_cast<int16_t>(0));
+	EXPECT_TRUE(result);
+}
+
+TEST(in_range, small_types_value_out_of_bounds)
+{
+	// small positive and negative bounds
+	auto result = in_range<-1, 1>(static_cast<uint8_t>(2u));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1, 0>(static_cast<uint8_t>(1u));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1, 1>(static_cast<uint8_t>(2u));
+	EXPECT_FALSE(result);
+
+	// large positive and negative bounds
+	result = in_range<-1000, 1000>(static_cast<int16_t>(-1001));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1000, 1000>(static_cast<uint16_t>(1001));
+	EXPECT_FALSE(result);
+
+	// positive-only bounds
+	result = in_range<1, 3>(static_cast<uint8_t>(0));
+	EXPECT_FALSE(result);
+
+	result = in_range<1, 2>(static_cast<uint8_t>(3));
+	EXPECT_FALSE(result);
+
+	result = in_range<999, 1000>(static_cast<uint16_t>(998));
+	EXPECT_FALSE(result);
+
+	result = in_range<999, 1000>(static_cast<int16_t>(-1000));
+	EXPECT_FALSE(result);
+
+	result = in_range<999, 1000>(static_cast<uint16_t>(1001));
+	EXPECT_FALSE(result);
+
+	result = in_range<999, 1000>(static_cast<int16_t>(INT16_MIN));
+	EXPECT_FALSE(result);
+
+	result = in_range<999, 1000>(static_cast<int16_t>(INT16_MAX));
+	EXPECT_FALSE(result);
+
+	// negative-only bounds
+	result = in_range<-3, -1>(static_cast<int8_t>(-4));
+	EXPECT_FALSE(result);
+
+	result = in_range<-2, -1>(static_cast<int8_t>(-3));
+	EXPECT_FALSE(result);
+
+	result = in_range<-2, -1>(static_cast<uint8_t>(0));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1000, -999>(static_cast<int16_t>(-1001));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1000, -999>(static_cast<int16_t>(-998));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1000, -999>(static_cast<int16_t>(INT16_MIN));
+	EXPECT_FALSE(result);
+
+	result = in_range<-1000, -999>(-static_cast<int16_t>(INT16_MAX));
+	EXPECT_FALSE(result);
+}
+
 } // namespace

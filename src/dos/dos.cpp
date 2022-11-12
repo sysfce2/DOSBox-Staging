@@ -587,63 +587,57 @@ static Bitu DOS_21Handler(void) {
 			reg_dl=dos.date.day;
 		}
 		break;
-	case 0x2b:		/* Set System Date */
-		if (!is_date_valid(reg_cx, reg_dh, reg_dl)) {
-			reg_al = 0xff;
-			break;
-		}
-		dos.date.year=reg_cx;
-		dos.date.month=reg_dh;
-		dos.date.day=reg_dl;
-		reg_al=0;
-		break;
-	case 0x2c: {	/* Get System Time */
-		reg_ax=0; // get time
-		CALLBACK_RunRealInt(0x1a);
-		if(reg_al) DOS_AddDays(reg_al);
-		reg_ah=0x2c;
+	        case 0x2b: // Set System Date
+		        // reg_cx is the year(s)
+		        // reg_dh is the month(s)
+		        // reg_dl is the day(s)
+		        // reg_al should be 0 on success, 0xff on failure
+		        reg_al = BIOS_SetDate(reg_cx, reg_dh, reg_dl) ? 0x00 : 0xff;
+		        break;
+	        case 0x2c: {        /* Get System Time */
+		        reg_ax = 0; // get time
+		        CALLBACK_RunRealInt(0x1a);
+		        if (reg_al)
+			DOS_AddDays(reg_al);
+		        reg_ah = 0x2c;
 
-		Bitu ticks=((Bitu)reg_cx<<16)|reg_dx;
-		if(time_start<=ticks) ticks-=time_start;
-		Bitu time=(Bitu)((100.0/((double)PIT_TICK_RATE/65536.0)) * (double)ticks);
+		        Bitu ticks = ((Bitu)reg_cx << 16) | reg_dx;
+		        if (time_start <= ticks)
+			ticks -= time_start;
+		        Bitu time = (Bitu)((100.0 / ((double)PIT_TICK_RATE / 65536.0)) *
+		                           (double)ticks);
 
-		reg_dl=(uint8_t)((Bitu)time % 100); // 1/100 seconds
-		time/=100;
-		reg_dh=(uint8_t)((Bitu)time % 60); // seconds
-		time/=60;
-		reg_cl=(uint8_t)((Bitu)time % 60); // minutes
-		time/=60;
-		reg_ch=(uint8_t)((Bitu)time % 24); // hours
+		        reg_dl = (uint8_t)((Bitu)time % 100); // 1/100 seconds
+		        time /= 100;
+		        reg_dh = (uint8_t)((Bitu)time % 60); // seconds
+		        time /= 60;
+		        reg_cl = (uint8_t)((Bitu)time % 60); // minutes
+		        time /= 60;
+		        reg_ch = (uint8_t)((Bitu)time % 24); // hours
 
-		//Simulate DOS overhead for timing-sensitive games
-        //Robomaze 2
-		overhead();
-		break;
-	}
+		        // Simulate DOS overhead for timing-sensitive games
+		        // Robomaze 2
+		        overhead();
+		        break;
+	        }
 	case 0x2d:		/* Set System Time */
-		if (!is_time_valid(reg_ch, reg_cl, reg_dh) || reg_dl > 99)
-			reg_al = 0xff;
-		else { //Allow time to be set to zero. Restore the orginal time for all other parameters. (QuickBasic)
-			if (reg_cx == 0 && reg_dx == 0) {time_start = mem_readd(BIOS_TIMER);LOG_MSG("Warning: game messes with DOS time!");}
-			else time_start = 0;
-			// Original IBM PC used ~1.19MHz crystal for timer,
-			// because at 1.19MHz, 2^16 ticks is ~1 hour, making it
-			// easy to count hours and days. More precisely:
-			//
-			// clock updates at 1193180/65536 ticks per second.
-			// ticks per second ??? 18.2
-			// ticks per hour   ??? 65543
-			// ticks per day    ??? 1573040
-			constexpr uint64_t ticks_per_day = 1573040;
-			const auto seconds = reg_ch * 3600 + reg_cl * 60 + reg_dh;
-			const auto ticks = ticks_per_day * seconds / (24 * 3600);
-			mem_writed(BIOS_TIMER, check_cast<uint32_t>(ticks));
-			reg_al = 0;
-		}
-		break;
-	case 0x2e:		/* Set Verify flag */
-		dos.verify=(reg_al==1);
-		break;
+		        // Allow time to be set to zero. Restore the orginal
+		        // time for all other parameters. (QuickBasic)
+		        if (reg_cx == 0 && reg_dx == 0) {
+			time_start = BIOS_GetClockTicks();
+			LOG_WARNING("Warning: game messes with DOS time!");
+		        } else {
+			time_start = 0;
+		        }
+		        // reg_ch is the hour(s)
+		        // reg_cl is the minute(s)
+		        // reg_dh is the second(s)
+		        // reg_al should be 0 on success, 0xff on failure
+		        reg_al = BIOS_SetTime(reg_ch, reg_cl, reg_dh, reg_dl)
+		                       ? 0x00
+		                       : 0xff;
+		        break;
+	case 0x2e: /* Set Verify flag */ dos.verify = (reg_al == 1); break;
 	case 0x2f:		/* Get Disk Transfer Area */
 		SegSet16(es,RealSeg(dos.dta()));
 		reg_bx=RealOff(dos.dta());

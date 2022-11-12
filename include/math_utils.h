@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <type_traits>
 
 #include "support.h"
 
@@ -85,6 +86,28 @@ inline int iroundf(const float x)
 	assert(x >= static_cast<float>((std::numeric_limits<int>::min)()));
 	assert(x <= static_cast<float>((std::numeric_limits<int>::max)()));
 	return static_cast<int>(roundf(x));
+}
+
+// Is the value within the lower and upper bounds, inclusively?
+template <int lower, int upper, typename T>
+constexpr bool in_range(const T val)
+{
+	// compile-time checks
+	static_assert(sizeof(T) <= sizeof(int), "T needs to be <= (u)int");
+	static_assert(lower < upper, "Lower needs to be less than upper");
+	static_assert(std::is_integral_v<T>, "Value must be any (u)int type");
+	static_assert(!std::is_same_v<T, bool>, "Value can't be a bool type");
+
+	using uint_t = std::make_unsigned_t<int>;
+	const auto u_val = !std::is_same_v<T, uint_t> ? static_cast<uint_t>(val)
+	                                              : val;
+											
+	// Use single-branch relative comparison as described by Jerry Coffin in
+	// Stack Overflow answer: https://stackoverflow.com/q/17095324
+	const auto relative_value     = u_val - static_cast<uint_t>(lower);
+	constexpr auto relative_upper = static_cast<uint_t>(upper - lower);
+
+	return relative_value <= relative_upper;
 }
 
 // Left-shifts a signed value by a given amount, with overflow detection

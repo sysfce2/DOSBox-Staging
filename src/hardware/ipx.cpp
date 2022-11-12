@@ -26,23 +26,25 @@
 #include <time.h>
 #include <stdio.h>
 
-#include "cross.h"
-#include "string_utils.h"
-#include "cpu.h"
-#include "regs.h"
-#include "inout.h"
-#include "setup.h"
-#include "debug.h"
-#include "callback.h"
-#include "dos_system.h"
-#include "mem.h"
-#include "ipx.h"
-#include "ipxserver.h"
-#include "timer.h"
-#include "programs.h"
-#include "pic.h"
+#	include "bios.h"
+#	include "callback.h"
+#	include "cpu.h"
+#	include "cross.h"
+#	include "debug.h"
+#	include "dos_system.h"
+#	include "inout.h"
+#	include "ipx.h"
+#	include "ipxserver.h"
+#	include "mem.h"
+#	include "pic.h"
+#	include "programs.h"
+#	include "regs.h"
+#	include "setup.h"
+#	include "string_utils.h"
+#	include "timer.h"
 
-#define SOCKTABLESIZE	150 // DOS IPX driver was limited to 150 open sockets
+#	define SOCKTABLESIZE \
+		150 // DOS IPX driver was limited to 150 open sockets
 
 struct ipxnetaddr {
 	Uint8 netnum[4];   // Both are big endian
@@ -459,8 +461,9 @@ static void handleIpxRequest(void) {
 		reg_al = 0xff; // Fail
 	} break;
 
-	case 0x0008: // Get interval marker
-		reg_ax = mem_readw(0x46c); // BIOS_TIMER
+	case 0x0008: // Get interval marker using the first 16-bits from the
+	             // BIOS clock
+		reg_ax = check_cast<uint16_t>(BIOS_GetClockTicks() & UINT16_MAX);
 		break;
 	case 0x0009: // Get internetwork address
 	{

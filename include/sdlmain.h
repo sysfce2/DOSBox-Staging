@@ -164,7 +164,7 @@ struct SDL_Block {
 		SCREEN_TYPES want_type = SCREEN_SURFACE;
 	} desktop = {};
 	struct {
-		int num_cycles = 0;
+		int num_cycles              = 0;
 		std::string hint_mouse_str  = {};
 		std::string hint_paused_str = {};
 		std::string cycles_ms_str   = {};
