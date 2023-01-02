@@ -9,8 +9,6 @@ ARG DEB_VERS
 
 ENV MESON_CROSS_FILE=/usr/local/share/meson/cross/${DPKG_ARCH}.txt
 
-USER root
-
 COPY ./debian-${DEB_VERS}-docker-apt.txt ${DOSBOX_APT_LIST}
 
 RUN mkdir -p $(dirname ${MESON_CROSS_FILE})
@@ -35,6 +33,3 @@ RUN export DPKG_TRIPLET=$(dpkg-architecture -A ${DPKG_ARCH} -q DEB_TARGET_MULTIA
     # Fix opusfile pkgconfig
     && sed 's@libdir=\${exec_prefix}/lib@libdir=\${prefix}/lib/'"${DPKG_TRIPLET}@g" \
         /usr/lib/pkgconfig/opusfile.pc > /usr/lib/${DPKG_TRIPLET}/pkgconfig/opusfile.pc
-
-USER dosbox-staging
-WORKDIR /home/dosbox-staging

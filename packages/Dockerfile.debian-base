@@ -19,8 +19,3 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
         qemu-user-static \
     && rm -rf /var/lib/apt/lists/*
-
-RUN useradd -ms /bin/bash dosbox-staging
-USER dosbox-staging
-
-ENTRYPOINT [ "/bin/bash" ]
