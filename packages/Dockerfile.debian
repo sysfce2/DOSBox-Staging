@@ -1,4 +1,5 @@
-FROM ghcr.io/dosbox-staging/debian-cross-base:0.80.1 as final
+ARG DOSBOX_VERS=v0.00.0
+FROM ghcr.io/dosbox-staging/debian-cross-base:${DOSBOX_VERS} as final
 ARG DPKG_ARCH=arm64
 ARG DOSBOX_APT_LIST=/debian-apt-list.txt
 
