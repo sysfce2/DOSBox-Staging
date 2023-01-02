@@ -5,12 +5,14 @@ on:
     paths:
       - 'packages/Dockerfile*'
       - 'packages/debian-10-docker-apt.txt'
+      - 'packages/debian-11-docker-apt.txt'
       - '.github/workflows/debian-docker-build.yml'
     tags:
   pull_request:
     paths:
       - 'packages/Dockerfile*'
       - 'packages/debian-10-docker-apt.txt'
+      - 'packages/debian-11-docker-apt.txt'
       - '.github/workflows/debian-docker-build.yml'
   schedule:
     - cron: '13 13 * * 0'
@@ -26,7 +28,7 @@ env:
 
 jobs:
   build_base_image:
-    name: Debian base image
+    name: ${{ matrix.conf.name }}
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     outputs:
@@ -34,6 +36,13 @@ jobs:
     defaults:
       run:
         shell: bash
+    strategy:
+      matrix:
+        conf:
+          - name: Debian 10 Base
+            vers: 10
+          - name: Debian 11 Base
+            vers: 11
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -74,6 +83,8 @@ jobs:
           context: ./packages
           file: ./packages/Dockerfile.debian-base
           push: true
+          build-args: |
+            DEB_VERS=${{ matrix.conf.vers }}
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -89,14 +100,18 @@ jobs:
     strategy:
       matrix:
         conf:
-          - name: Debian cross x64
-            arch: amd64
-          - name: Debian cross x86
-            arch: i386
-          - name: Debian cross ARM 64
+          - name: Debian 10 cross ARM 64
             arch: arm64
-          - name: Debian cross ARM 32
+            vers: 10
+          - name: Debian 10 cross ARM 32
             arch: armhf
+            vers: 10
+          - name: Debian 11 cross ARM 64
+            arch: arm64
+            vers: 11
+          - name: Debian 11 cross ARM 32
+            arch: armhf
+            vers: 11
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -126,6 +141,8 @@ jobs:
           file: ./packages/Dockerfile.debian
           push: true
           build-args: |
+            DEB_VERS=${{ matrix.conf.vers }}
+            BASE_IMG=${{ DOCKER_BASE_IMG_NAME }}
             DOSBOX_VERS=${{ needs.build_base_image.outputs.db_vers }}
             DPKG_ARCH=${{ matrix.conf.arch }}
           platforms: linux/amd64

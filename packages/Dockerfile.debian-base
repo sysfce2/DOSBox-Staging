@@ -1,4 +1,5 @@
-FROM debian:10-slim
+ARG DEB_VERS=10
+FROM debian:${DEB_VERS}-slim
 
 # Enable architectures
 RUN dpkg --add-architecture amd64 && \
