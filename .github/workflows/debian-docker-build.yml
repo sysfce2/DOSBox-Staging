@@ -41,6 +41,9 @@ jobs:
       - name: Get dosbox-staging version
         id: db_vers
         run: |
+          set -x
+          git fetch --prune --unshallow
+          git fetch --all --tags --force
           if $(git describe | grep -qs '-'); then
             echo "DOSBOX_VERS=$(git describe | cut -d '-' -f 1)-dev" >> $GITHUB_OUTPUT
           else
