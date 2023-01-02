@@ -11,7 +11,7 @@ on:
       - 'packages/Dockerfile*'
       - 'packages/debian-11-docker-apt.txt'
   schedule:
-    cron: '13 13 * * 0'
+    - cron: '13 13 * * 0'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
