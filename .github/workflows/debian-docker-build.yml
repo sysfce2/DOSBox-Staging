@@ -132,7 +132,7 @@ jobs:
         with:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_IMG_NAME }}
           tags: |
-            type=raw,${{ needs.build_base_image.outputs.db_vers }}-${{ matrix.conf.arch }}
+            type=raw,${{ matrix.conf.vers }}-${{ needs.build_base_image.outputs.db_vers }}-${{ matrix.conf.arch }}
       
       - name: Build and push base Docker image
         uses: docker/build-push-action@v3
