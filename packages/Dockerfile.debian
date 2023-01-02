@@ -7,7 +7,7 @@ ENV MESON_CROSS_FILE=/usr/local/share/meson/cross/${DPKG_ARCH}.txt
 
 USER root
 
-COPY ./debian-11-docker-apt.txt ${DOSBOX_APT_LIST}
+COPY ./debian-10-docker-apt.txt ${DOSBOX_APT_LIST}
 
 RUN mkdir -p $(dirname ${MESON_CROSS_FILE})
 RUN apt-get update && apt-get -y install --no-install-recommends \
