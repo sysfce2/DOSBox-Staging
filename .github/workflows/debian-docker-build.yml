@@ -75,7 +75,7 @@ jobs:
         with:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_BASE_IMG_NAME }}
           tags: |
-            type=raw,${{ steps.db_vers.outputs.DOSBOX_VERS }}
+            type=raw,${{ matrix.conf.vers }}-${{ steps.db_vers.outputs.DOSBOX_VERS }}
       
       - name: Build and push base Docker image
         uses: docker/build-push-action@v3
