@@ -7,7 +7,7 @@ ARG DPKG_ARCH=arm64
 ARG DOSBOX_APT_LIST=/debian-apt-list.txt
 ARG DEB_VERS
 
-ENV MESON_CROSS_FILE=/usr/local/share/meson/cross/${DPKG_ARCH}.txt
+ENV MESON_CROSS_FILE=/usr/local/share/meson/cross/dosbox-cross
 
 COPY ./debian-${DEB_VERS}-docker-apt.txt ${DOSBOX_APT_LIST}
 
