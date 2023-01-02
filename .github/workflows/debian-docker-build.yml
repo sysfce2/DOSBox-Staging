@@ -142,7 +142,7 @@ jobs:
           push: true
           build-args: |
             DEB_VERS=${{ matrix.conf.vers }}
-            BASE_IMG=${{ env.DOCKER_BASE_IMG_NAME }}
+            BASE_IMG=${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_BASE_IMG_NAME }}
             DOSBOX_VERS=${{ needs.build_base_image.outputs.db_vers }}
             DPKG_ARCH=${{ matrix.conf.arch }}
           platforms: linux/amd64
