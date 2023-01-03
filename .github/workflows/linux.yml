@@ -33,7 +33,7 @@ jobs:
         conf:
           - name: GCC 8, Debian 10 Cross ARM 64
             os: ubuntu-20.04
-            build_flags: -Dbuildtype=debug --cross-file debian-cross
+            build_flags: -Dbuildtype=debug --cross-file dosbox-cross
             max_warnings: 0
             run_tests: true
             cross: true
@@ -42,7 +42,7 @@ jobs:
 
           - name: GCC 10, Debian 11 Cross ARM 64
             os: ubuntu-20.04
-            build_flags: -Dbuildtype=debug --cross-file debian-cross
+            build_flags: -Dbuildtype=debug --cross-file dosbox-cross
             max_warnings: 0
             run_tests: true
             cross: true
