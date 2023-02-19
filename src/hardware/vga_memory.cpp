@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1010,7 +1011,7 @@ void VGA_SetupHandlers(void) {
 		case SVGA_TsengET4K:
 			vgapages.mask = 0xffff;
 			break;
-		case SVGA_S3Trio:
+		case SVGA_S3:
 		default:
 			vgapages.mask = 0x1ffff;
 			break;
@@ -1038,7 +1039,7 @@ void VGA_SetupHandlers(void) {
 		MEM_SetPageHandler( VGA_PAGE_B0, 8, &vgaph.empty );
 		break;
 	}
-	if(svgaCard == SVGA_S3Trio && (vga.s3.ext_mem_ctrl & 0x10))
+	if(svgaCard == SVGA_S3 && (vga.s3.ext_mem_ctrl & 0x10))
 		MEM_SetPageHandler(VGA_PAGE_A0, 16, &vgaph.mmio);
 range_done:
 	PAGING_ClearTLB();

@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -311,7 +312,7 @@ void INT10_SetActivePage(uint8_t page) {
 	uint16_t mem_address;
 	if (page>7) LOG(LOG_INT10,LOG_ERROR)("INT10_SetActivePage page %d",page);
 
-	if (IS_EGAVGA_ARCH && (svgaCard==SVGA_S3Trio)) page &= 7;
+	if (IS_EGAVGA_ARCH && (svgaCard==SVGA_S3)) page &= 7;
 
 	mem_address=page*real_readw(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE);
 	/* Write the new page start */

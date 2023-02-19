@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -991,7 +992,7 @@ static void VGA_VerticalTimer(uint32_t /*val*/)
 	vga.draw.address_line = vga.config.hlines_skip;
 	if (IS_EGAVGA_ARCH) {
 		vga.draw.split_line = (vga.config.line_compare + 1) / vga.draw.lines_scaled;
-		if ((svgaCard==SVGA_S3Trio) && (vga.config.line_compare==0)) vga.draw.split_line=0;
+		if ((svgaCard==SVGA_S3) && (vga.config.line_compare==0)) vga.draw.split_line=0;
 		vga.draw.split_line -= vga.draw.vblank_skip;
 	} else {
 		vga.draw.split_line = 0x10000;	// don't care
@@ -1560,7 +1561,7 @@ void VGA_SetupDrawing(uint32_t /*val*/)
 	case M_LIN8:
 		if (vga.crtc.mode_control & 0x8) {
 			width >>=1;
-		} else if (svgaCard == SVGA_S3Trio && !(vga.s3.reg_3a & 0x10)) {
+		} else if (svgaCard == SVGA_S3 && !(vga.s3.reg_3a & 0x10)) {
 			doublewidth=true;
 			width >>=1;
 		}

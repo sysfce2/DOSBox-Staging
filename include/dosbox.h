@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2019-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,7 +61,7 @@ extern config_ptr_t control;
 
 enum SVGACards {
 	SVGA_None,
-	SVGA_S3Trio,
+	SVGA_S3,
 	SVGA_TsengET4K,
 	SVGA_TsengET3K,
 	SVGA_ParadisePVGA1A

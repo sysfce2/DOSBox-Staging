@@ -360,12 +360,12 @@ static void DOSBOX_RealInit(Section * sec) {
 	} else if (mtype == "ega") {
 		machine = MCH_EGA;
 	} else if (mtype == "svga_s3") {
-		svgaCard = SVGA_S3Trio;
+		svgaCard = SVGA_S3;
 	} else if (mtype == "vesa_nolfb") {
-		svgaCard = SVGA_S3Trio;
+		svgaCard = SVGA_S3;
 		int10.vesa_nolfb = true;
 	} else if (mtype == "vesa_oldvbe") {
-		svgaCard = SVGA_S3Trio;
+		svgaCard = SVGA_S3;
 		int10.vesa_oldvbe = true;
 	} else if (mtype == "svga_et4000") {
 		svgaCard = SVGA_TsengET4K;

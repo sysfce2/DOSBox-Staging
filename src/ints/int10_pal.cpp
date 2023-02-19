@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -146,7 +147,7 @@ void INT10_ToggleBlinkingBit(uint8_t state) {
 	if(IS_VGA_ARCH) {
 		uint8_t value;
 	//	state&=0x01;
-		if ((state>1) && (svgaCard==SVGA_S3Trio)) return;
+		if ((state>1) && (svgaCard==SVGA_S3)) return;
 		ResetACTL();
 		
 		IO_Write(VGAREG_ACTL_ADDRESS,0x10);

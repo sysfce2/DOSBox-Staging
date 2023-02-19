@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2021-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -425,7 +426,7 @@ graphics_chars:
 			break;
 		case 0x36: {						/* VGA Refresh control */
 			if (!IS_VGA_ARCH) break;
-			if ((svgaCard==SVGA_S3Trio) && (reg_al>1)) {
+			if ((svgaCard==SVGA_S3) && (reg_al>1)) {
 				reg_al=0;
 				break;
 			}
@@ -496,7 +497,7 @@ graphics_chars:
 		}
 		break;
 	case 0x4f:								/* VESA Calls */
-		if ((!IS_VGA_ARCH) || (svgaCard!=SVGA_S3Trio)) break;
+		if ((!IS_VGA_ARCH) || (svgaCard!=SVGA_S3)) break;
 		switch (reg_al) {
 		case 0x00:							/* Get SVGA Information */
 			reg_al=0x4f;

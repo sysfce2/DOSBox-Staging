@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -31,7 +32,7 @@ Bitu INT10_VideoState_GetSize(Bitu state) {
 	if (state&1) size+=0x46;
 	if (state&2) size+=0x3a;
 	if (state&4) size+=0x303;
-	if ((svgaCard==SVGA_S3Trio) && (state&8)) size+=0x43;
+	if ((svgaCard==SVGA_S3) && (state&8)) size+=0x43;
 	assert(size > 0);
 	return (size - 1) / 64 + 1;
 }
@@ -172,7 +173,7 @@ bool INT10_VideoState_Save(Bitu state,RealPt buffer) {
 		base_dest+=0x303;
 	}
 
-	if ((svgaCard==SVGA_S3Trio) && (state&8))  {
+	if ((svgaCard==SVGA_S3) && (state&8))  {
 		real_writew(base_seg,RealOff(buffer)+6,base_dest);
 
 		uint16_t crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);
@@ -326,7 +327,7 @@ bool INT10_VideoState_Restore(Bitu state,RealPt buffer) {
 		}
 	}
 
-	if ((svgaCard==SVGA_S3Trio) && (state&8))  {
+	if ((svgaCard==SVGA_S3) && (state&8))  {
 		base_dest=real_readw(base_seg,RealOff(buffer)+6);
 
 		uint16_t crt_reg=real_readw(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS);

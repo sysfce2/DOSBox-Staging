@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -139,7 +140,7 @@ void INT10_SetupRomMemory(void) {
 		if (IS_VGA_ARCH) {
 			// SVGA card-specific ROM signatures
 			switch (svgaCard) {
-			case SVGA_S3Trio:
+			case SVGA_S3:
 				phys_writeb(rom_base+0x003f,'S');
 				phys_writeb(rom_base+0x0040,'3');
 				phys_writeb(rom_base+0x0041,' ');
@@ -182,7 +183,7 @@ void INT10_SetupRomMemory(void) {
 		int10.rom.used=0x100;
 	}
 
-	if (IS_VGA_ARCH && svgaCard==SVGA_S3Trio) INT10_SetupVESA();
+	if (IS_VGA_ARCH && svgaCard==SVGA_S3) INT10_SetupVESA();
 
 	int10.rom.font_8_first=RealMake(0xC000,int10.rom.used);
 	for (i=0;i<128*8;i++) {

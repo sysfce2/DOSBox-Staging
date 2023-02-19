@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -646,7 +647,7 @@ void INT10_SetCurMode(void) {
 			case SVGA_ParadisePVGA1A:
 				mode_changed=SetCurMode(ModeList_VGA_Paradise,bios_mode);
 				break;
-			case SVGA_S3Trio:
+			case SVGA_S3:
 				if (bios_mode>=0x68 && CurMode->mode==(bios_mode+0x98)) break;
 				// fall-through
 			default:
@@ -1043,7 +1044,7 @@ bool INT10_SetVideoMode(uint16_t mode)
 	if (mono_mode) crtc_base=0x3b4;
 	else crtc_base=0x3d4;
 
-	if (IS_VGA_ARCH && (svgaCard == SVGA_S3Trio)) {
+	if (IS_VGA_ARCH && (svgaCard == SVGA_S3)) {
 		// Disable MMIO here so we can read / write memory
 		IO_Write(crtc_base,0x53);
 		IO_Write(crtc_base+1,0x0);
@@ -1296,7 +1297,7 @@ bool INT10_SetVideoMode(uint16_t mode)
 	//  OverFlow
 	IO_Write(crtc_base,0x07);IO_Write(crtc_base+1,overflow);
 
-	if (svgaCard == SVGA_S3Trio) {
+	if (svgaCard == SVGA_S3) {
 		//  Extended Horizontal Overflow
 		IO_Write(crtc_base,0x5d);IO_Write(crtc_base+1,hor_overflow);
 		//  Extended Vertical Overflow
@@ -1327,7 +1328,7 @@ bool INT10_SetVideoMode(uint16_t mode)
 	IO_Write(crtc_base,0x13);
 	IO_Write(crtc_base + 1,offset & 0xff);
 
-	if (svgaCard == SVGA_S3Trio) {
+	if (svgaCard == SVGA_S3) {
 		//  Extended System Control 2 Register
 		//  This register actually has more bits but only use the extended offset ones
 		IO_Write(crtc_base, 0x51);
@@ -1399,7 +1400,7 @@ bool INT10_SetVideoMode(uint16_t mode)
 	IO_Write(crtc_base,0x11);
 	IO_Write(crtc_base+1,IO_Read(crtc_base+1)|0x80);
 
-	if (svgaCard == SVGA_S3Trio) {
+	if (svgaCard == SVGA_S3) {
 		//  Setup the correct clock
 		if (CurMode->mode>=0x100) {
 			if (CurMode->vdispend>480)
@@ -1653,7 +1654,7 @@ att_text16:
 			break;
 		case M_TEXT:
 			if (CurMode->mode==7) {
-				if ((IS_VGA_ARCH) && (svgaCard == SVGA_S3Trio))
+				if ((IS_VGA_ARCH) && (svgaCard == SVGA_S3))
 					write_palette_dac_data(palette.mono_text_s3);
 				else
 					write_palette_dac_data(palette.mono_text);
@@ -1738,7 +1739,7 @@ dac_text16:
 		break;
 	}
 
-	if (svgaCard == SVGA_S3Trio) {
+	if (svgaCard == SVGA_S3) {
 		//  Setup the CPU Window
 		IO_Write(crtc_base,0x6a);
 		IO_Write(crtc_base+1,0);

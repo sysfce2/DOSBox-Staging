@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -388,7 +389,7 @@ void SVGA_Setup_Driver(void) {
 	memset(&svga, 0, sizeof(SVGA_Driver));
 
 	switch(svgaCard) {
-	case SVGA_S3Trio:
+	case SVGA_S3:
 		SVGA_Setup_S3Trio();
 		break;
 	case SVGA_TsengET4K:
