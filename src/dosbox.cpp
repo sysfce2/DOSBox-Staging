@@ -57,8 +57,10 @@
 #include "video.h"
 
 bool shutdown_requested = false;
-MachineType machine;
-SVGACards svgaCard;
+
+MachineType machine  = MCH_VGA;
+SVGACards   svgaCard = SVGA_S3;
+S3Card      s3Card   = S3_Generic;
 
 /* The whole load of startups for all the subfunctions */
 void LOG_StartUp();
@@ -347,14 +349,18 @@ static void DOSBOX_RealInit(Section * sec) {
 	}
 
 	std::string mtype(section->Get_string("machine"));
+	machine  = MCH_VGA;
 	svgaCard = SVGA_None;
-	machine = MCH_VGA;
-	int10.vesa_nolfb = false;
+	int10.vesa_nolfb  = false;
 	int10.vesa_oldvbe = false;
-	if      (mtype == "cga")      { machine = MCH_CGA; mono_cga = false; }
-	else if (mtype == "cga_mono") { machine = MCH_CGA; mono_cga = true; }
-	else if (mtype == "tandy")    { machine = MCH_TANDY; }
-	else if (mtype == "pcjr")     { machine = MCH_PCJR;
+	if (mtype == "cga") {
+		machine = MCH_CGA; mono_cga = false;
+	} else if (mtype == "cga_mono") {
+		machine = MCH_CGA; mono_cga = true;
+	} else if (mtype == "tandy") {
+		machine = MCH_TANDY;
+	} else if (mtype == "pcjr") {
+		machine = MCH_PCJR;
 	} else if (mtype == "hercules") {
 		machine = MCH_HERC;
 	} else if (mtype == "ega") {
@@ -362,21 +368,46 @@ static void DOSBOX_RealInit(Section * sec) {
 	} else if (mtype == "svga_s3") {
 		svgaCard = SVGA_S3;
 	} else if (mtype == "vesa_nolfb") {
-		svgaCard = SVGA_S3;
-		int10.vesa_nolfb = true;
+		svgaCard = SVGA_S3; int10.vesa_nolfb = true;
 	} else if (mtype == "vesa_oldvbe") {
-		svgaCard = SVGA_S3;
-		int10.vesa_oldvbe = true;
-	} else if (mtype == "svga_et4000") {
-		svgaCard = SVGA_TsengET4K;
+		svgaCard = SVGA_S3; int10.vesa_oldvbe = true;
 	} else if (mtype == "svga_et3000") {
 		svgaCard = SVGA_TsengET3K;
+	} else if (mtype == "svga_et4000") {
+		svgaCard = SVGA_TsengET4K;
 	} else if (mtype == "svga_paradise") {
 		svgaCard = SVGA_ParadisePVGA1A;
 	} else if (mtype == "vgaonly") {
 		svgaCard = SVGA_None;
-	} else
+	} else {
 		E_Exit("DOSBOX:Unknown machine type %s", mtype.c_str());
+	}
+
+	std::string s3type(section->Get_string("s3_card"));
+	s3Card = S3_Generic;
+	if (svgaCard == SVGA_S3) {
+		if (s3type == "86c928") {
+			s3Card = S3_86C928;
+		} else if (s3type == "vision864") {
+			s3Card = S3_Vision864;
+		} else if (s3type == "vision868") {
+			s3Card = S3_Vision868;
+		} else if (s3type == "vision964") {
+			s3Card = S3_Vision964;
+		} else if (s3type == "vision968") {
+			s3Card = S3_Vision968;
+		} else if (s3type == "trio32") {
+			s3Card = S3_Trio32;
+		} else if (s3type == "trio64") {
+			s3Card = S3_Trio64;
+		} else if (s3type == "trio64v+") {
+			s3Card = S3_Trio64V;
+		} else if (s3type == "virge") {
+			s3Card = S3_ViRGE;
+		} else if (s3type == "virgevx") {
+			s3Card = S3_ViRGEVX;
+		}
+	}
 
 	// Set the user's prefered MCB fault handling strategy
 	DOS_SetMcbFaultStrategy(section->Get_string("mcb_fault_strategy"));
@@ -428,14 +459,23 @@ void DOSBOX_Init()
 	constexpr auto only_at_start = Property::Changeable::OnlyAtStart;
 	constexpr auto when_idle = Property::Changeable::WhenIdle;
 
-	/* Setup all the different modules making up DOSBox */
-	const char *machines[] = {"hercules",      "cga",
-	                          "cga_mono",      "tandy",
-	                          "pcjr",          "ega",
-	                          "vgaonly",       "svga_s3",
-	                          "svga_et3000",   "svga_et4000",
-	                          "svga_paradise", "vesa_nolfb",
-	                          "vesa_oldvbe",   0};
+	// Setup all the different modules making up DOSBox
+
+	const char *machines[] = {
+		"hercules", "cga", "cga_mono", "tandy", "pcjr",
+		"ega", "vgaonly",
+		"svga_s3", "svga_et3000", "svga_et4000", "svga_paradise"
+		"vesa_nolfb", "vesa_oldvbe",
+		nullptr
+	};
+
+	const char *cards_s3[] = {
+		"86c928",
+		"vision864", "vision868", "vision964", "vision968",
+		"trio32", "trio64", "trio64v+",
+		"virge", "virgevx",
+		nullptr
+	};
 
 	secprop = control->AddSection_prop("dosbox", &DOSBOX_RealInit);
 	pstring = secprop->Add_string("language", always, "");
@@ -445,10 +485,41 @@ void DOSBOX_Init()
 	        "       The 'resources/translations' directory bundled with the executable holds\n"
 	        "       these files. Please keep it along-side the executable to support this\n"
 	        "       feature.");
+
 	pstring = secprop->Add_string("machine", only_at_start, "svga_s3");
 	pstring->Set_values(machines);
 	pstring->Set_help(
-	        "The type of machine DOSBox tries to emulate ('svga_s3' by default).");
+	        "The type of machine DOSBox tries to emulate ('svga_s3' by default).\n"
+	        "  hercules:       Hercules Computer Technology card, MDA compatible\n"
+	        "  cga:            Color Graphics Adapter, MDA successor\n"
+	        "  cga_mono:       CGA connected to monochrome monitor\n"
+	        "  tandy:          Tandy Video\n"
+	        "  pcjr:           IBM PCjr (PC junior)\n"
+	        "  ega:            Enhanced Graphics Adapter, CGA successor\n"
+	        "  vgaonly:        Video Graphics Array, EGA successor\n"
+	        "  svga_s3:        S3 Graphics; see 's3_card' for available models\n"
+	        "  svga_et3000:    Tseng Labs ET3000; 512 KB card\n"
+	        "  svga_et4000:    Tseng Labs ET4000; 256, 512, or 1024 KB card\n"
+	        "  svga_paradise:  Paradise Systems PVGA1A; 256, 512, or 1024 KB card\n"
+	        "  vesa_nolfb:     S3 card with Linear Frame Buffer modes hidden in VBE\n"
+	        "  vesa_oldvbe:    S3 card with VBE 1.2 only");
+
+	pstring = secprop->Add_string("s3_card", only_at_start, "vision968");
+	pstring->Set_values(cards_s3);
+	pstring->Set_help(
+	        "For S3 SVGA card, exact model to emulate ('vision968' by default).\n"
+		"  vision864:  Vision 864;  1, 2, or 4 MB card\n"
+		"  vision868:  Vision 868;  1, 2, or 4 MB card, motion video acceleration\n"
+		"  vision964:  Vision 964;  2, 4, or 8 MB card, similar to Vision 864\n"
+		"  vision968:  Vision 968;  2, 4, or 8 MB card, similar to Vision 868\n"
+		"  trio32:     Trio 32;     1 or 2 MB card, low-cost Trio64\n"
+		"  trio64:     Trio 64;     1, 2, or 4 MB card, Vision 864 successor\n"
+		"  trio64v+:   Trio 64V+;   1, 2, or 4 MB card, MPEG-1 acceleration\n"
+		"The following cards are considered experimental; hardware 3D acceleration\n"
+		"of the ViRGE family is not emulated yet:\n"
+	        "  86c928:     86c928;      1, 2, 3, or 4 MB card, early CAD accelerator\n"
+		"  virge:      ViRGE;       2 or 4 MB card, MPEG-1 acceleration, S3D engine\n"
+		"  virgevx:    ViRGE VX;    2, 4, or 8 MB card, similar to ViRGE\n");
 
 	pstring = secprop->Add_path("captures", always, "capture");
 	pstring->Set_help("Directory where audio, video, MIDI, and screenshot captures get saved\n"
@@ -501,7 +572,9 @@ void DOSBOX_Init()
 	pstring = secprop->Add_string("vmemsize", only_at_start, "auto");
 	pstring->Set_values(vmemsize_choices);
 	pstring->Set_help("Video memory in MB (1-8) or KB (256 to 8192). 'auto' uses the default per\n"
-	                  "video adapter ('auto' by default).");
+	                  "video adapter ('auto' by default).\n"
+	                  "Note: Windows 3.1x S3 drivers tend to draw garbled mouse cursor if the video\n"
+	                  "      memory size is larger than supported by real cards.");
 
 	pstring = secprop->Add_string("dos_rate", when_idle, "default");
 	pstring->Set_help(
