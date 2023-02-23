@@ -370,8 +370,7 @@ static Bitu INT1A_Handler(void) {
 		TandyDAC_Handler(reg_ah);
 		break;
 	case 0xb1:		/* PCI Bios Calls */
-		LOG(LOG_BIOS,LOG_WARN)("INT1A:PCI bios call %2X",reg_al);
-#if defined(PCI_FUNCTIONALITY_ENABLED)
+		LOG(LOG_BIOS, LOG_NORMAL)("INT1A:PCI bios call %2X", reg_al);
 		switch (reg_al) {
 		case 0x01: // installation check
 			if (PCI_IsInitialized()) {
@@ -392,10 +391,8 @@ static Bitu INT1A_Handler(void) {
 			uint32_t devicetag = (reg_cx << 16) | reg_dx;
 			Bits found = -1;
 			for (Bitu i = 0; i <= count; i++) {
-				IO_WriteD(0xcf8, 0x80000000 | (i << 8)); // query
-				                                         // unique
-				                                         // device/subdevice
-				                                         // entries
+				// query unique device/subdevice entries
+				IO_WriteD(0xcf8, 0x80000000 | (i << 8));
 				if (IO_ReadD(0xcfc) == devicetag) {
 					if (devnr == reg_si) {
 						found = i;
@@ -485,9 +482,6 @@ static Bitu INT1A_Handler(void) {
 				CALLBACK_SCF(true);
 				break;
 		        }
-#else
-		CALLBACK_SCF(true);
-#endif
 		break;
 	default:
 		LOG(LOG_BIOS,LOG_ERROR)("INT1A:Undefined call %2X",reg_ah);

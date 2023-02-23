@@ -125,6 +125,10 @@ constexpr io_port_t port_num_i8042_command = 0x64u; // write-only
 constexpr io_port_t port_num_i8255_1 = 0x61u;
 constexpr io_port_t port_num_i8255_2 = 0x62u;
 
+// PCI configuration space
+constexpr io_port_t port_num_pci_address = 0x0cf8;
+constexpr io_port_t port_num_pci_data    = 0x0cfc;
+
 // VMware communication interface
 constexpr io_port_t port_num_vmware    = 0x5658u;
 constexpr io_port_t port_num_vmware_hb = 0x5659u; // high bandwidth

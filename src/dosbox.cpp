@@ -81,12 +81,8 @@ void FPU_Init(Section*);
 #endif
 
 void DMA_Init(Section*);
-
 void HARDWARE_Init(Section*);
-
-#if defined(PCI_FUNCTIONALITY_ENABLED)
 void PCI_Init(Section*);
-#endif
 
 void KEYBOARD_Init(Section*);	//TODO This should setup INT 16 too but ok ;)
 void JOYSTICK_Init(Section*);
@@ -724,10 +720,8 @@ void DOSBOX_Init()
 	secprop->AddInitFunction(&VGA_Init);
 	secprop->AddInitFunction(&KEYBOARD_Init);
 
-
-#if defined(PCI_FUNCTIONALITY_ENABLED)
-	secprop=control->AddSection_prop("pci",&PCI_Init,false); //PCI bus
-#endif
+	// PCI bus
+	secprop = control->AddSection_prop("pci", &PCI_Init, false);
 
 	// Configure mouse
 	MOUSE_AddConfigSection(control);
