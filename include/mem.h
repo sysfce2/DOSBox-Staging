@@ -28,6 +28,8 @@
 #include "mem_unaligned.h"
 #include "types.h"
 
+#include <string>
+
 typedef uint32_t PhysPt;
 typedef uint8_t *HostPt;
 typedef uint32_t RealPt;
@@ -105,6 +107,14 @@ static inline void phys_writew(PhysPt addr, uint16_t val)
 static inline void phys_writed(PhysPt addr, uint32_t val)
 {
 	host_writed(MemBase + addr, val);
+}
+
+static inline void phys_writes(PhysPt addr, const std::string& str)
+{
+	auto mem_addr = MemBase + addr;
+	for (const auto val : str) {
+		host_writeb(mem_addr++, static_cast<uint8_t>(val));
+	}
 }
 
 static inline uint8_t phys_readb(PhysPt addr)

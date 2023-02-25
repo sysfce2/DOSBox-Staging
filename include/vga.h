@@ -596,6 +596,9 @@ void SVGA_Setup_TsengET3K(void);
 void SVGA_Setup_ParadisePVGA1A(void);
 void SVGA_Setup_Driver(void);
 
+std::string SVGA_GetChipName_S3();
+std::string SVGA_GetCardName();
+
 // Amount of video memory required for a mode, implemented in int10_modes.cpp
 uint32_t VideoModeMemSize(uint16_t mode);
 

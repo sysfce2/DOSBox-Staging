@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -15,7 +16,6 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-
 
 #include "dosbox.h"
 
@@ -759,6 +759,26 @@ void filter_s3_modes_to_oem_only()
 	ModeList_VGA.erase(std::remove_if(ModeList_VGA.begin(),
 	                                  ModeList_VGA.end(), mode_not_allowed),
 	                   ModeList_VGA.end());
+}
+
+std::string SVGA_GetChipName_S3()
+{
+	assert(svgaCard == SVGA_S3);
+
+	switch (s3Card) {
+	case S3_Generic: return "";
+	case S3_86C928: return "86C928";
+	case S3_Vision864: return "Vision864";
+	case S3_Vision868: return "Vision868";
+	case S3_Vision964: return "Vision964";
+	case S3_Vision968: return "Vision968";
+	case S3_Trio32: return "Trio32";
+	case S3_Trio64: return "Trio64";
+	case S3_Trio64V: return "Trio64V+";
+	case S3_ViRGE: return "ViRGE";
+	case S3_ViRGEVX: return "ViRGE VX";
+	default: assert(false); return "";
+	}
 }
 
 void SVGA_Setup_S3Trio(void)

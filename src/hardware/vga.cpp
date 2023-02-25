@@ -385,7 +385,24 @@ void VGA_Init(Section* sec) {
 	}
 }
 
-void SVGA_Setup_Driver(void) {
+std::string SVGA_GetCardName()
+{
+	switch (svgaCard) {
+	case SVGA_S3:
+		if (s3Card == S3_Generic) {
+			return "S3";
+		} else {
+			return "S3 " + SVGA_GetChipName_S3();
+		}
+	case SVGA_TsengET3K: return "Tseng ET3000";
+	case SVGA_TsengET4K: return "Tseng ET4000";
+	case SVGA_ParadisePVGA1A: return "Paradise PVGA1A";
+	default: assert(false); return "";
+	}
+}
+
+void SVGA_Setup_Driver(void)
+{
 	memset(&svga, 0, sizeof(SVGA_Driver));
 
 	switch(svgaCard) {

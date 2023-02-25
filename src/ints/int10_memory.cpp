@@ -130,60 +130,84 @@ void INT10_SetupRomMemory(void) {
 	int10.rom.used=3;
 	if (IS_EGAVGA_ARCH) {
 		// set up the start of the ROM
-		phys_writew(rom_base+0,0xaa55);
-		phys_writeb(rom_base+2,0x40);		// Size of ROM: 64 512-blocks = 32KB
-		phys_writeb(rom_base+0x1e,0x49);	// IBM string
-		phys_writeb(rom_base+0x1f,0x42);
-		phys_writeb(rom_base+0x20,0x4d);
-		phys_writeb(rom_base+0x21,0x20);
+		phys_writew(rom_base + 0, 0xaa55);
+		phys_writeb(rom_base + 2, 0x40); // Size of ROM: 64 512-blocks = 32KB
 
-		if (IS_VGA_ARCH) {
+		if (!IS_VGA_ARCH) {
+			phys_writes(rom_base + 0x1e, "IBM compatible EGA BIOS");
+		} else {
 			// SVGA card-specific ROM signatures
+			std::string tmp_str  = {};
+			std::string year_str = {};
 			switch (svgaCard) {
 			case SVGA_S3:
-				phys_writeb(rom_base+0x003f,'S');
-				phys_writeb(rom_base+0x0040,'3');
-				phys_writeb(rom_base+0x0041,' ');
-				phys_writeb(rom_base+0x0042,'8');
-				phys_writeb(rom_base+0x0043,'6');
-				phys_writeb(rom_base+0x0044,'C');
-				phys_writeb(rom_base+0x0045,'7');
-				phys_writeb(rom_base+0x0046,'6');
-				phys_writeb(rom_base+0x0047,'4');
+				phys_writes(rom_base + 0x1e, "IBM compatible VGA BIOS");
+				// Main banner string
+				switch (s3Card) {
+				case S3_Generic:
+				case S3_86C928: year_str = "1993"; break;
+				case S3_Vision864:
+				case S3_Vision868:
+				case S3_Vision964:
+				case S3_Vision968: year_str = "1994"; break;
+				case S3_Trio32:
+				case S3_Trio64:
+				case S3_Trio64V: year_str = "1995"; break;
+				case S3_ViRGE:
+				case S3_ViRGEVX: year_str = "1996"; break;
+				default:
+					year_str = "1993";
+					assert(false);
+					break;
+				}
+				tmp_str = "DOSBox " + SVGA_GetCardName() +
+				          " SVGA BIOS\r\n" DOSBOX_COPYRIGHT "\r\n";
+				phys_writes(rom_base + 0x44, tmp_str);
+				assert(0x44 + tmp_str.length() < 0xe4);
+				// S3 copyright string
+				tmp_str = "Copyright 1992-" + year_str +
+				          " S3 Incorporated\r\n"
+				          "All Rights Reserved\r\n";
+				phys_writes(rom_base + 0xe4, tmp_str);
+				// Additional date strings - not sure what they
+				// mean, so let's commemorate some important
+				// dates from humankind history:
+				// 31 Jan 2002: DOSBox v0.1 released
+				// 10 Dec 2019: DOSBox Staging 1st pre-release
+				//              published on GitHub
+				phys_writes(rom_base + 0x184, "01/31/99");
+				phys_writes(rom_base + 0x18c, "12/10/99");
 				break;
 			case SVGA_TsengET4K:
 			case SVGA_TsengET3K:
-				phys_writeb(rom_base+0x0075,' ');
-				phys_writeb(rom_base+0x0076,'T');
-				phys_writeb(rom_base+0x0077,'s');
-				phys_writeb(rom_base+0x0078,'e');
-				phys_writeb(rom_base+0x0079,'n');
-				phys_writeb(rom_base+0x007a,'g');
-				phys_writeb(rom_base+0x007b,' ');
+				phys_writes(rom_base + 0x05,
+				            "This is not a product of IBM  "
+				            "(IBM is a trademark of International Business Machines Corp.)");
+				phys_writes(rom_base + 0x65,
+				            "Copyright(c)1988 Tseng Laboratories, Inc. ");
+				if (svgaCard == SVGA_TsengET3K) {
+					phys_writes(rom_base + 0x8f, "02/23/89 V8.00X\x01");
+				} else if (svgaCard == SVGA_TsengET4K) {
+					phys_writes(rom_base + 0x8f, "06/13/90 V8.02X\x01");
+				}
 				break;
 			case SVGA_ParadisePVGA1A:
-				phys_writeb(rom_base+0x0048,' ');
-				phys_writeb(rom_base+0x0049,'W');
-				phys_writeb(rom_base+0x004a,'E');
-				phys_writeb(rom_base+0x004b,'S');
-				phys_writeb(rom_base+0x004c,'T');
-				phys_writeb(rom_base+0x004d,'E');
-				phys_writeb(rom_base+0x004e,'R');
-				phys_writeb(rom_base+0x004f,'N');
-				phys_writeb(rom_base+0x0050,' ');
-				phys_writeb(rom_base+0x007d,'V');
-				phys_writeb(rom_base+0x007e,'G');
-				phys_writeb(rom_base+0x007f,'A');
-				phys_writeb(rom_base+0x0080,'=');
+				phys_writes(rom_base + 0x1e, "IBM compatible");
+				phys_writes(rom_base + 0x48, " WESTERN ");
+				phys_writes(rom_base + 0x7d, "VGA=");
 				break;
 			case SVGA_None:
+				phys_writes(rom_base + 0x1e, "IBM compatible VGA BIOS");
 				break;
+			default: assert(false); break;
 			}
 		}
-		int10.rom.used=0x100;
+		int10.rom.used = 0x100;
 	}
 
-	if (IS_VGA_ARCH && svgaCard==SVGA_S3) INT10_SetupVESA();
+	if (IS_VGA_ARCH && svgaCard == SVGA_S3) {
+		INT10_SetupVESA();
+	}
 
 	int10.rom.font_8_first=RealMake(0xC000,int10.rom.used);
 	for (i=0;i<128*8;i++) {

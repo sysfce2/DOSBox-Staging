@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2019-2023  The DOSBox Staging Team
  *  Copyright (C) 2002-2021  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -43,10 +44,9 @@ static struct {
 	callback_number_t pmPalette = 0;
 } callback;
 
-static char string_oem[]="S3 Incorporated. Trio64";
-static char string_vendorname[]="DOSBox Development Team";
-static char string_productname[]="DOSBox - The DOS Emulator";
-static char string_productrev[]="DOSBox " VERSION;
+static char string_vendorname[]  = "DOSBox Staging Team";
+static char string_productname[] = "DOSBox Staging - The DOS Emulator";
+static char string_productrev[]  = "DOSBox Staging " VERSION;
 
 #ifdef _MSC_VER
 #pragma pack (1)
@@ -110,8 +110,10 @@ uint8_t VESA_GetSVGAInformation(uint16_t seg,uint16_t off) {
 	else mem_writew(buffer+0x04,0x102);						//Vesa version 1.2
 	if (vbe2) {
 		mem_writed(buffer+0x06,RealMake(seg,vbe2_pos));
-		for (i=0;i<sizeof(string_oem);i++) real_writeb(seg,vbe2_pos++,string_oem[i]);
-		mem_writew(buffer+0x14,0x200);					//VBE 2 software revision
+		for (const auto byte : SVGA_GetCardName()) {
+			real_writeb(seg, vbe2_pos++, byte);
+		}
+		mem_writew(buffer + 0x14, 0x200); // VBE 2 software revision
 		mem_writed(buffer+0x16,RealMake(seg,vbe2_pos));
 		for (i=0;i<sizeof(string_vendorname);i++) real_writeb(seg,vbe2_pos++,string_vendorname[i]);
 		mem_writed(buffer+0x1a,RealMake(seg,vbe2_pos));
@@ -663,9 +665,8 @@ void INT10_SetupVESA(void) {
 	phys_writew(PhysMake(0xc000,int10.rom.used),0xffff);
 	int10.rom.used+=2;
 	int10.rom.oemstring=RealMake(0xc000,int10.rom.used);
-	const auto len = safe_strlen(string_oem) + 1;
-	for (i=0;i<len;i++) {
-		phys_writeb(0xc0000+int10.rom.used++,string_oem[i]);
+	for (const auto byte : SVGA_GetCardName()) {
+		phys_writeb(0xc0000 + int10.rom.used++, byte);
 	}
 	/* Prepare the real mode interface */
 	int10.rom.wait_retrace=RealMake(0xc000,int10.rom.used);
