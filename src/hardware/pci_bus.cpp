@@ -30,6 +30,8 @@
 
 CHECK_NARROWING();
 
+#define S3_LFB_BASE 0xE0000000u
+
 
 static uint32_t pci_caddress          = 0; // current PCI addressing
 static uint8_t  pci_devices_installed = 0; // number of registered PCI devices
@@ -38,6 +40,10 @@ static uint8_t  pci_devices_installed = 0; // number of registered PCI devices
 static uint8_t pci_cfg_data[PCI_MAX_PCIDEVICES][PCI_MAX_PCIFUNCTIONS][256];
 // Registered PCI devices
 static PCI_Device* pci_devices[PCI_MAX_PCIDEVICES];
+
+// ***************************************************************************
+// Helper functions
+// ***************************************************************************
 
 uint8_t get_pci_cfg_data(const PCI_Device* dev, const uint8_t reg_num)
 {
@@ -346,6 +352,10 @@ PCI_Device* PCI_Device::GetSubdevice(const Bits subfct)
 	return nullptr;
 }
 
+// ***************************************************************************
+// PCI bus
+// ***************************************************************************
+
 // Queued devices -  PCI device registering requested before the PCI framework
 // was initialized
 
@@ -354,7 +364,6 @@ static uint8_t num_rqueued_devices = 0;
 static PCI_Device* rqueued_devices[max_rqueued_devices];
 
 #include "pci_devices.h"
-
 
 class PCI final : public Module_base {
 private:
@@ -381,14 +390,41 @@ public:
 
 	// register PCI device to bus and setup data
 	Bits RegisterPCIDevice(PCI_Device* device, Bits slot = -1);
+	void RemoveDevice(uint16_t vendor_id, uint16_t device_id);
 
 	void Deinitialize();
-	void RemoveDevice(uint16_t vendor_id, uint16_t device_id);
 
 	PCI(Section* configuration);
 	~PCI();
 
 };
+
+PCI::PCI(Section* configuration) : Module_base(configuration)
+{
+	initialized = false;
+	pci_devices_installed = 0;
+
+	for (uint8_t devct = 0; devct < PCI_MAX_PCIDEVICES; devct++) {
+		pci_devices[devct] = nullptr;
+	}
+
+	if (num_rqueued_devices > 0) {
+		// Register all devices that have been added
+		// before the PCI bus was instantiated
+		for (uint8_t dct = 0; dct < num_rqueued_devices; dct++) {
+			this->RegisterPCIDevice(rqueued_devices[dct]);
+		}
+		num_rqueued_devices = 0;
+	}
+}
+
+PCI::~PCI()
+{
+	initialized = false;
+
+	pci_devices_installed = 0;
+	num_rqueued_devices   = 0;
+}
 
 void PCI::InitializePCI()
 {
@@ -419,13 +455,42 @@ void PCI::InitializePCI()
 	initialized = true;
 }
 
+void PCI::Deinitialize()
+{
+	initialized = false;
+
+	pci_devices_installed = 0;
+	num_rqueued_devices   = 0;
+	pci_caddress          = 0;
+
+	for (uint8_t dev = 0; dev < PCI_MAX_PCIDEVICES; ++dev) {
+		for (uint8_t fct = 0; fct < PCI_MAX_PCIFUNCTIONS - 1; ++fct) {
+			for (uint16_t reg = 0; reg < 256; ++reg) {
+				pci_cfg_data[dev][fct][reg] = 0;
+			}
+		}
+	}
+
+	// Uninstall PCI-addressing ports
+	PCI_WriteHandler[0].Uninstall();
+	PCI_ReadHandler[0].Uninstall();
+
+	// Uninstall PCI-register read/write handlers
+	for (uint8_t ct = 0; ct < 4; ++ct) {
+		PCI_WriteHandler[1 + ct].Uninstall();
+		PCI_ReadHandler[1 + ct].Uninstall();
+	}
+
+	callback_pci.Uninstall();
+}
+
 Bits PCI::RegisterPCIDevice(PCI_Device* device, Bits slot)
 {
 	if (!device) {
 		return -1;
 	}
 
-	if (slot>=0) {
+	if (slot >= 0) {
 		// specific slot specified, basic check for validity
 		if (slot >= PCI_MAX_PCIDEVICES) {
 			return -1;
@@ -467,35 +532,6 @@ Bits PCI::RegisterPCIDevice(PCI_Device* device, Bits slot)
 	}
 
 	return -1;
-}
-
-void PCI::Deinitialize()
-{
-	initialized = false;
-
-	pci_devices_installed = 0;
-	num_rqueued_devices   = 0;
-	pci_caddress          = 0;
-
-	for (uint8_t dev = 0; dev < PCI_MAX_PCIDEVICES; ++dev) {
-		for (uint8_t fct = 0; fct < PCI_MAX_PCIFUNCTIONS - 1; ++fct) {
-			for (uint16_t reg = 0; reg < 256; ++reg) {
-				pci_cfg_data[dev][fct][reg] = 0;
-			}
-		}
-	}
-
-	// Uninstall PCI-addressing ports
-	PCI_WriteHandler[0].Uninstall();
-	PCI_ReadHandler[0].Uninstall();
-
-	// Uninstall PCI-register read/write handlers
-	for (uint8_t ct = 0; ct < 4; ++ct) {
-		PCI_WriteHandler[1 + ct].Uninstall();
-		PCI_ReadHandler[1 + ct].Uninstall();
-	}
-
-	callback_pci.Uninstall();
 }
 
 void PCI::RemoveDevice(const uint16_t vendor_id, const uint16_t device_id)
@@ -551,34 +587,212 @@ void PCI::RemoveDevice(const uint16_t vendor_id, const uint16_t device_id)
 	}
 }
 
-PCI::PCI(Section* configuration) : Module_base(configuration)
-{
-	initialized = false;
-	pci_devices_installed = 0;
-
-	for (uint8_t devct = 0; devct < PCI_MAX_PCIDEVICES; devct++) {
-		pci_devices[devct] = nullptr;
-	}
-
-	if (num_rqueued_devices > 0) {
-		// Register all devices that have been added
-		// before the PCI bus was instantiated
-		for (uint8_t dct = 0; dct < num_rqueued_devices; dct++) {
-			this->RegisterPCIDevice(rqueued_devices[dct]);
-		}
-		num_rqueued_devices = 0;
-	}
-}
-
-PCI::~PCI()
-{
-	initialized = false;
-
-	pci_devices_installed = 0;
-	num_rqueued_devices   = 0;
-}
-
 static PCI* pci_interface = nullptr;
+
+static void RegisterPCIDevice(PCI_Device* device)
+{
+	if (pci_interface) {
+		pci_interface->RegisterPCIDevice(device);
+	} else {
+		if (num_rqueued_devices < max_rqueued_devices) {
+			rqueued_devices[num_rqueued_devices++] = device;
+		} else {
+			// Too many devices waiting for registration
+			assert(false);
+		}
+	}
+}
+
+static void UnregisterPCIDevice(PCI_Device* device)
+{
+	if (pci_interface) {
+		// XXX pci_interface->RemoveDevice(device); */
+	} else {
+		// Trying to remove device before PCI got initialized
+		assert(false);
+	}
+}
+
+// ***************************************************************************
+// SVGA S3 device
+// ***************************************************************************
+
+class PCI_VGADevice : public PCI_Device {
+private:
+	static const uint16_t vendor_id = 0x5333; // S3
+	static uint16_t GetDeviceId();
+	static uint8_t GetRevision();
+
+public:
+
+	PCI_VGADevice();
+
+	bool InitializeRegisters(uint8_t registers[256]) override;
+	Bits ParseReadRegister(const uint8_t reg_num) override;
+	bool OverrideReadRegister(const uint8_t reg_num, uint8_t* rval,
+	                          uint8_t* rval_mask) override;
+	Bits ParseWriteRegister(const uint8_t reg_num,
+	                        const uint8_t value) override;
+};
+
+PCI_VGADevice::PCI_VGADevice() : PCI_Device(vendor_id, GetDeviceId())
+{
+	// init (S3 graphics card)
+	assert(svgaCard == SVGA_S3);
+}
+
+uint16_t PCI_VGADevice::GetDeviceId()
+{
+	switch (s3Card) {
+	case S3_86C928:
+		// FIXME: Datasheet does not list PCI info at all.
+		// @TC1995 suggests the PCI version return 0xb0 for CR30,
+		// so this is probably the same here.
+		return 0x88b0;
+	case S3_Vision864:
+		return 0x88c0; // 0x88c0 or 0x88c1
+	case S3_Vision868:
+		// S3 didn't list this in their datasheet, but Windows 95
+		// INF files listed it anyway
+		return 0x8880; // 0x8880 or 0x8881
+	case S3_Vision964:
+		return 0x88d0; // 0x88d0, 0x88d1, 0x88d2 or 0x88d3
+	case S3_Vision968:
+		return 0x88f0; // 0x88f0, 0x88f1, 0x88f2 or 0x88f3
+	case S3_Trio32:
+		return 0x8810; // 0x8810 or 0x8811
+	case S3_Trio64:
+	case S3_Trio64V:
+		return 0x8811; // Trio64 (rev 00h) / Trio64V+ (rev 40h)
+	case S3_ViRGE:
+		return 0x5631;
+	case S3_ViRGEVX:
+		return 0x883D;
+	case S3_Generic:
+		break;
+	default:
+		assert(false);
+		break;
+	};
+
+	// Trio64 - DOSBox SVN claims to emulate this, even though SVN
+	// is closer to Vision864 functionally
+	return 0x8811;
+}
+
+uint8_t PCI_VGADevice::GetRevision()
+{
+	if (s3Card == S3_Trio64V) {
+		// Trio64V+ datasheet, page 280, PCI "class code".
+		// "Hardwired to 0300004xh" (revision is 40h or more)
+		return 0x40;
+	}
+
+	// Trio32/Trio64 datasheet, page 242, PCI "class code".
+	// "Hardwired to 03000000h"
+	return 0x00;
+}
+
+bool PCI_VGADevice::InitializeRegisters(uint8_t registers[256])
+{
+	/* XXX
+	registers[0x08] = GetRevision(); // revision ID
+	registers[0x09] = 0x00; // interface
+	registers[0x0a] = 0x00; // subclass type (vga compatible)
+	registers[0x0b] = 0x03; // class type (display controller)
+	registers[0x0c] = 0x00; // cache line size
+	registers[0x0d] = 0x00; // latency timer
+	registers[0x0e] = 0x00; // header type (other)
+
+	registers[0x3c] = 0xff; // no irq
+
+	// reset
+	registers[0x04] = 0x23; // command register:
+	                        // - vga palette snoop
+	                        // - ports enabled
+	                        // - memory space enabled
+	registers[0x05] = 0x00;
+	registers[0x06] = 0x80; // status register (medium timing, fast back-to-back)
+	registers[0x07] = 0x02;
+
+	// allow changing mem/io enable and VGA palette snoop
+	host_writew(config_writemask + 0x04, 0x0023);
+
+	switch (s3Card) {
+	case S3_86C928:
+	case S3_Vision864:
+	case S3_Vision964:
+	case S3_Trio32:
+	case S3_Trio64:
+		// BAR0: memory resource 8MB aligned [22:0 reserved]
+		host_writed(config_writemask + 0x10, 0xff800000);
+		break;
+	case S3_Vision868:
+	case S3_Vision968:
+	case S3_Trio64V:
+	case S3_ViRGE:
+	case S3_ViRGEVX:
+		// BAR0: memory resource 64MB aligned [25:0 reserved]
+		host_writed(config_writemask + 0x10, 0xfc000000);
+		break;
+	default:
+		// BAR0: memory resource 8MB aligned [22:0 reserved]
+		host_writed(config_writemask + 0x10, 0xff800000);
+		break;
+	};
+
+	const auto val = (static_cast<uint32_t>(S3_LFB_BASE) & 0xfffffff0) | 0x8;
+	host_writed(config + 0x10, val);
+	*/
+}
+
+Bits PCI_VGADevice::ParseReadRegister(const uint8_t reg_num)
+{
+	// XXX
+	return 0;
+}
+
+bool PCI_VGADevice::OverrideReadRegister(const uint8_t reg_num,
+                                         uint8_t* rval,
+	                                     uint8_t* rval_mask)
+{
+	// XXX
+	return false;
+}
+
+Bits ParseWriteRegister(const uint8_t reg_num, uint8_t value)
+{
+	// XXX
+	return 0;
+}
+
+// ***************************************************************************
+// Initialization
+// ***************************************************************************
+
+static PCI_Device *dev_SVGAS3 = nullptr;
+
+void PCI_AddSVGAS3_Device()
+{
+	if (!dev_SVGAS3) {
+		dev_SVGAS3 = new PCI_VGADevice();
+		assert(dev_SVGAS3);
+		if (!dev_SVGAS3) {
+			return;
+		}
+
+		RegisterPCIDevice(dev_SVGAS3);
+	}
+}
+
+void PCI_RemoveSVGAS3_Device()
+{
+	if (dev_SVGAS3) {
+		UnregisterPCIDevice(dev_SVGAS3);
+		delete dev_SVGAS3;
+		dev_SVGAS3 = nullptr;
+	}
+}
 
 PhysPt PCI_GetPModeInterface()
 {
@@ -615,3 +829,17 @@ void PCI_Init(Section* sec)
 	pci_interface = new PCI(sec);
 	sec->AddDestroyFunction(&PCI_ShutDown, false);
 }
+
+
+// XXX Port changes from (10 files):
+//
+// int10_video_state.cpp
+// int10_char.cpp
+// int10_modes.cpp
+// memory.cpp
+// pci_bus.cpp (partially done)
+// vga_cpp
+// vga_draw.cpp
+// vga_seq.cpp
+// vga_xga.cpp
+// vga_s3.cpp (partially done)

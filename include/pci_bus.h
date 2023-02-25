@@ -86,16 +86,20 @@ public:
 		return static_cast<Bits>(num_subdevices + 1);
 	}
 
+	virtual bool InitializeRegisters(uint8_t registers[256]) = 0;
 	virtual Bits ParseReadRegister(const uint8_t reg_num)    = 0;
 	virtual bool OverrideReadRegister(const uint8_t reg_num, uint8_t* rval,
 	                                  uint8_t* rval_mask)    = 0;
 	virtual Bits ParseWriteRegister(const uint8_t reg_num,
 	                                const uint8_t value)     = 0;
-	virtual bool InitializeRegisters(uint8_t registers[256]) = 0;
 	virtual ~PCI_Device()                                    = 0;
 };
 
 bool PCI_IsInitialized();
+
+void PCI_AddSVGAS3_Device();
+void PCI_RemoveSVGAS3_Device();
+
 RealPt PCI_GetPModeInterface();
 
 #endif
