@@ -197,132 +197,138 @@ Controla a seleção dos modos VESA 1.2 e 2.0 disponibilizados:
 			   sistema para serem jogados.
 .
 :CONFIG_SPEED_MODS
-Permit changes known to improve performance (enabled by default).
-Currently, no games are known to be negatively affected by this.
-Please file a bug with the project if you find a game that fails
-when this is enabled so we will list them here.
+Autoriza modificações que melhoram performance (ativado por padrão).
+Atualmente, não há jogos conhecidos que são negativamente impactados por isso.
+Por favor, caso encontrar algum jogo que falhe quando isso estiver ativado,  
+informe sobre o bug com o projeto para que este seja incluso aqui.
 .
 :CONFIG_AUTOEXEC_SECTION
-How autoexec sections are handled from multiple config files:
-  join:       Combine them into one big section (legacy behavior; default).
-  overwrite:  Use the last one encountered, like other config settings.
+Como as seções de autoexec são tratados por vários arquivos de config:
+  join:       Combina os dois arquivos em uma única seção grande (comportamento 
+			  antigo; padrão).
+  overwrite:  Use o último encontrado, como o resto das configurações do config.
 .
 :CONFIG_AUTOMOUNT
-Mount 'drives/[c]' directories as drives on startup, where [c] is a lower-case
-drive letter from 'a' to 'y' (enabled by default). The 'drives' folder can be
-provided relative to the current directory or via built-in resources.
-Mount settings can be optionally provided using a [c].conf file along-side
-the drive's directory, with content as follows:
+Monte diretórios 'drives/[c]' como unidades de disco durante a inicialização,
+sendo [c] uma letra minuscula de unidade entre 'a' até 'y' (ativo por padrão). 
+A pasta 'drives' pode ser fornecida em relação ao diretório atual ou por meio de
+recursos internos. As configurações de montagem podem ser providas opcionalmente
+usando um arquivo [c].conf em conjunto do diretório contendo a unidade de disco, 
+como a seguir:
   [drive]
-  type    = dir, overlay, floppy, or cdrom
-  label   = custom_label
-  path    = path-specification, ie: path = %%path%%;c:\tools
-  override_drive = mount the directory to this drive instead (default empty)
-  verbose = true or false
+  type    = dir, overlay, floppy, ou cdrom
+  label   = indicação_personalizada
+  path    = especificação do caminho, ex: path = %%path%%;c:\tools
+  override_drive = Monte o diretório nessa unidade de disco (vazio por padrão)
+  verbose = true ou false
 .
 :CONFIG_STARTUP_VERBOSITY
-Controls verbosity prior to displaying the program ('auto' by default):
-  Verbosity   | Welcome | Early stdout
-  high        |   yes   |    yes
-  low         |   no    |    yes
-  quiet       |   no    |    no
-  auto        | 'low' if exec or dir is passed, otherwise 'high'
+Controla a verbosidade antes de exibir o programa ('auto' por padrão):
+  Verbosidade | Boas-Vindas | Stdout inicial
+  high        |     sim     |      sim
+  low         |     não     |      sim
+  quiet       |     não     |      não
+  auto        | como 'low' se exec ou dir forem informados, caso contrário 'high'
 .
 :CONFIG_ALLOW_WRITE_PROTECTED_FILES
-Many games open all their files with writable permissions; even files that they
-never modify. This setting lets you write-protect those files while still
-allowing the game to read them. A second use-case: if you're using a copy-on-write
-or network-based filesystem, this setting avoids triggering write-operations for
-these write-protected files.
+Vários jogos desbloqueiam todos os seus arquivos com permissões de edição, até
+arquivos que nunca modificam. Essa configuração permite que esses arquivos sejam
+protegidos contra modificação, apenas deixando que o jogo os leia. Outro cenário
+de uso: se você estiver usando um sistema de arquivos baseado em rede ou cópia
+em gravação, essa configuração evita iniciar operações de edição sobre arquivos
+protegidos contra gravação.
 .
 :CONFIG_FRAMESKIP
-Consider capping frame-rates using the '[sdl] host_rate' setting.
+Considere limitar a taxa de quadros usando a configuração '[sdl] host_rate'.
 .
 :CONFIG_ASPECT
-Scale the vertical resolution to produce a 4:3 display aspect ratio, matching
-that of the original monitors the majority of DOS games were designed for
-(enabled by default).
-This setting only affects video modes that use non-square pixels, such as
-320x200 or 640x400; whereas square-pixel modes, such as 640x480
-and 800x600, are displayed as-is.
+Redimensione a resolução vertical para produzir uma proporção de tela 4:3, igual
+os monitores originais em que a maior parte dos jogos de DOS foram destinados
+(ativado por padrão).
+Essa configuração apenas afeta modos de vídeo que usam pixels não quadrados, como
+320x200 ou 640x400; enquanto modos com pixeis quadrados, como 640x480 ou 800x600,
+serão exibidos como se encontram.
 .
 :CONFIG_MONOCHROME_PALETTE
-Select default palette for monochrome display ('white' by default).
-Works only when emulating 'hercules' or 'cga_mono'.
-You can also cycle through available colours using F11.
+Selecione o palheta de cores padrão para exibições monocromáticas ('white' por 
+padrão). Apenas funciona ao emular 'hercules' ou 'cga_mono'.
+Você também pode alternar entre as cores disponíveis usando F11.
 .
 :CONFIG_CGA_COLORS
-Set the interpretation of CGA RGBI colours. Affects all machine types capable
-of displaying CGA or better graphics. Built-in presets:
-  default:       The canonical CGA palette, as emulated by VGA adapters
-                 (default).
-  tandy <bl>:    Emulation of an idealised Tandy monitor with adjustable brown
-                 level. The brown level can be provided as an optional second
-                 parameter (0 - red, 50 - brown, 100 - dark yellow;
-                 defaults to 50). E.g. tandy 100
-  tandy-warm:    Emulation of the actual colour output of an unknown Tandy
-                 monitor.
-  ibm5153 <c>:   Emulation of the actual colour output of an IBM 5153 monitor
-                 with a unique contrast control that dims non-bright colours
-                 only. The contrast can be optionally provided as a second
-                 parameter (0 to 100; defaults to 100), e.g. ibm5153 60
+Escolha a interpretação de cores RGBI do Adaptador Gráfico Colorido (CGA). Afeta 
+todas as máquinas capazes de exibir gráficos CGA ou melhores. Predefinições inclusas:
+  default:       A palheta de cores original do CGA, como emulado pelas placas VGA
+                 (padrão).
+  tandy <bl>:    Emulação de um monitor Tandy ideal com nível de marrom ajustável.
+                 O nível de marrom pode ser dado como um segundo parâmetro opcional
+                 (0 - vermelho, 50 - marrom, 100 - amarelo escuro; 50 sendo o
+                 padrão). Ex. tandy 100
+  tandy-warm:    Emulação verídica da palheta de cores como renderizada por um 
+                 monitor Tandy desconhecido.
+  ibm5153 <c>:   Emulação verídica da palheta de cores como renderizada por um
+                 monitor IBM 5153 com controle único de contraste que apenas
+                 escurece cores não brilhantes. O contraste pode ser dado como
+                 um segundo parâmetro opcional (0 até 100; 100 sendo o padrão),
+				 Ex. ibm5153 60
   agi-amiga-v1, agi-amiga-v2, agi-amiga-v3:
-                 Palettes used by the Amiga ports of Sierra AGI games.
-  agi-amigaish:  A mix of EGA and Amiga colours used by the Sarien
-                 AGI-interpreter.
-  scumm-amiga:   Palette used by the Amiga ports of LucasArts EGA games.
-  colodore:      Commodore 64 inspired colours based on the Colodore palette.
-  colodore-sat:  Colodore palette with 20% more saturation.
-  dga16:         A modern take on the canonical CGA palette with dialed back
-                 contrast.
-You can also set custom colours by specifying 16 space or comma separated
-colour values, either as 3 or 6-digit hex codes (e.g. #f00 or #ff0000 for full red),
-or decimal RGB triplets (e.g. (255, 0, 255) for magenta). The 16 colours are
-ordered as follows:
-  black, blue, green, cyan, red, magenta, brown, light-grey, dark-grey,
-  light-blue, light-green, light-cyan, light-red, light-magenta, yellow, white.
-Their default values, shown here in 6-digit hex code format, are:
+                 Palhetas de cores usados pelos jogos AGI da Sierra no Amiga.
+  agi-amigaish:  Uma combinação entre a palheta de cores do EGA e do Amiga
+                 usado pelo interpretador de AGI do Sarien.
+  scumm-amiga:   A palheta de cores usado pelos jogos EGA da LucasArts no Amiga.
+  colodore:      Palheta de cores do Colodore, que é inspirada no Commodore 64.
+  colodore-sat:  Palheta de cores do Colodore com 20% mais saturação.
+  dga16:         Uma interpretação moderna da palheta de cores do CGA com
+                 contraste reduzido.
+Ademais, você pode definir uma palheta de cores personalizada especificando 16  
+valores de cores separados por espaço ou virgula, tanto por códigos Hex de 3 ou 
+6 dígitos (ex. #f00 ou #ff0000 para vermelho), ou valores decimais RGB em tríade 
+(ex. (255, 0, 255) para magenta). As 16 cores são organizadas da seguinte forma:
+  preto, azul, verde, ciano , vermelho, magenta, marrom, cinza claro, cinza
+  escuro, azul claro, verde claro, ciano claro, vermelho claro, magenta claro,
+  amarelo, branco.
+Seus valores padrão, em formato de códigos Hex em 6 dígitos, são:
   #000000 #0000aa #00aa00 #00aaaa #aa0000 #aa00aa #aa5500 #aaaaaa
   #555555 #5555ff #55ff55 #55ffff #ff5555 #ff55ff #ffff55 #ffffff
 .
 :CONFIG_SCALER
-Software scalers are deprecated in favour of hardware-accelerated options:
-  - If you used the normal2x/3x scalers, set a desired 'windowresolution'
-    instead.
-  - If you used an advanced scaler, consider one of the 'glshader'
-    options instead.
+Redimensionadores por Software estão depreciados em favor de opções aceleradas
+por hardware:
+  - Se você usa os redimensionadores normal2x/3x, escolha a 'windowresolution'
+    desejada em seu lugar.
+  - Se você usa um redimensionador avançado, considere uma das opções 'glshader'
+    em seu lugar.
 .
 :CONFIG_GLSHADER
-Set the GLSL shader to use in OpenGL output modes.
-Options include 'default', 'none', a shader listed using the --list-glshaders
-command-line argument, or an absolute or relative path to a file.
-'default' sets the `interpolation/sharp.glsl` shader.
-In all cases, you may omit the shader's '.glsl' file extension.
+Define o sombreador GLSL (GLSL shader) a ser usado nos modos de saída OpenGL.
+Opções incluem 'default', 'none', um dos sombreadores indicados pelo comando
+--list-glshaders, ou o caminho relativo ou absoluto de um arquivo.
+'default' escolhe o sombreador `interpolation/sharp.glsl`.
+Em todos os casos, você pode omitir extensão de arquivo '.glsl' do sombreador.
 .
 :CONFIG_COMPOSITE
-Enable composite mode on start ('auto' by default).
-'auto' lets the program decide.
-Notes: Fine-tune the settings below (i.e., hue) using the composite hotkeys,
-       then read the new settings from your console and enter them here.
+Ativa o modo analógico 'composite' ao iniciar ('auto' por padrão).
+'auto' deixa o programa escolher.
+Observação: Aperfeiçoe as configurações abaixo (ex. hue) usando as teclas do
+			composite, e depois leia as novas pelo seu console e insira elas aqui.
 .
 :CONFIG_ERA
-Era of composite technology ('auto' by default).
-When 'auto', PCjr uses 'new', and CGA/Tandy use 'old'.
+Geração da tecnologia 'composite' ('auto' por padrão).
+Quando for 'auto', o PCjr usa 'new', e o CGA/Tandy usa 'old'.
 .
 :CONFIG_HUE
-Appearance of RGB palette. For example, adjust until the sky is blue.
+Aparência da palheta de cores RGB. Por exemplo, ajuste até que o céu esteja azul.
 .
 :CONFIG_SATURATION
-Intensity of colors, from washed out to vivid.
+Intensidade das cores, de desbotada até vivida.
 .
 :CONFIG_CONTRAST
-Ratio between the dark and light area.
+Proporção entre a área clara e escura.
 .
 :CONFIG_BRIGHTNESS
-Luminosity of the image, from dark to light.
+Luminosidade da imagem, de escuro para claro.
 .
 :CONFIG_CONVERGENCE
-Convergence of subpixel elements, from blurry to sharp (CGA and Tandy-only).
+Convergência de elementos subpixel, de borrado para nítido (Apenas CGA e Tandy).
 .
 :CONFIG_CORE
 CPU core used in emulation ('auto' by default). 'auto' will switch to dynamic
