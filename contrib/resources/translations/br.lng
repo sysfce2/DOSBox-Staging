@@ -331,156 +331,173 @@ Luminosidade da imagem, de escuro para claro.
 Convergência de elementos subpixel, de borrado para nítido (Apenas CGA e Tandy).
 .
 :CONFIG_CORE
-CPU core used in emulation ('auto' by default). 'auto' will switch to dynamic
-if available and appropriate.
+Núcleo do processador a ser usado na emulação ('auto' por padrão). 'auto' mudará
+se disponível e apropriado.
 .
 :CONFIG_CPUTYPE
-CPU type used in emulation ('auto' by default). 'auto' is the fastest choice.
+Tipo de processador a ser usado na emulação ('auto' por padrão). 'auto' é a 
+escolha mais rápida.
 .
 :CONFIG_CYCLES
-Number of instructions DOSBox tries to emulate per millisecond
-('auto' by default). Setting this value too high may result in sound drop-outs
-and lags.
-Possible settings:
-  auto:            Try to guess what a game needs. It usually works, but can
-                   fail with certain games.
-  fixed <number>:  Set a fixed number of cycles. This is what you usually
-                   need if 'auto' fails (e.g. 'fixed 4000').
-  max:             Allocate as much cycles as your computer is able to handle.
+Número de instruções que o DOSBox tenta emular por milissegundo ('auto' por 
+padrão). Definindo esse número alto demais pode resultar em queda na qualidade
+sonora e latência maior.
+Definições possíveis:
+  auto:            Tenta adivinhar o que um jogo precisa. Geralmente funciona,
+                   mas pode falhar sobre certos jogos.
+  fixed <número>:  Determina um número especifico de ciclos. Geralmente usado
+                   se 'auto' falhar (ex. 'fixed 4000').
+  max:             Aloque a mesma quantidade de ciclos que seu computador
+                   consegue lidar.
 .
 :CONFIG_CYCLEUP
-Number of cycles added or subtracted with speed control hotkeys
-(10 by default).
+Número de ciclos a serem adicionados ou subtraídos usando as teclas de controle 
+de velocidade (10 por padrão).
 .
 :CONFIG_CYCLEDOWN
-Setting it lower than 100 will be a percentage (20 by default).
+Definir um número menor que 100 resultará em uma porcentagem (20 por padrão).	
 .
 :CONFIG_MOUSE_CAPTURE
-Set the mouse capture behaviour:
-  onclick:   Capture the mouse when clicking any mouse button in the window 
-             (default).
-  onstart:   Capture the mouse immediately on start. Might not work correctly
-             on some host operating systems.
-  seamless:  Let the mouse move seamlessly between the DOSBox window and the
-             rest of the desktop; captures only with middle-click or hotkey.
-             Seamless mouse does not work correctly with all the games.
-             Windows 3.1x can be made compatible with a custom mouse driver.
-  nomouse:   Hide the mouse and don't send mouse input to the game.
-For touch-screen control, use 'seamless'.
+Define o funcionamento da restrição do mouse:
+  onclick:   Restringe o mouse ao clicar com qualquer botão do mouse dentro da
+             janela (padrão).
+  onstart:   Restringe o mouse imediatamente ao iniciar. Pode não funcionar
+             corretamente em alguns sistemas operacionais hospedeiros.
+  seamless:  Permite que o mouse se mova de forma contínua entre a janela do
+             DOSBox e o restante da área de trabalho; o restringe apenas com
+             clique do meio ou tecla de atalho. O mouse ininterrupto (seamless)
+             não funciona corretamente com todos os jogos. O Windows 3.1x se
+			 torna compatível com esse modo instalando um driver personalizado.
+  nomouse:   Oculte e não envie dados do mouse para o jogo.
+Em caso de controle por toque (em telas touch), use o 'seamless'.
 .
 :CONFIG_MOUSE_MIDDLE_RELEASE
-If enabled, middle-click will release the captured mouse, and also capture
-when seamless (enabled by default).
+Se ativo, o botão do meio do mouse soltará o mouse e também o restringirá
+quando o mouse estiver livre (ativo por padrão).
 .
 :CONFIG_MOUSE_SENSITIVITY
-Mouse sensitivity for the horizontal and vertical axes, as a percentage
-(100,100 by default). Negative values invert the axis, zero disables it.
-Providing only one value sets sensitivity for both axes.
-The setting can be adjusted in runtime (also per mouse interface) using
-internal MOUSECTL.COM tool, available on drive Z.
+Sensibilidade do mouse para os eixos horizontal e vertical em porcentagem
+(100,100 por padrão). Números negativos invertem o eixo e zero desativa o mouse.
+Fornecendo apenas um número define a mesma sensibilidade para os dois eixos.
+Essa configuração pode ser ajustada em pleno funcionamento (também conforme a 
+interface de mouse) usando a ferramenta interna MOUSECTL.COM, disponível no
+drive Z.
 .
 :CONFIG_MOUSE_RAW_INPUT
-Enable to bypass your operating system's mouse acceleration and sensitivity
-settings (enabled by default). Works in fullscreen or when the mouse is
-captured in window mode.
+Ative para ignorar as configurações do seu sistema operacional sobre aceleração 
+e sensibilidade do mouse (ativo por padrão). Funciona em tela cheia ou
+quando o mouse está restringido no modo janela.
 .
 :CONFIG_DOS_MOUSE_DRIVER
-Enable built-in DOS mouse driver (enabled by default).
-Notes: Disable if you intend to use original MOUSE.COM driver in emulated DOS.
-       When guest OS is booted, built-in driver gets disabled automatically.
+Ativa o driver de mouse do integrado ao DOS (ativo por padrão).
+Observações: Desative se você pretende usar o driver original do MOUSE.COM no
+			 DOS emulado. Quando um sistema operacional hóspede é inicializado,
+			 o driver integrado se desativa automaticamente.
 .
 :CONFIG_DOS_MOUSE_IMMEDIATE
-Update mouse movement counters immediately, without waiting for interrupt
-(disabled by default). May improve gameplay, especially in fast-paced games
-(arcade, FPS, etc.), as for some games it effectively boosts the mouse
-sampling rate to 1000 Hz, without increasing interrupt overhead.
-Might cause compatibility issues. List of known incompatible games:
+Atualiza os marcadores de movimentos do mouse imediatamente, sem esperar pela
+interrupção (desativado por padrão). Pode melhorar a jogabilidade, especialmente
+em jogos frenéticos (como arcade, FPS, etc.), pois para alguns jogos, isso
+efetivamente aumenta a taxa de amostragem do mouse para 1000 Hz sem que aumente
+sobrecarga de interrupção. Pode causar problemas de compatibilidade. 
+Lista de jogos incompatíveis conhecidos:
   - Ultima Underworld: The Stygian Abyss
   - Ultima Underworld II: Labyrinth of Worlds
-Please report it if you find another incompatible game so we can update this
-list.
+Por favor, nos informe se você encontrar outro jogo incompatível para que 
+possamos atualizar esta lista.
 .
 :CONFIG_PS2_MOUSE_MODEL
-PS/2 AUX port mouse model:
-  standard:      3 buttons, standard PS/2 mouse.
-  intellimouse:  3 buttons + wheel, Microsoft IntelliMouse.
-  explorer:      5 buttons + wheel, Microsoft IntelliMouse Explorer.
-  none:          no PS/2 mouse emulated.
-Default: explorer
+Modelo do mouse na porta auxiliar (AUX) do conector PS/2:
+  standard:      3 botões, mouse padrão do conector PS/2.
+  intellimouse:  3 botões + a rodinha, Microsoft IntelliMouse.
+  explorer:      5 botões + a rodinha, Microsoft IntelliMouse Explorer.
+  none:          nenhum mouse do conector PS/2 mouse emulado.
+Padrão: 'explorer'
 .
 :CONFIG_COM_MOUSE_MODEL
-COM (serial) port default mouse model:
-  2button:      2 buttons, Microsoft mouse.
-  3button:      3 buttons, Logitech mouse;
-                mostly compatible with Microsoft mouse.
-  wheel:        3 buttons + wheel;
-                mostly compatible with Microsoft mouse.
-  msm:          3 buttons, Mouse Systems mouse;
-                NOT compatible with Microsoft mouse.
-  2button+msm:  Automatic choice between '2button' and 'msm'.
-  3button+msm:  Automatic choice between '3button' and 'msm'.
-  wheel+msm:    Automatic choice between 'wheel' and 'msm' (default).
-Notes: Enable COM port mice in the [serial] section.
+Modelo do mouse padrão na porta serial COM:
+  2button:      2 botões, mouse da Microsoft.
+  3button:      3 botões, mouse da Logitech;
+                por grande parte compatível com o mouse da Microsoft.
+  wheel:        3 botões + a rodinha;
+                por grande parte compatível com o mouse da Microsoft.
+  msm:          3 botões, mouse da Mouse Systems;
+                NÃO compatível com o mouse da Microsoft.
+  2button+msm:  Escolha automática entre '2button' e 'msm'.
+  3button+msm:  Escolha automática entre '3button' e 'msm'.
+  wheel+msm:    Escolha automática entre 'wheel' e 'msm' (padrão).
+Observação: Habilite os mouses da porta serial COM na seção [serial].
 .
 :CONFIG_NOSOUND
-Enable silent mode (disabled by default).
-Sound is still fully emulated in silent mode, but DOSBox outputs silence.
+Habilitar modo silencioso (desativado por padrão).
+O som ainda é totalmente emulado no modo silencioso, mas o DOSBox não emite som.
 .
 :CONFIG_RATE
-Mixer sample rate (48000 by default).
+Taxa de amostragem do mixer sonoro (48000 por padrão).
 .
 :CONFIG_BLOCKSIZE
-Mixer block size; larger values might help with sound stuttering but sound will
-also be more lagged.
+Tamanho do bloco do mixer sonoro; números maiores podem ajudar com travamentos
+no som, porém afetará sua latência (aumentando o atraso). 
 .
 :CONFIG_PREBUFFER
-How many milliseconds of sound to render on top of the blocksize; larger values
-might help with sound stuttering but sound will also be more lagged.
+Quantos milissegundos levará o som para renderizar além do tamanho do bloco;
+números maiores podem ajudar com travamentos no som porém afetará sua latência 
+(aumentando o atraso).
 .
 :CONFIG_NEGOTIATE
-Let the system audio driver negotiate (possibly) better rate and blocksize
-settings.
+Permite que o driver de áudio do seu sistema ajuste (possivelmente) melhores
+configurações sobre a taxa de amostragem e do tamanho do bloco do mixer sonoro.
 .
 :CONFIG_COMPRESSOR
-Enable the auto-leveling compressor on the master channel to prevent clipping
-of the audio output:
-  off:  Disable compressor.
-  on:   Enable compressor (default).
+Ativa o compressor de nivelamento automático sobre no canal principal para evitar
+cortes na saída de áudio:
+  off:  Desativa o compressor.
+  on:   Ativa o compressor (padrão).
 .
 :CONFIG_CROSSFEED
-Set crossfeed globally on all stereo channels for headphone listening:
-  off:         No crossfeed (default).
-  on:          Enable crossfeed (at strength 40).
-  <strength>:  Set crossfeed strength from 0 to 100, where 0 means no crossfeed
-               (off) and 100 full crossfeed (effectively turning stereo content
-               into mono).
-Notes: You can set per-channel crossfeed via mixer commands.
+Define a alimentação cruzada (crossfeed) a ser usada globalmente sobre todos os 
+canais em estéreo para a audição com fones de ouvido:
+  off:        Sem alimentação cruzada (padrão).
+  on:         Ative a alimentação cruzada (com o tamanho 40).
+  <tamanho>:  Escolha um tamanho para a alimentação cruzada entre 0 até 100,
+              aonde 0 significa que a opção está desativada (é o mesmo que 'off')
+              e 100 para uma alimentação cruzada total (efetivamente tornando o 
+			  conteúdo estéreo em mono).
+Observação: Você pode definir alimentação cruzada por canal usando comandos do
+			mixer sonoro.
 .
 :CONFIG_REVERB
-Enable reverb globally to add a sense of space to the sound:
-  off:     No reverb (default).
-  on:      Enable reverb (medium preset).
-  tiny:    Simulates the sound of a small integrated speaker in a room;
-           specifically designed for small-speaker audio systems
-           (PC Speaker, Tandy, PS/1 Audio, and LPT DAC devices).
-  small:   Adds a subtle sense of space; good for games that use a single
-           synth channel (typically OPL) for both music and sound effects.
-  medium:  Medium room preset that works well with a wide variety of games.
-  large:   Large hall preset recommended for games that use separate
-           channels for music and digital audio.
-  huge:    A stronger variant of the large hall preset; works really well
-           in some games with more atmospheric soundtracks.
-Notes: You can fine-tune per-channel reverb levels via mixer commands.
+Ativa a reverberação (reverb) a ser usada globalmente para adicionar uma 
+sensação de espaço ao som:
+  off:     Sem reverberação (padrão).
+  on:      Ative a reverberação (predefinição média).
+  tiny:    Simula o som de um pequeno alto-falante integrado em uma sala;
+           projetado especificamente para sistemas com alto-falantes pequenos
+           (como alto-falantes de PC e Áudio PS/1, além de dispositivos Tandy e
+		   LPT DAC).
+  small:   Adiciona uma sensação sutil de espaço; bom para jogos que usam um 
+           único canal de sintetizador (como geralmente o OPL) para música e 
+		   seus efeitos sonoros.
+  medium:  Predefinição de sala média que funciona bem com uma alta variedade de 
+		   jogos.
+  large:   Predefinição de um salão enorme, recomendado para jogos que usam 
+		   canais separados para música e áudio digital.
+  huge:    Uma versão mais forte da predefinição do salão enorme; funciona muito
+           bem em alguns jogos com trilhas sonoras mais atmosféricas.
+Observação: Você pode ajustar os níveis de reverberação por canal através dos 
+			comandos do mixer sonoro.
 .
 :CONFIG_CHORUS
-Enable chorus globally to add a sense of stereo movement to the sound:
-  off:     No chorus (default).
-  on:      Enable chorus (normal preset).
-  light:   A light chorus effect (especially suited for synth music that
-           features lots of white noise.)
-  normal:  Normal chorus that works well with a wide variety of games.
-  strong:  An obvious and upfront chorus effect.
-Notes: You can fine-tune per-channel chorus levels via mixer commands.
+Ative o coro de áudio globalmente para adicionar uma sensação de movimento em
+estéreo ao som:
+  off:     Nenhum coro (padrão).
+  on:      Ative o coro (predefinição normal).
+  light:   Um pequeno efeito de coro (particularmente adequado para músicas
+           sintetizadas que apresentam muito ruído branco.)
+  normal:  Coro normal que funciona bem com uma grande variedade de jogos.
+  strong:  Um efeito de coro óbvio e pronunciado.
+Observação: Você pode ajustar os níveis de coro por canal através dos comandos
+			do mixer sonoro.
 .
 :CONFIG_MIDIDEVICE
 Set where MIDI data from the emulated MPU-401 MIDI interface is sent
