@@ -29,7 +29,7 @@ mouse ininterrupto, pressione %s+F10 para restringi-lo
 mouse ininterrupto, aperte %s+F10 ou o botão do meio do mouse para restringi-lo
 .
 :CONFIG_FULLSCREEN
-Comece diretamente em tela cheia.
+Inicie diretamente em tela cheia.
 Execute INTRO e veja as Teclas Especiais para as teclas de controle da janela.
 .
 :CONFIG_DISPLAY
@@ -38,14 +38,14 @@ e das configurações do usuário.
 .
 :CONFIG_FULLRESOLUTION
 Que resolução deve ser usada em tela cheia: 'original', 'desktop'
-ou um valor em especifico (ex. 1024x768).
+ou um valor específico (ex. 1024x768).
 .
 :CONFIG_WINDOWRESOLUTION
-Define o tamanho da janela quando estiver rodando em modo de janela:
+Define o tamanho da janela ao executar no modo janela:
   default:   Seleciona a melhor opção baseado no seu contexto atual e
              suas outras configurações.
   small, medium, ou large (ou s, m, l):
-             Dimensiona a janela conforme o área de trabalho.
+             Dimensiona a janela conforme a área de trabalho.
   <personalizado>:  Dimensiona a janela conforme as dimensões
              definidas pelo formato LxA. Por exemplo: 1024x768.
              O dimensionamento não é realizado quando output=surface.
@@ -59,70 +59,70 @@ Define o tamanho da área de visualização (região de renderização) da janel
 					Pode ser definido em LxA, N%, N.M%. Exemplo: 960x720 ou 50%
 .
 :CONFIG_WINDOW_POSITION
-Define a posição inicial da janela quando rodar em modo em janela:
+Define a posição inicial da janela quando rodar em modo janela:
   auto:             Permite o gestor de janela decidir a posição.
   <personalizado>:  Define a posição da janela conforme o formato X,Y. Por 
 					exemplo: 250,100. 0,0 é o canto superior esquerdo da tela.
 .
 :CONFIG_WINDOW_DECORATIONS
-Ativa as decorações da janela no modo em janela.
+Ative as decorações de janela no modo janela.
 .
 :CONFIG_TRANSPARENCY
-Define a transparência de tela do DOSBox Staging.
+Define a transparência da tela do DOSBox Staging.
 De 0 (sem transparência) para 90 (transparência alta).
 .
 :CONFIG_MAX_RESOLUTION
-Essa configuração foi renomeada para viewport_resolution.
+Esta configuração foi renomeada para viewport_resolution.
 .
 :CONFIG_HOST_RATE
 Define a taxa de atualização do anfitrião:
-  auto:      		Usa taxas SDI, ou taxas VRR quando estiver em tela cheia ou  
-					em uma tela com alta taxa de atualização.
-  sdi:       		Use taxas de dispositivos de interface seriais (ou SDI), 
-					sem mais ajustes.
-  vrr:       		Reduz 3 Hz da taxa informada (prática recomendada para
-					telas VRR, ou seja, de taxas variáveis).
-  <personalizado>:  Especifica uma taxa de atualização personalizada tanto como
-					valor inteiro ou decimal desde maior que 23.000.
+  auto:      		Usa taxas SDI ou taxas VRR em tela cheia ou em tela com 
+					de alta taxa de atualização.
+  sdi:       		Usa taxas de dispositivos de interface seriais (ou SDI), 
+					sem ajustes adicionais.
+  vrr:       		Diminui 3 Hz da taxa informada (prática recomendada para
+					telas VRR, ou seja, com taxas variáveis).
+  <personalizado>:  Especifica uma taxa de atualização personalizada, como
+					valor inteiro ou decimal, desde maior que 23.000.
 .
 :CONFIG_VSYNC
-Sincroniza com a taxa de atualização da tela se compatível. Isso pode
-reduzir a tremulação e o 'tearing' (rasgo), mas pode afetar sua performance.
+Sincroniza com a taxa de atualização da tela, se compatível. Isso pode
+diminuir a tremulação e o 'tearing' (rasgo), mas pode afetar sua performance.
 .
 :CONFIG_VSYNC_SKIP
-Numero de microssegundos que serão bloqueados pela renderização antes de pular
-para o próximo quadro. Em 0 fica desativado e sempre renderizará.
+Número de microssegundos bloqueados pela renderização antes de pular para
+o próximo quadro. Em 0, fica desativado e sempre renderizará.
 .
 :CONFIG_PRESENTATION_MODE
 Selecione o modo de apresentação dos quadros:
-  auto:  Inteligentemente cronometra e perde quadros para prevenir travamentos
+  auto:  Cronometra e descarta quadros inteligentemente para evitar travamentos
          na emulação, conforme a taxa de quadros do anfitrião e do DOS.
-  cfr:   Sempre exibe quadros do DOS em uma taxa de quadros constante.
-  vfr:   Sempre exibe quadros diferentes do DOS em uma taxa de quadros variável.
+  cfr:   Exibe sempre os quadros do DOS em uma taxa constante.
+  vfr:   Exibe sempre os quadros diferenciados do DOS em uma taxa variável.
 .
 :CONFIG_OUTPUT
 O sistema de video a ser exibido.
 .
 :CONFIG_TEXTURE_RENDERER
-Driver de renderização a ser usado no modo de exibição de textura.
-Use o 'texture_renderer=auto' para uma escolha automática.
+Driver de renderização para o modo de exibição de textura.
+Use 'texture_renderer=auto' para uma escolha automática.
 .
 :CONFIG_CAPTURE_MOUSE
-Transferido para a seção [mouse].
+Movido para a seção [mouse].
 .
 :CONFIG_SENSITIVITY
-Transferido para a seção [mouse].
+Movido para a seção [mouse].
 .
 :CONFIG_RAW_MOUSE_INPUT
-Transferido para a seção [mouse].
+Movido para a seção [mouse].
 .
 :CONFIG_WAITONERROR
 Mantém o console aberto em caso de erro.
 .
 :CONFIG_PRIORITY
-Níveis de prioridade a serem aplicados quando ativo e inativo, respectivamente.
+Níveis de prioridade aplicados quando ativo e inativo, respectivamente.
 (O padrão é 'auto auto')
-'auto' permite que o sistema operacional anfitrião controle sua prioridade.
+'auto' permite o controle da prioridade pelo o sistema operacional anfitrião.
 .
 :CONFIG_MUTE_WHEN_INACTIVE
 Desativa o som quando a janela estiver inativa.
@@ -133,84 +133,83 @@ Pausa a emulação quando a janela estiver inativa.
 :CONFIG_MAPPERFILE
 Arquivo usado para carregar/salvar os mapeamentos das teclas/eventos.
 Mapeamentos pré-configurados estão inclusos no diretório 'resources/mapperfiles'
-Eles podem ser carregados por nome, por exemplo: mapperfile = xbox/xenon2.map
-Observação: o comando -resetmapper apenas deleta o arquivo de mapeamento padrão.
+Podem ser carregados pelo nome, por exemplo: mapperfile = xbox/xenon2.map
+Observação: o comando -resetmapper deleta apenas o arquivo de mapeamento padrão.
 .
 :CONFIG_SCREENSAVER
-Use 'allow' ou 'block' para sobrepor a variável de ambiente 
+Use 'allow' ou 'block' para substituir a variável de ambiente 
 SDL_VIDEO_ALLOW_SCREENSAVER (que geralmente bloqueia o protetor de tela do
 sistema operacional enquanto o emulador está rodando).
 .
 :CONFIG_LANGUAGE
-Selecione uma linguagem para ser usada: de, br, en, es, fr, it, nl, pl, e ru
+Selecione um idioma a ser usado: de, br, en, es, fr, it, nl, pl, e ru
 Observações: Essa configuração sobrescreverá o ambiente 'LANG', se definido.
 			 O diretório 'resources/translations' incluso com o executável
-			 incluí esses arquivos. Por favor, deixe-os juntamente com o 
-			 executável para que essa funcionalidade tenha suporte.
+			 contém esses arquivos. Por favor, mantenha-os junto ao executável
+			 para suportar essa funcionalidade.
 .
 :CONFIG_MACHINE
-O tipo de máquina o DOSBox tentará emular (O padrão é 'svga_s3').
+O tipo de máquina que o DOSBox tentará emular (O padrão é 'svga_s3').
 .
 :CONFIG_CAPTURES
-O diretório aonde arquivos de áudio, video, MIDI, e capturas de tela serão
-salvos (O padrão é 'capture').
+O diretório onde serão salvos os arquivos de áudio, vídeo, MIDI, e capturas de
+tela (O padrão é 'capture').
 .
 :CONFIG_MEMSIZE
 A quantidade de memória que o DOSBox possuí em MB (O padrão é 16).
 Mantenha o número padrão para evitar problemas em alguns jogos, embora
-alguns jogos podem necessitar de um número maior.
-Normalmente não há nenhum beneficio de velocidade aumentando este número.
+alguns jogos possam necessitar de um número maior.
+Geralmente, não há nenhum beneficio de velocidade aumentando este número.
 .
 :CONFIG_MCB_FAULT_STRATEGY
-Como blocos de cadeias de memória corruptas em programas devem ser resolvidos:
+Como resolver blocos de cadeias de memória que foram corrompidos nos programas:
   deny:    Fecha (e informa) quando falhas são detectadas (padrão).
   repair:  Repara (e informa) falhas usando blocos de cadeias adjacentes.
-  report:  Informa as falhas, porém procede como está.
+  report:  Informa as falhas, mas procede como está.
   allow:   Permite que falhas não sejam comunicadas (comportamento de hardware).
-O padrão (deny) é recomendado ao menos que um jogo não funcione direito devido a
-erros de corrupção por MCB (blocos de cadeias de memoria).
+O padrão (deny) é recomendado, a menos que um jogo não funcione corretamente 
+devido a erros de corrupção por MCB (blocos de cadeias de memória).
 .
 :CONFIG_VMEMSIZE
-Memória de vídeo em MiB (1-8) ou KB (256 to 8192). 'auto' usa o padrão conforme
+Memória de vídeo em MiB (1-8) ou KB (256 até 8192). 'auto' usa o padrão conforme
 a placa de vídeo selecionada (O padrão é 'auto').
 .
 :CONFIG_DOS_RATE
 Personaliza a taxa de quadros do modo de vídeo emulado, em Hz:
-default:  O modo de video determina a taxa de quadros (recomendado; padrão).
-host:     Iguala a taxa de quadros do DOS para a taxa do anfitrião (veja a
+default:  O modo de vídeo determina a taxa de quadros (recomendado; padrão).
+host:     Iguala a taxa de quadros do DOS à taxa do anfitrião (veja a
 		  configuração 'host_rate').
-<número>: Estabelece a taxa para um valor exato, entre 24.000 and 1000.000 (Hz).
-Nós recomendamos a taxa 'default' (padrão); caso contrário teste e ajuste a taxa
+<número>: Define a taxa para um valor exato, entre 24.000 até 1000.000 (Hz).
+Recomendamos a taxa 'default' (padrão); caso contrário teste e ajuste a taxa
 de acordo com o jogo.
 .
 :CONFIG_VESA_MODES
-Controla a seleção dos modos VESA 1.2 e 2.0 disponibilizados:
-  compatible   Uma seleção especifica que maximiza a compatibilidade dos jogos.
-               Isso é recomendável juntamente com 4 ou 8 MB de memória de vídeo
-               (padrão).
-  halfline     Compatível com a modo de baixa resolução em meia linha do VESA   
-               2.0 usado pelo Extreme Assault. Selecione apenas se necessário,
-			   já que não é compatível com o S3.
-  all          Disponibiliza todos os modos para a quantidade de memória
-               selecionada, porém alguns jogos podem não funcionar propriamente
-               (causando tremulação) ou podem necessitar de mais memória de 
-			   sistema para serem jogados.
+Controla a seleção dos modos VESA 1.2 e 2.0 disponíveis:
+  compatible   Uma seleção específica que maximiza a compatibilidade dos jogos.
+               Recomendado em conjunto de 4 ou 8 MB de memória de vídeo (padrão).
+  halfline     Compatível com o modo de baixa resolução em meia linha do VESA   
+               2.0, usado pelo Extreme Assault. Selecione apenas se necessário,
+			   pois não é compatível com o S3.
+  all          Disponibiliza todos os modos conforme a quantidade de memória
+               selecionada. Contudo, alguns jogos podem não funcionar
+               corretamente (causando tremulação) ou podem exigir mais memória 
+			   do sistema para serem jogados.
 .
 :CONFIG_SPEED_MODS
-Autoriza modificações que melhoram performance (ativado por padrão).
-Atualmente, não há jogos conhecidos que são negativamente impactados por isso.
-Por favor, caso encontrar algum jogo que falhe quando isso estiver ativado,  
-informe sobre o bug com o projeto para que este seja incluso aqui.
+Permite modificações que melhoram o desempenho (ativado por padrão).
+Atualmente, não há jogos conhecidos negativamente afetados por isso.
+Por favor, se encontrar algum jogo com falhas enquanto estiver ativado, informe  
+o bug ao projeto para que este seja incluso aqui.
 .
 :CONFIG_AUTOEXEC_SECTION
 Como as seções de autoexec são tratados por vários arquivos de config:
   join:       Combina os dois arquivos em uma única seção grande (comportamento 
 			  antigo; padrão).
-  overwrite:  Use o último encontrado, como o resto das configurações do config.
+  overwrite:  Use o último encontrado, como nas demais configurações do config.
 .
 :CONFIG_AUTOMOUNT
-Monte diretórios 'drives/[c]' como unidades de disco durante a inicialização,
-sendo [c] uma letra minuscula de unidade entre 'a' até 'y' (ativo por padrão). 
+Monte diretórios 'drives/[c]' como unidades de disco na inicialização, sendo [c]
+uma letra minúscula de unidade de disco entre 'a' até 'y' (ativo por padrão). 
 A pasta 'drives' pode ser fornecida em relação ao diretório atual ou por meio de
 recursos internos. As configurações de montagem podem ser providas opcionalmente
 usando um arquivo [c].conf em conjunto do diretório contendo a unidade de disco, 
@@ -232,100 +231,101 @@ Controla a verbosidade antes de exibir o programa ('auto' por padrão):
 .
 :CONFIG_ALLOW_WRITE_PROTECTED_FILES
 Vários jogos desbloqueiam todos os seus arquivos com permissões de edição, até
-arquivos que nunca modificam. Essa configuração permite que esses arquivos sejam
-protegidos contra modificação, apenas deixando que o jogo os leia. Outro cenário
-de uso: se você estiver usando um sistema de arquivos baseado em rede ou cópia
-em gravação, essa configuração evita iniciar operações de edição sobre arquivos
+aqueles que nunca modificam. Essa configuração permite proteger tais arquivos
+contra modificação, apenas deixando que o jogo os leia. Outro cenário de uso:
+se você estiver usando um sistema de arquivos baseado em rede ou cópia em
+gravação, essa configuração evita iniciar operações de edição sobre arquivos
 protegidos contra gravação.
 .
 :CONFIG_FRAMESKIP
-Considere limitar a taxa de quadros usando a configuração '[sdl] host_rate'.
+Considere limitar a taxa de quadros com a configuração '[sdl] host_rate'.
 .
 :CONFIG_ASPECT
-Redimensione a resolução vertical para produzir uma proporção de tela 4:3, igual
-os monitores originais em que a maior parte dos jogos de DOS foram destinados
+Redimensiona a resolução vertical para obter uma proporção de tela 4:3, igual
+aos monitores originais onde a maioria dos jogos de DOS foram destinados
 (ativado por padrão).
-Essa configuração apenas afeta modos de vídeo que usam pixels não quadrados, como
-320x200 ou 640x400; enquanto modos com pixeis quadrados, como 640x480 ou 800x600,
-serão exibidos como se encontram.
+Esta configuração só afeta modos de vídeo que usam pixels não quadrados, como
+320x200 ou 640x400; enquanto modos com pixels quadrados, como 640x480 ou 800x600,
+serão exibidos como estão.
 .
 :CONFIG_MONOCHROME_PALETTE
-Selecione o palheta de cores padrão para exibições monocromáticas ('white' por 
-padrão). Apenas funciona ao emular 'hercules' ou 'cga_mono'.
+Selecione a paleta de cores padrão para exibições monocromáticas ('white' por 
+padrão). Funciona apenas ao emular 'hercules' ou 'cga_mono'.
 Você também pode alternar entre as cores disponíveis usando F11.
 .
 :CONFIG_CGA_COLORS
-Escolha a interpretação de cores RGBI do Adaptador Gráfico Colorido (CGA). Afeta 
-todas as máquinas capazes de exibir gráficos CGA ou melhores. Predefinições inclusas:
-  default:       A palheta de cores original do CGA, como emulado pelas placas VGA
+Escolha a interpretação das cores RGBI do Adaptador Gráfico Colorido (ou CGA).  
+Afeta todas as máquinas capazes de exibir gráficos CGA ou superiores. 
+Predefinições inclusas:
+  default:       A paleta de cores original do CGA, como emulada pelas placas VGA
                  (padrão).
   tandy <bl>:    Emulação de um monitor Tandy ideal com nível de marrom ajustável.
-                 O nível de marrom pode ser dado como um segundo parâmetro opcional
-                 (0 - vermelho, 50 - marrom, 100 - amarelo escuro; 50 sendo o
-                 padrão). Ex. tandy 100
-  tandy-warm:    Emulação verídica da palheta de cores como renderizada por um 
-                 monitor Tandy desconhecido.
-  ibm5153 <c>:   Emulação verídica da palheta de cores como renderizada por um
-                 monitor IBM 5153 com controle único de contraste que apenas
-                 escurece cores não brilhantes. O contraste pode ser dado como
-                 um segundo parâmetro opcional (0 até 100; 100 sendo o padrão),
+                 O nível de marrom pode ser fornecido como um segundo parâmetro
+                 opcional (0 - vermelho, 50 - marrom, 100 - amarelo escuro; 50 
+                 sendo o padrão). Ex. tandy 100
+  tandy-warm:    Emulação verídica da paleta de cores como exibida em um monitor
+                 Tandy desconhecido.
+  ibm5153 <c>:   Emulação verídica da paleta de cores como exibida em um monitor
+                 IBM 5153 com controle único de contraste que apenas escurece
+                 cores não brilhantes. O contraste pode ser fornecido como um
+                 segundo parâmetro opcional (0 até 100; 100 sendo o padrão).
 				 Ex. ibm5153 60
   agi-amiga-v1, agi-amiga-v2, agi-amiga-v3:
-                 Palhetas de cores usados pelos jogos AGI da Sierra no Amiga.
-  agi-amigaish:  Uma combinação entre a palheta de cores do EGA e do Amiga
+                 Paletas de cores usadas nos jogos AGI da Sierra no Amiga.
+  agi-amigaish:  Uma combinação entre a paleta de cores do EGA e do Amiga
                  usado pelo interpretador de AGI do Sarien.
-  scumm-amiga:   A palheta de cores usado pelos jogos EGA da LucasArts no Amiga.
-  colodore:      Palheta de cores do Colodore, que é inspirada no Commodore 64.
-  colodore-sat:  Palheta de cores do Colodore com 20% mais saturação.
-  dga16:         Uma interpretação moderna da palheta de cores do CGA com
+  scumm-amiga:   A paleta de cores usada nos jogos EGA da LucasArts no Amiga.
+  colodore:      Paleta de cores do Colodore, que é inspirada no Commodore 64.
+  colodore-sat:  Paleta de cores do Colodore com 20% mais saturação.
+  dga16:         Uma interpretação moderna da paleta de cores do CGA com
                  contraste reduzido.
-Ademais, você pode definir uma palheta de cores personalizada especificando 16  
-valores de cores separados por espaço ou virgula, tanto por códigos Hex de 3 ou 
-6 dígitos (ex. #f00 ou #ff0000 para vermelho), ou valores decimais RGB em tríade 
+Ademais, você pode definir uma paleta de cores personalizada especificando 16  
+valores de cores separados por espaço ou vírgula, usando códigos Hex de 3 ou 6
+dígitos (ex. #f00 ou #ff0000 para vermelho), ou valores decimais RGB em tríades 
 (ex. (255, 0, 255) para magenta). As 16 cores são organizadas da seguinte forma:
   preto, azul, verde, ciano , vermelho, magenta, marrom, cinza claro, cinza
   escuro, azul claro, verde claro, ciano claro, vermelho claro, magenta claro,
   amarelo, branco.
-Seus valores padrão, em formato de códigos Hex em 6 dígitos, são:
+Seus valores padrão, em formato de códigos Hex de 6 dígitos, são:
   #000000 #0000aa #00aa00 #00aaaa #aa0000 #aa00aa #aa5500 #aaaaaa
   #555555 #5555ff #55ff55 #55ffff #ff5555 #ff55ff #ffff55 #ffffff
 .
 :CONFIG_SCALER
-Redimensionadores por Software estão depreciados em favor de opções aceleradas
+Redimensionadores por software estão depreciados em favor de opções aceleradas
 por hardware:
   - Se você usa os redimensionadores normal2x/3x, escolha a 'windowresolution'
-    desejada em seu lugar.
+    desejada em vez disso.
   - Se você usa um redimensionador avançado, considere uma das opções 'glshader'
-    em seu lugar.
+    como alternativa.
 .
 :CONFIG_GLSHADER
 Define o sombreador GLSL (GLSL shader) a ser usado nos modos de saída OpenGL.
 Opções incluem 'default', 'none', um dos sombreadores indicados pelo comando
 --list-glshaders, ou o caminho relativo ou absoluto de um arquivo.
-'default' escolhe o sombreador `interpolation/sharp.glsl`.
-Em todos os casos, você pode omitir extensão de arquivo '.glsl' do sombreador.
+'default' seleciona o sombreador `interpolation/sharp.glsl`.
+Em todos os casos, você pode omitir a extensão de arquivo '.glsl' do sombreador.
 .
 :CONFIG_COMPOSITE
 Ativa o modo analógico 'composite' ao iniciar ('auto' por padrão).
-'auto' deixa o programa escolher.
-Observação: Aperfeiçoe as configurações abaixo (ex. hue) usando as teclas do
-			composite, e depois leia as novas pelo seu console e insira elas aqui.
+'auto' permite que o programa escolha.
+Observação: Ajuste as configurações abaixo (ex. tonalidade) usando as teclas do
+			composite, e depois leia as novas pelo seu console e insira-as aqui.
 .
 :CONFIG_ERA
 Geração da tecnologia 'composite' ('auto' por padrão).
-Quando for 'auto', o PCjr usa 'new', e o CGA/Tandy usa 'old'.
+Quando for 'auto', o PCjr utiliza 'new', e o CGA/Tandy utiliza 'old'.
 .
 :CONFIG_HUE
-Aparência da palheta de cores RGB. Por exemplo, ajuste até que o céu esteja azul.
+Aparência da paleta de cores RGB. Por exemplo, ajuste até que o céu esteja azul.
 .
 :CONFIG_SATURATION
-Intensidade das cores, de desbotada até vivida.
+Intensidade das cores, de desbotadas até vívidas.
 .
 :CONFIG_CONTRAST
-Proporção entre a área clara e escura.
+Proporção entre áreas claras e escuras.
 .
 :CONFIG_BRIGHTNESS
-Luminosidade da imagem, de escuro para claro.
+Luminosidade da imagem, de escura para clara.
 .
 :CONFIG_CONVERGENCE
 Convergência de elementos subpixel, de borrado para nítido (Apenas CGA e Tandy).
@@ -339,72 +339,72 @@ Tipo de processador a ser usado na emulação ('auto' por padrão). 'auto' é a
 escolha mais rápida.
 .
 :CONFIG_CYCLES
-Número de instruções que o DOSBox tenta emular por milissegundo ('auto' por 
-padrão). Definindo esse número alto demais pode resultar em queda na qualidade
-sonora e latência maior.
+Quantidade de instruções que o DOSBox tenta emular por milissegundo ('auto' por 
+padrão). Definir este número muito alto pode resultar em perda de qualidade
+sonora e numa latência maior.
 Definições possíveis:
   auto:            Tenta adivinhar o que um jogo precisa. Geralmente funciona,
-                   mas pode falhar sobre certos jogos.
-  fixed <número>:  Determina um número especifico de ciclos. Geralmente usado
+                   mas pode falhar em alguns jogos.
+  fixed <número>:  Estabelece um número específico de ciclos. Geralmente usado
                    se 'auto' falhar (ex. 'fixed 4000').
-  max:             Aloque a mesma quantidade de ciclos que seu computador
+  max:             Atribui a mesma quantidade de ciclos que seu computador
                    consegue lidar.
 .
 :CONFIG_CYCLEUP
-Número de ciclos a serem adicionados ou subtraídos usando as teclas de controle 
+Número de ciclos a serem adicionados ou subtraídos usando as teclas de ajuste 
 de velocidade (10 por padrão).
 .
 :CONFIG_CYCLEDOWN
 Definir um número menor que 100 resultará em uma porcentagem (20 por padrão).	
 .
 :CONFIG_MOUSE_CAPTURE
-Define o funcionamento da restrição do mouse:
+Define como o confinamento do mouse funciona:
   onclick:   Restringe o mouse ao clicar com qualquer botão do mouse dentro da
              janela (padrão).
-  onstart:   Restringe o mouse imediatamente ao iniciar. Pode não funcionar
+  onstart:   Restringe  o mouse imediatamente ao iniciar. Pode não funcionar
              corretamente em alguns sistemas operacionais hospedeiros.
   seamless:  Permite que o mouse se mova de forma contínua entre a janela do
              DOSBox e o restante da área de trabalho; o restringe apenas com
              clique do meio ou tecla de atalho. O mouse ininterrupto (seamless)
              não funciona corretamente com todos os jogos. O Windows 3.1x se
 			 torna compatível com esse modo instalando um driver personalizado.
-  nomouse:   Oculte e não envie dados do mouse para o jogo.
-Em caso de controle por toque (em telas touch), use o 'seamless'.
+  nomouse:   Oculta e não envia dados do mouse para o jogo.
+Em caso de controle por toque (em telas sensíveis ao toque), use o 'seamless'.
 .
 :CONFIG_MOUSE_MIDDLE_RELEASE
-Se ativo, o botão do meio do mouse soltará o mouse e também o restringirá
-quando o mouse estiver livre (ativo por padrão).
+Se ativo, o botão do meio do mouse soltará o mouse e também o restringirá quando
+o mouse estiver livre (ativo por padrão).
 .
 :CONFIG_MOUSE_SENSITIVITY
 Sensibilidade do mouse para os eixos horizontal e vertical em porcentagem
 (100,100 por padrão). Números negativos invertem o eixo e zero desativa o mouse.
-Fornecendo apenas um número define a mesma sensibilidade para os dois eixos.
+Ao fornecer apenas um número, define a mesma sensibilidade para ambos os eixos.
 Essa configuração pode ser ajustada em pleno funcionamento (também conforme a 
 interface de mouse) usando a ferramenta interna MOUSECTL.COM, disponível no
 drive Z.
 .
 :CONFIG_MOUSE_RAW_INPUT
-Ative para ignorar as configurações do seu sistema operacional sobre aceleração 
-e sensibilidade do mouse (ativo por padrão). Funciona em tela cheia ou
-quando o mouse está restringido no modo janela.
+Ative para ignorar as configurações do seu sistema operacional quanto à 
+aceleração e sensibilidade do mouse (ativo por padrão). Funciona em tela cheia 
+ou quando o mouse está restringido no modo janela.
 .
 :CONFIG_DOS_MOUSE_DRIVER
 Ativa o driver de mouse do integrado ao DOS (ativo por padrão).
 Observações: Desative se você pretende usar o driver original do MOUSE.COM no
-			 DOS emulado. Quando um sistema operacional hóspede é inicializado,
-			 o driver integrado se desativa automaticamente.
+			 DOS emulado. Quando um sistema operacional hóspede é iniciado, o
+			 driver integrado é desativado automaticamente.
 .
 :CONFIG_DOS_MOUSE_IMMEDIATE
-Atualiza os marcadores de movimentos do mouse imediatamente, sem esperar pela
+Atualiza os marcadores de movimento do mouse imediatamente, sem aguardar pela
 interrupção (desativado por padrão). Pode melhorar a jogabilidade, especialmente
-em jogos frenéticos (como arcade, FPS, etc.), pois para alguns jogos, isso
-efetivamente aumenta a taxa de amostragem do mouse para 1000 Hz sem que aumente
+em jogos frenéticos (como arcade, FPS, etc.), pois, para alguns jogos, isso
+efetivamente aumenta a taxa de amostragem do mouse para 1000 Hz sem aumentar a
 sobrecarga de interrupção. Pode causar problemas de compatibilidade. 
 Lista de jogos incompatíveis conhecidos:
   - Ultima Underworld: The Stygian Abyss
   - Ultima Underworld II: Labyrinth of Worlds
-Por favor, nos informe se você encontrar outro jogo incompatível para que 
-possamos atualizar esta lista.
+Por favor, informe-nos se encontrar outro jogo incompatível para que possamos
+atualizar esta lista.
 .
 :CONFIG_PS2_MOUSE_MODEL
 Modelo do mouse na porta auxiliar (AUX) do conector PS/2:
@@ -418,18 +418,18 @@ Padrão: 'explorer'
 Modelo do mouse padrão na porta serial COM:
   2button:      2 botões, mouse da Microsoft.
   3button:      3 botões, mouse da Logitech;
-                por grande parte compatível com o mouse da Microsoft.
+                compatível em grande parte com o mouse da Microsoft.
   wheel:        3 botões + a rodinha;
-                por grande parte compatível com o mouse da Microsoft.
+                compatível em grande parte com o mouse da Microsoft.
   msm:          3 botões, mouse da Mouse Systems;
                 NÃO compatível com o mouse da Microsoft.
   2button+msm:  Escolha automática entre '2button' e 'msm'.
   3button+msm:  Escolha automática entre '3button' e 'msm'.
   wheel+msm:    Escolha automática entre 'wheel' e 'msm' (padrão).
-Observação: Habilite os mouses da porta serial COM na seção [serial].
+Observação: Ative os mouses da porta serial COM na seção [serial].
 .
 :CONFIG_NOSOUND
-Habilitar modo silencioso (desativado por padrão).
+Ativar modo silencioso (desativado por padrão).
 O som ainda é totalmente emulado no modo silencioso, mas o DOSBox não emite som.
 .
 :CONFIG_RATE
@@ -437,54 +437,54 @@ Taxa de amostragem do mixer sonoro (48000 por padrão).
 .
 :CONFIG_BLOCKSIZE
 Tamanho do bloco do mixer sonoro; números maiores podem ajudar com travamentos
-no som, porém afetará sua latência (aumentando o atraso). 
+no som, porém afetarão a latência (aumentando o atraso). 
 .
 :CONFIG_PREBUFFER
 Quantos milissegundos levará o som para renderizar além do tamanho do bloco;
-números maiores podem ajudar com travamentos no som porém afetará sua latência 
+números maiores podem ajudar com travamentos no som porém afetarão a latência 
 (aumentando o atraso).
 .
 :CONFIG_NEGOTIATE
 Permite que o driver de áudio do seu sistema ajuste (possivelmente) melhores
-configurações sobre a taxa de amostragem e do tamanho do bloco do mixer sonoro.
+configurações para a taxa de amostragem e tamanho do bloco do mixer sonoro.
 .
 :CONFIG_COMPRESSOR
-Ativa o compressor de nivelamento automático sobre no canal principal para evitar
+Ativa o compressor de nivelamento automático no canal principal para evitar
 cortes na saída de áudio:
   off:  Desativa o compressor.
   on:   Ativa o compressor (padrão).
 .
 :CONFIG_CROSSFEED
-Define a alimentação cruzada (crossfeed) a ser usada globalmente sobre todos os 
+Define a alimentação cruzada (crossfeed) a ser aplicado globalmente em todos os 
 canais em estéreo para a audição com fones de ouvido:
   off:        Sem alimentação cruzada (padrão).
   on:         Ative a alimentação cruzada (com o tamanho 40).
   <tamanho>:  Escolha um tamanho para a alimentação cruzada entre 0 até 100,
-              aonde 0 significa que a opção está desativada (é o mesmo que 'off')
+              onde 0 significa que a opção está desativada (é o mesmo que 'off')
               e 100 para uma alimentação cruzada total (efetivamente tornando o 
 			  conteúdo estéreo em mono).
-Observação: Você pode definir alimentação cruzada por canal usando comandos do
-			mixer sonoro.
+Observação: É possível definir a alimentação cruzada por canal usando comandos 
+			do mixer sonoro.
 .
 :CONFIG_REVERB
-Ativa a reverberação (reverb) a ser usada globalmente para adicionar uma 
+Ativa a reverberação (reverb) a ser aplicado globalmente para adicionar uma 
 sensação de espaço ao som:
   off:     Sem reverberação (padrão).
   on:      Ative a reverberação (predefinição média).
-  tiny:    Simula o som de um pequeno alto-falante integrado em uma sala;
+  tiny:    Simula o som de um pequeno alto-falante embutido em uma sala;
            projetado especificamente para sistemas com alto-falantes pequenos
            (como alto-falantes de PC e Áudio PS/1, além de dispositivos Tandy e
 		   LPT DAC).
   small:   Adiciona uma sensação sutil de espaço; bom para jogos que usam um 
            único canal de sintetizador (como geralmente o OPL) para música e 
 		   seus efeitos sonoros.
-  medium:  Predefinição de sala média que funciona bem com uma alta variedade de 
-		   jogos.
-  large:   Predefinição de um salão enorme, recomendado para jogos que usam 
+  medium:  Predefinição de sala média que funciona bem com uma ampla variedade
+		   de jogos.
+  large:   Predefinição de um salão enorme, recomendado para jogos que utilizam 
 		   canais separados para música e áudio digital.
-  huge:    Uma versão mais forte da predefinição do salão enorme; funciona muito
-           bem em alguns jogos com trilhas sonoras mais atmosféricas.
-Observação: Você pode ajustar os níveis de reverberação por canal através dos 
+  huge:    Uma versão mais intensa da predefinição do salão enorme; funciona bem
+           em alguns jogos com trilhas sonoras mais atmosféricas.
+Observação: É possível ajustar os níveis de reverberação por canal através dos 
 			comandos do mixer sonoro.
 .
 :CONFIG_CHORUS
@@ -492,41 +492,41 @@ Ative o coro de áudio globalmente para adicionar uma sensação de movimento em
 estéreo ao som:
   off:     Nenhum coro (padrão).
   on:      Ative o coro (predefinição normal).
-  light:   Um pequeno efeito de coro (particularmente adequado para músicas
-           sintetizadas que apresentam muito ruído branco.)
-  normal:  Coro normal que funciona bem com uma grande variedade de jogos.
-  strong:  Um efeito de coro óbvio e pronunciado.
-Observação: Você pode ajustar os níveis de coro por canal através dos comandos
+  light:   Efeito de coro suave (particularmente adequado para músicas
+           sintetizadas com muito ruído branco).
+  normal:  Coro normal, funciona bem com uma grande variedade de jogos.
+  strong:  Efeito de coro óbvio e pronunciado.
+Observação: É possível ajustar os níveis de coro por canal através dos comandos
 			do mixer sonoro.
 .
 :CONFIG_MIDIDEVICE
-Defina aonde as operações MIDI da interface MIDI emulada MPU-401 serão enviados
-('auto' por padrão):
-  oss:         Usa a interface de reprodução MIDI OSS do Linux.
-  alsa:        Usa a interface de reprodução MIDI ALSA do Linux.
-  fluidsynth:  O sintetizador MIDI integrado FluidSynth (reprodutor de SoundFont).
+Defina para onde as operações MIDI da interface MIDI emulada MPU-401 serão
+enviadas ('auto' por padrão):
+  oss:         Utiliza a interface de reprodução MIDI OSS do Linux.
+  alsa:        Utiliza a interface de reprodução MIDI ALSA do Linux.
+  fluidsynth:  Sintetizador MIDI integrado FluidSynth (reprodutor de SoundFont).
                Consulte a seção [fluidsynth] para configurações mais detalhadas.
-  mt32:        O sintetizador integrado do Roland MT-32.
+  mt32:        Sintetizador integrado do Roland MT-32.
                Consulte a seção [mt32] para configurações mais detalhadas.
   auto:        Seleciona um dos sintetizadores MIDI integrados (se `midiconfig`
                estiver configurado para 'fluidsynth' ou 'mt32'), ou um 
                dispositivo MIDI externo ao DOSBox (qualquer outro valor de 
-			   'midiconfig'). Este pode ser tanto um sintetizador por software
-               ou um dispositivo físico. Comportamento padrão.
+			   'midiconfig'). Pode ser tanto um sintetizador por software quanto
+               um dispositivo físico. Comportamento padrão.
   none:        Desabilita saída MIDI.
 .
 :CONFIG_MIDICONFIG
 Configurações para a interface MIDI selecionada (não definido por padrão).
-Normalmente é o ID ou nome do sintetizador MIDI que você pretende usar (encontre
+Normalmente é o ID ou nome do sintetizador MIDI que você deseja usar (encontre
 o ID/nome com o comando 'MIXER /LISTMIDI').
-Observações: - Esta opção não surte efeito quando estiver usando os sintetizadores
-               integrados ('mididevice = fluidsynth' ou 'mididevice = mt32').
-             - Quando usar o ALSA, use o comando do Linux 'aconnect -l' para
-               listar todas as portas MIDI abertas e selecionar uma 
+Observações: - Esta opção não tem efeito ao usar sintetizadores integrados
+               ('mididevice = fluidsynth' ou 'mididevice = mt32').
+             - Ao usar o ALSA, utilize o comando do Linux 'aconnect -l'
+               para listar todas as portas MIDI abertas e escolher uma 
 			   (ex. 'midiconfig = 14:0' para o sequenciador 14, porta 0).
-             - Se você estiver usando um Roland MT-32 físico com PCB de revisão 0,
-               o componente pode requerer um atraso para evitar que seu buffer
-               transborde. Nesse caso, adicione 'delaysysex' desta forma:
+             - Se estiver usando um Roland MT-32 físico com PCB de revisão 0,
+               o componente pode requerer um atraso para evitar transbordamento
+               de seu buffer. Nesse caso, adicione 'delaysysex' assim:
                'midiconfig = 2 delaysysex'.
 .
 :CONFIG_MPU401
@@ -534,54 +534,53 @@ Modo do MPU-401 a ser emulado ('intelligent' por padrão).
 .
 :CONFIG_RAW_MIDI_OUTPUT
 Permite que a saída MIDI permaneça pura e inalterada (desativado por padrão).
-Drivers MIDI de diversos jogos não se adequam totalmente ao padrão MIDI, o que
-torna a edição das gravações MIDI desses jogos propensa a erros e deveras 
-complicada para os sequenciadores MIDI, muitas vezes resultando em notas
-pendentes ou ausentes. O DOSBox corrige a saída MIDI desses jogos por padrão.
+Drivers MIDI de diversos jogos não se adequam totalmente ao padrão MIDI,
+tornando a edição das gravações MIDI desses jogos sujeita a erros e complexa 
+para os sequenciadores MIDI, muitas vezes resultando em notas faltantes ou
+pendentes. O DOSBox corrige a saída MIDI desses jogos por padrão.
 Isso não causa nenhuma diferença audível; afeta apenas a representação dos dados
 MIDI. Você deve apenas ativar 'raw_midi_output' se você precisar gravar a saída
-pura e inalterada de um programa, por exemplo quando estiver trabalhando com
-aplicativos de música ou para depurar problemas com o MIDI.
+pura e inalterada de um programa, por exemplo, ao trabalhar com aplicativos de 
+música ou para depurar problemas com o MIDI.
 .
 :CONFIG_SOUNDFONT
 Caminho para um arquivo SoundFont no formato .sf2 ('default.sf2' por padrão).
-Você pode usar tanto um caminho absoluto ou relativo, ou o nome de um .sf2 dentro
-do diretório 'soundfonts' localizado dentro do diretório configuração do DOSBox.
+Você pode usar um caminho absoluto, relativo ou o nome de um .sf2 dentro
+do diretório 'soundfonts', localizado no diretório de configuração do DOSBox.
 Observação: A porcentagem adicional de ajuste de volume após o nome do arquivo
-			foi descontinuada. Por favor, use um comando do mixer sonoro ao invés
-			disso para alterar o volume do canal de áudio, ex. 'MIXER FSYNTH 200'
+			foi descontinuada. Por favor, use um comando do mixer sonoro para 
+			alterar o volume do canal de áudio, ex. 'MIXER FSYNTH 200'
 .
 :CONFIG_FSYNTH_CHORUS
 Efeito coro: 'auto' (padrão), 'on', 'off', ou valores personalizados.
 Em caso de utilização de valores personalizados:
-  Todos os cinco devem respeitar a seguinte ordem e ser separados por espaços.
-  Dessa forma: contagem-de-voz nível velocidade profundidade modulação-de-onda,
-  aonde:
-    - contagem-de-voz é um número inteiro de 0 até 99.
-    - nível é um número decimal de 0.0 até 10.0
-    - velocidade é um número decimal, medido em Hz, de 0.1 até 5.0
-    - profundidade é um número decimal de 0.0 até 21.0
+  Todos os cinco devem seguir a ordem e ser separados por espaços. Da seguinte 
+  forma: contagem-de-voz nível velocidade profundidade modulação-de-onda, aonde:
+    - contagem-de-voz é um número inteiro entre 0 e 99.
+    - nível é um número decimal entre 0.0 e 10.0
+    - velocidade é um número decimal, medido em Hz, entre 0.1 e 5.0
+    - profundidade é um número decimal entre 0.0 e 21.0
     - modulação-de-onda pode ser 'sine' ou 'triangle'
   Por exemplo: 'chorus = 3 1.2 0.3 8.0 sine'
-Observação: Você pode desativar o coro do FluidSynth e ativar o coro do mixer
+Observação: É possível desativar o coro do FluidSynth e ativar o coro do mixer
 			sonoro sobre canal FluidSynth, ou ativar ambos efeitos coro ao
-			mesmo tempo. Se soará bom ou não dependerá do SoundFont e das
+			mesmo tempo. Se soará bom ou não, dependerá do SoundFont e das
 			configurações de coro a serem utilizadas.
 .
 :CONFIG_FSYNTH_REVERB
-Efeito de reverberação: 'auto' (padrão), 'on', 'off', or valores personalizados.
+Efeito de reverberação: 'auto' (padrão), 'on', 'off' ou valores personalizados.
 Em caso de utilização de valores personalizados:
-  Todos os quatro devem respeitar a seguinte ordem e ser separados por espaços.
+  Os quatro valores devem seguir a ordem e ser separados por espaços.
   Dessa forma: tamanho-do-cômodo isolamento-sonoro amplitude nível, aonde:
-    - tamanho-do-cômodo é um número decimal de 0.0 até 1.0
-    - isolamento-sonoro é um número decimal de 0.0 até 1.0
-    - amplitude é um número decimal de 0.0 até 100.0
-    - nível é um número decimal de 0.0 até 1.0
+    - tamanho-do-cômodo é um número decimal entre 0.0 e 1.0
+    - isolamento-sonoro é um número decimal entre 0.0 e 1.0
+    - amplitude é um número decimal entre 0.0 e 100.0
+    - nível é um número decimal entre 0.0 e 1.0
   Por exemplo: 'reverb = 0.61 0.23 0.76 0.56'
-Observação: Você pode desativar a reverberação do FluidSynth e ativar a 
-			reverberação do mixer sonoro sobre canal FluidSynth, ou ativar ambos
-			efeitos de reverberação ao mesmo tempo. Se soará bom ou não dependerá
-			do SoundFont e das configurações de reverberação a serem utilizadas.
+Observação: É possível desativar a reverberação do FluidSynth e ativar a
+			reverberação do mixer sonoro do canal FluidSynth, ou ativar ambos os
+			efeitos de reverberação ao mesmo tempo. Se soará bom ou não, 
+			dependerá do SoundFont e das configurações de reverberação utilizadas.
 .
 :CONFIG_FSYNTH_FILTER
 Filtro para a saída de áudio do FluidSynth:
@@ -598,13 +597,13 @@ Modelo do MT-32 a ser utilizado:
 .
 :CONFIG_ROMDIR
 O diretório que contém as ROMs de um ou mais modelos.
-Esse diretório pode ser absoluto ou relativo, deixe em branco para usar o
-diretório 'mt32-roms' localizado dentro do diretório configuração do seu DOSBox.
-Outros caminhos de sistema usados frequentemente também serão verificados.
-Os arquivos ROM dentro do diretório selecionado podem ser quaisquer um destes:
+Este diretório pode ser absoluto ou relativo, deixe em branco para utilizar o
+diretório 'mt32-roms' localizado dentro do diretório de configuração do seu
+DOSBox. Outros caminhos de sistema frequentemente usados também serão analisados.
+Os arquivos ROM dentro do diretório selecionado podem ser qualquer um destes:
   - MT32_CONTROL.ROM e MT32_PCM.ROM, para o modelo 'mt32'.
   - CM32L_CONTROL.ROM e CM32L_PCM.ROM, para o modelo 'cm32l'.
-  - As ROMs MT-32 e CM-32L descompactados do MAME, para os modelos com versão.
+  - As ROMs MT-32 e CM-32L descompactadas do MAME, para os modelos com versão.
 .
 :CONFIG_MT32_FILTER
 Filtro para a saída de áudio do Roland MT-32/CM-32L:
@@ -612,10 +611,10 @@ Filtro para a saída de áudio do Roland MT-32/CM-32L:
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :MT32_NO_SUPPORTED_MODELS
-Nenhum modelo compatível presente.
+Nenhum modelo compatível disponível.
 .
 :MT32_ROM_NOT_LOADED
-Nenhuma ROM está carregada no momento.
+Nenhuma ROM carregada no momento.
 .
 :MT32_INVENTORY_TABLE_MISSING_LETTER
 -
@@ -646,39 +645,39 @@ O número do DMA (Acesso Direto à Memória) do Sound Blaster (1 por padrão).
 O número do DMA (Acesso Direto à Memória) alto do Sound Blaster (5 por padrão).
 .
 :CONFIG_SBMIXER
-Permite que o mixer do Sound Blaster modifique o mixer sonoro do DOSBox (ativado
+Permite que o mixer do Sound Blaster altere o mixer sonoro do DOSBox (ativado
 por padrão).
 .
 :CONFIG_SBWARMUP
-Silencia o áudio inicial do DMA (Acesso Direto à Memória) após a inicialização 
-da placa, em milissegundos (100 por padrão). Isso diminui estalos que podem ser 
-ouvidos ao iniciar jogos do SB. Reduza isso caso você note que está faltando 
-áudio durante a execução inicial.
+Silencia o áudio inicial do DMA (Acesso Direto à Memória) após inicialização da 
+placa, em milissegundos (100 por padrão). Isso diminui estalos que podem ser 
+ouvidos ao iniciar jogos do SB. Reduza isso caso você note falta de áudio durante 
+a execução inicial.
 .
 :CONFIG_OPLRATE
-A onda sonora do OPL agora é amostrada durante a reprodução do mixer sonoro para
+A onda sonora do OPL é amostrada durante a reprodução do mixer sonoro para
 evitar a re-amostragem do som.
 .
 :CONFIG_OPLMODE
 Tipo de emulação do OPL ('auto' por padrão).
-No 'auto' o modo será determinado pelo 'sbtype'.
+Em 'auto', o modo será determinado pelo 'sbtype'.
 Todos os modos OPL são compatíveis com o AdLib, exceto o 'cms'.
 .
 :CONFIG_OPLEMU
-Apenas a emulação 'nuked' do OPL é compatível atualmente.
+Somente a emulação 'nuked' do OPL é compatível atualmente.
 .
 :CONFIG_SB_FILTER
 Filtro a ser emulado para a saída de áudio digital do Sound Blaster:
-  auto:      		Use o filtro apropriado como determinado pelo 'sbtype'.
+  auto:      		Use o filtro adequado conforme determinado pelo 'sbtype'.
   sb1, sb2, sbpro1, sbpro2, sb16:
-					Use o filtro especifico a um modelo do Sound Blaster.
-  modern:    		Use uma interpolação linear ampliada que funciona como 
-					filtro de passe baixo (low-pass); esse é o funcionamento
-					antigo do DOSBox (padrão).
-  off:       		Não filtrar a saída de áudio.
+					Use o filtro específico para um modelo do Sound Blaster.
+  modern:    		Use uma interpolação linear ampliada, atuando como filtro
+					de passe baixo (low-pass); esse é o funcionamento antigo do
+					DOSBox (padrão).
+  off:       		Não filtre a saída de áudio.
   <personalizado>:  Um ou dois filtros modificados conforme o formato a seguir:
 					   TIPO ORDEM FREQ
-					Aonde TIPO pode ser 'hpf' (high-pass ou passe alto) ou 'lpf' 
+					Onde TIPO pode ser 'hpf' (high-pass ou passe alto) ou 'lpf' 
 					(low-pass ou passe baixo), ORDEM é a ordem do filtro de
 					1 até 16 (1ª ordem = inclinação de 6dB por oitava, 2ª ordem 
 					= 12dB por oitava, e assim em diante), e FREQ é a frequência
@@ -692,17 +691,18 @@ Força o filtro do Sound Blaster a permanecer sempre ativo.
 .
 :CONFIG_OPL_FILTER
 Filtro a ser emulado para a saída de áudio OPL do Sound Blaster:
-  auto:      		Use o filtro apropriado como determinado pelo 'sbtype' (padrão).
+  auto:      		Use o filtro adequado conforme determinado pelo 'sbtype' 
+					(padrão).
   sb1, sb2, sbpro1, sbpro2, sb16:
-					Use o filtro especifico a um modelo do Sound Blaster.
+					Use o filtro específico para um modelo do Sound Blaster.
   off:       		Não filtre a saída.
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_CMS_FILTER
 Filtro para a saída de áudio do CMS do Sound Blaster:
-  on:        Filtrar a saida (padrão).
-  off:       Não filtre a saída.
-  <custom>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
+  on:        		Filtrar a saida (padrão).
+  off:       		Não filtre a saída.
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_GUS
 Ativa a emulação do Gravis UltraSound (desativado por padrão).
