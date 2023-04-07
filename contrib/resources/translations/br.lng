@@ -53,16 +53,16 @@ Define o tamanho da janela ao executar no modo janela:
 :CONFIG_VIEWPORT_RESOLUTION
 Define o tamanho da área de visualização (região de renderização) da janela/tela:
   fit:              Ajusta a área de visualização conforme a janela/tela 
-					disponível (padrão).
+                    disponível (padrão).
   <personalizado>:  Restringe a área de visualização conforme uma resolução
-					personalizada ou porcentagem da área de trabalho. 
-					Pode ser definido em LxA, N%, N.M%. Exemplo: 960x720 ou 50%
+                    personalizada ou porcentagem da área de trabalho. 
+                    Pode ser definido em LxA, N%, N.M%. Exemplo: 960x720 ou 50%
 .
 :CONFIG_WINDOW_POSITION
 Define a posição inicial da janela quando rodar em modo janela:
   auto:             Permite o gestor de janela decidir a posição.
   <personalizado>:  Define a posição da janela conforme o formato X,Y. Por 
-					exemplo: 250,100. 0,0 é o canto superior esquerdo da tela.
+                    exemplo: 250,100. 0,0 é o canto superior esquerdo da tela.
 .
 :CONFIG_WINDOW_DECORATIONS
 Ative as decorações de janela no modo janela.
@@ -76,14 +76,14 @@ Esta configuração foi renomeada para viewport_resolution.
 .
 :CONFIG_HOST_RATE
 Define a taxa de atualização do anfitrião:
-  auto:      		Usa taxas SDI ou taxas VRR em tela cheia ou em tela com 
-					de alta taxa de atualização.
-  sdi:       		Usa taxas de dispositivos de interface seriais (ou SDI), 
-					sem ajustes adicionais.
-  vrr:       		Diminui 3 Hz da taxa informada (prática recomendada para
-					telas VRR, ou seja, com taxas variáveis).
+  auto:             Usa taxas SDI ou taxas VRR em tela cheia ou em tela com 
+                    de alta taxa de atualização.
+  sdi:              Usa taxas de dispositivos de interface seriais (SDI), sem
+                    ajustes adicionais.
+  vrr:              Diminui 3 Hz da taxa informada (prática recomendada para
+                    telas VRR, ou seja, com taxas variáveis).
   <personalizado>:  Especifica uma taxa de atualização personalizada, como
-					valor inteiro ou decimal, desde maior que 23.000.
+                    valor inteiro ou decimal, desde maior que 23.000.
 .
 :CONFIG_VSYNC
 Sincroniza com a taxa de atualização da tela, se compatível. Isso pode
@@ -144,9 +144,9 @@ sistema operacional enquanto o emulador está rodando).
 :CONFIG_LANGUAGE
 Selecione um idioma a ser usado: de, br, en, es, fr, it, nl, pl, e ru
 Observações: Essa configuração sobrescreverá o ambiente 'LANG', se definido.
-			 O diretório 'resources/translations' incluso com o executável
-			 contém esses arquivos. Por favor, mantenha-os junto ao executável
-			 para suportar essa funcionalidade.
+             O diretório 'resources/translations' incluso com o executável
+             contém esses arquivos. Por favor, mantenha-os junto ao executável
+             para suportar essa funcionalidade.
 .
 :CONFIG_MACHINE
 O tipo de máquina que o DOSBox tentará emular (O padrão é 'svga_s3').
@@ -178,7 +178,7 @@ a placa de vídeo selecionada (O padrão é 'auto').
 Personaliza a taxa de quadros do modo de vídeo emulado, em Hz:
 default:  O modo de vídeo determina a taxa de quadros (recomendado; padrão).
 host:     Iguala a taxa de quadros do DOS à taxa do anfitrião (veja a
-		  configuração 'host_rate').
+          configuração 'host_rate').
 <número>: Define a taxa para um valor exato, entre 24.000 até 1000.000 (Hz).
 Recomendamos a taxa 'default' (padrão); caso contrário teste e ajuste a taxa
 de acordo com o jogo.
@@ -189,11 +189,11 @@ Controla a seleção dos modos VESA 1.2 e 2.0 disponíveis:
                Recomendado em conjunto de 4 ou 8 MB de memória de vídeo (padrão).
   halfline     Compatível com o modo de baixa resolução em meia linha do VESA   
                2.0, usado pelo Extreme Assault. Selecione apenas se necessário,
-			   pois não é compatível com o S3.
+               pois não é compatível com o S3.
   all          Disponibiliza todos os modos conforme a quantidade de memória
                selecionada. Contudo, alguns jogos podem não funcionar
                corretamente (causando tremulação) ou podem exigir mais memória 
-			   do sistema para serem jogados.
+               do sistema para serem jogados.
 .
 :CONFIG_SPEED_MODS
 Permite modificações que melhoram o desempenho (ativado por padrão).
@@ -204,7 +204,7 @@ o bug ao projeto para que este seja incluso aqui.
 :CONFIG_AUTOEXEC_SECTION
 Como as seções de autoexec são tratados por vários arquivos de config:
   join:       Combina os dois arquivos em uma única seção grande (comportamento 
-			  antigo; padrão).
+              antigo; padrão).
   overwrite:  Use o último encontrado, como nas demais configurações do config.
 .
 :CONFIG_AUTOMOUNT
@@ -254,7 +254,7 @@ padrão). Funciona apenas ao emular 'hercules' ou 'cga_mono'.
 Você também pode alternar entre as cores disponíveis usando F11.
 .
 :CONFIG_CGA_COLORS
-Escolha a interpretação das cores RGBI do Adaptador Gráfico Colorido (ou CGA).  
+Escolha a interpretação das cores RGBI do Adaptador Gráfico Colorido (CGA).  
 Afeta todas as máquinas capazes de exibir gráficos CGA ou superiores. 
 Predefinições inclusas:
   default:       A paleta de cores original do CGA, como emulada pelas placas VGA
@@ -269,7 +269,7 @@ Predefinições inclusas:
                  IBM 5153 com controle único de contraste que apenas escurece
                  cores não brilhantes. O contraste pode ser fornecido como um
                  segundo parâmetro opcional (0 até 100; 100 sendo o padrão).
-				 Ex. ibm5153 60
+                 Ex. ibm5153 60
   agi-amiga-v1, agi-amiga-v2, agi-amiga-v3:
                  Paletas de cores usadas nos jogos AGI da Sierra no Amiga.
   agi-amigaish:  Uma combinação entre a paleta de cores do EGA e do Amiga
@@ -309,7 +309,7 @@ Em todos os casos, você pode omitir a extensão de arquivo '.glsl' do sombreado
 Ativa o modo analógico 'composite' ao iniciar ('auto' por padrão).
 'auto' permite que o programa escolha.
 Observação: Ajuste as configurações abaixo (ex. tonalidade) usando as teclas do
-			composite, e depois leia as novas pelo seu console e insira-as aqui.
+            composite, e depois leia as novas pelo seu console e insira-as aqui.
 .
 :CONFIG_ERA
 Geração da tecnologia 'composite' ('auto' por padrão).
@@ -355,7 +355,7 @@ Número de ciclos a serem adicionados ou subtraídos usando as teclas de ajuste
 de velocidade (10 por padrão).
 .
 :CONFIG_CYCLEDOWN
-Definir um número menor que 100 resultará em uma porcentagem (20 por padrão).	
+Definir um número menor que 100 resultará em uma porcentagem (20 por padrão).    
 .
 :CONFIG_MOUSE_CAPTURE
 Define como o confinamento do mouse funciona:
@@ -367,7 +367,7 @@ Define como o confinamento do mouse funciona:
              DOSBox e o restante da área de trabalho; o restringe apenas com
              clique do meio ou tecla de atalho. O mouse ininterrupto (seamless)
              não funciona corretamente com todos os jogos. O Windows 3.1x se
-			 torna compatível com esse modo instalando um driver personalizado.
+             torna compatível com esse modo instalando um driver personalizado.
   nomouse:   Oculta e não envia dados do mouse para o jogo.
 Em caso de controle por toque (em telas sensíveis ao toque), use o 'seamless'.
 .
@@ -391,8 +391,8 @@ ou quando o mouse está restringido no modo janela.
 :CONFIG_DOS_MOUSE_DRIVER
 Ativa o driver de mouse do integrado ao DOS (ativo por padrão).
 Observações: Desative se você pretende usar o driver original do MOUSE.COM no
-			 DOS emulado. Quando um sistema operacional hóspede é iniciado, o
-			 driver integrado é desativado automaticamente.
+             DOS emulado. Quando um sistema operacional hóspede é iniciado, o
+             driver integrado é desativado automaticamente.
 .
 :CONFIG_DOS_MOUSE_IMMEDIATE
 Atualiza os marcadores de movimento do mouse imediatamente, sem aguardar pela
@@ -462,9 +462,9 @@ canais em estéreo para a audição com fones de ouvido:
   <tamanho>:  Escolha um tamanho para a alimentação cruzada entre 0 até 100,
               onde 0 significa que a opção está desativada (é o mesmo que 'off')
               e 100 para uma alimentação cruzada total (efetivamente tornando o 
-			  conteúdo estéreo em mono).
+              conteúdo estéreo em mono).
 Observação: É possível definir a alimentação cruzada por canal usando comandos 
-			do mixer sonoro.
+            do mixer sonoro.
 .
 :CONFIG_REVERB
 Ativa a reverberação (reverb) a ser aplicado globalmente para adicionar uma 
@@ -473,19 +473,18 @@ sensação de espaço ao som:
   on:      Ative a reverberação (predefinição média).
   tiny:    Simula o som de um pequeno alto-falante embutido em uma sala;
            projetado especificamente para sistemas com alto-falantes pequenos
-           (como alto-falantes de PC e Áudio PS/1, além de dispositivos Tandy e
-		   LPT DAC).
+           (dispositivos como o PC Speaker da IBM, áudio PS/1, Tandy e LPT DAC).
   small:   Adiciona uma sensação sutil de espaço; bom para jogos que usam um 
            único canal de sintetizador (como geralmente o OPL) para música e 
-		   seus efeitos sonoros.
+           seus efeitos sonoros.
   medium:  Predefinição de sala média que funciona bem com uma ampla variedade
-		   de jogos.
+           de jogos.
   large:   Predefinição de um salão enorme, recomendado para jogos que utilizam 
-		   canais separados para música e áudio digital.
+           canais separados para música e áudio digital.
   huge:    Uma versão mais intensa da predefinição do salão enorme; funciona bem
            em alguns jogos com trilhas sonoras mais atmosféricas.
 Observação: É possível ajustar os níveis de reverberação por canal através dos 
-			comandos do mixer sonoro.
+            comandos do mixer sonoro.
 .
 :CONFIG_CHORUS
 Ative o coro de áudio globalmente para adicionar uma sensação de movimento em
@@ -497,7 +496,7 @@ estéreo ao som:
   normal:  Coro normal, funciona bem com uma grande variedade de jogos.
   strong:  Efeito de coro óbvio e pronunciado.
 Observação: É possível ajustar os níveis de coro por canal através dos comandos
-			do mixer sonoro.
+            do mixer sonoro.
 .
 :CONFIG_MIDIDEVICE
 Defina para onde as operações MIDI da interface MIDI emulada MPU-401 serão
@@ -511,7 +510,7 @@ enviadas ('auto' por padrão):
   auto:        Seleciona um dos sintetizadores MIDI integrados (se `midiconfig`
                estiver configurado para 'fluidsynth' ou 'mt32'), ou um 
                dispositivo MIDI externo ao DOSBox (qualquer outro valor de 
-			   'midiconfig'). Pode ser tanto um sintetizador por software quanto
+               'midiconfig'). Pode ser tanto um sintetizador por software quanto
                um dispositivo físico. Comportamento padrão.
   none:        Desabilita saída MIDI.
 .
@@ -523,7 +522,7 @@ Observações: - Esta opção não tem efeito ao usar sintetizadores integrados
                ('mididevice = fluidsynth' ou 'mididevice = mt32').
              - Ao usar o ALSA, utilize o comando do Linux 'aconnect -l'
                para listar todas as portas MIDI abertas e escolher uma 
-			   (ex. 'midiconfig = 14:0' para o sequenciador 14, porta 0).
+               (ex. 'midiconfig = 14:0' para o sequenciador 14, porta 0).
              - Se estiver usando um Roland MT-32 físico com PCB de revisão 0,
                o componente pode requerer um atraso para evitar transbordamento
                de seu buffer. Nesse caso, adicione 'delaysysex' assim:
@@ -548,8 +547,8 @@ Caminho para um arquivo SoundFont no formato .sf2 ('default.sf2' por padrão).
 Você pode usar um caminho absoluto, relativo ou o nome de um .sf2 dentro
 do diretório 'soundfonts', localizado no diretório de configuração do DOSBox.
 Observação: A porcentagem adicional de ajuste de volume após o nome do arquivo
-			foi descontinuada. Por favor, use um comando do mixer sonoro para 
-			alterar o volume do canal de áudio, ex. 'MIXER FSYNTH 200'
+            foi descontinuada. Por favor, use um comando do mixer sonoro para 
+            alterar o volume do canal de áudio, ex. 'MIXER FSYNTH 200'
 .
 :CONFIG_FSYNTH_CHORUS
 Efeito coro: 'auto' (padrão), 'on', 'off', ou valores personalizados.
@@ -563,9 +562,9 @@ Em caso de utilização de valores personalizados:
     - modulação-de-onda pode ser 'sine' ou 'triangle'
   Por exemplo: 'chorus = 3 1.2 0.3 8.0 sine'
 Observação: É possível desativar o coro do FluidSynth e ativar o coro do mixer
-			sonoro sobre canal FluidSynth, ou ativar ambos efeitos coro ao
-			mesmo tempo. Se soará bom ou não, dependerá do SoundFont e das
-			configurações de coro a serem utilizadas.
+            sonoro sobre canal FluidSynth, ou ativar ambos efeitos coro ao
+            mesmo tempo. Se soará bom ou não, dependerá do SoundFont e das
+            configurações de coro a serem utilizadas.
 .
 :CONFIG_FSYNTH_REVERB
 Efeito de reverberação: 'auto' (padrão), 'on', 'off' ou valores personalizados.
@@ -578,13 +577,13 @@ Em caso de utilização de valores personalizados:
     - nível é um número decimal entre 0.0 e 1.0
   Por exemplo: 'reverb = 0.61 0.23 0.76 0.56'
 Observação: É possível desativar a reverberação do FluidSynth e ativar a
-			reverberação do mixer sonoro do canal FluidSynth, ou ativar ambos os
-			efeitos de reverberação ao mesmo tempo. Se soará bom ou não, 
-			dependerá do SoundFont e das configurações de reverberação utilizadas.
+            reverberação do mixer sonoro do canal FluidSynth, ou ativar ambos os
+            efeitos de reverberação ao mesmo tempo. Se soará bom ou não, 
+            dependerá do SoundFont e das configurações de reverberação utilizadas.
 .
 :CONFIG_FSYNTH_FILTER
 Filtro para a saída de áudio do FluidSynth:
-  off:       		Não filtrar a saída de áudio (padrão).
+  off:               Não filtrar a saída de áudio (padrão).
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_MODEL
@@ -607,7 +606,7 @@ Os arquivos ROM dentro do diretório selecionado podem ser qualquer um destes:
 .
 :CONFIG_MT32_FILTER
 Filtro para a saída de áudio do Roland MT-32/CM-32L:
-  off:       		Não filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio (padrão).
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :MT32_NO_SUPPORTED_MODELS
@@ -633,7 +632,7 @@ Tipo de Sound Blaster a ser emulado ('sb16' por padrão).
 'gb' é o Game Blaster.
 .
 :CONFIG_SBBASE
-O endereço ES (ou IO) do Sound Blaster (220 por padrão).
+O endereço ES (IO) do Sound Blaster (220 por padrão).
 .
 :CONFIG_IRQ
 O número do IRQ (Pedido de Interrupção) do Sound Blaster (7 por padrão).
@@ -668,22 +667,22 @@ Somente a emulação 'nuked' do OPL é compatível atualmente.
 .
 :CONFIG_SB_FILTER
 Filtro a ser emulado para a saída de áudio digital do Sound Blaster:
-  auto:      		Use o filtro adequado conforme determinado pelo 'sbtype'.
+  auto:             Use o filtro adequado conforme determinado pelo 'sbtype'.
   sb1, sb2, sbpro1, sbpro2, sb16:
-					Use o filtro específico para um modelo do Sound Blaster.
-  modern:    		Use uma interpolação linear ampliada, atuando como filtro
-					de passe baixo (low-pass); esse é o funcionamento antigo do
-					DOSBox (padrão).
-  off:       		Não filtre a saída de áudio.
+                    Use o filtro específico para um modelo do Sound Blaster.
+  modern:           Use uma interpolação linear ampliada, atuando como filtro
+                    de passe baixo (low-pass); esse é o funcionamento antigo do
+                    DOSBox (padrão).
+  off:              Não filtre a saída de áudio.
   <personalizado>:  Um ou dois filtros modificados conforme o formato a seguir:
-					   TIPO ORDEM FREQ
-					Onde TIPO pode ser 'hpf' (high-pass ou passe alto) ou 'lpf' 
-					(low-pass ou passe baixo), ORDEM é a ordem do filtro de
-					1 até 16 (1ª ordem = inclinação de 6dB por oitava, 2ª ordem 
-					= 12dB por oitava, e assim em diante), e FREQ é a frequência
-					de corte em hertz (Hz). Exemplos:
-					   lpf 2 12000
-					   hpf 3 120 lfp 1 6500
+                       TIPO ORDEM FREQ
+                    Onde TIPO pode ser 'hpf' (high-pass ou passe alto) ou 'lpf' 
+                    (low-pass ou passe baixo), ORDEM é a ordem do filtro de
+                    1 até 16 (1ª ordem = inclinação de 6dB por oitava, 2ª ordem 
+                    = 12dB por oitava, e assim em diante), e FREQ é a frequência
+                    de corte em hertz (Hz). Exemplos:
+                       lpf 2 12000
+                       hpf 3 120 lfp 1 6500
 .
 :CONFIG_SB_FILTER_ALWAYS_ON
 Força o filtro do Sound Blaster a permanecer sempre ativo.
@@ -691,317 +690,328 @@ Força o filtro do Sound Blaster a permanecer sempre ativo.
 .
 :CONFIG_OPL_FILTER
 Filtro a ser emulado para a saída de áudio OPL do Sound Blaster:
-  auto:      		Use o filtro adequado conforme determinado pelo 'sbtype' 
-					(padrão).
+  auto:             Use o filtro adequado conforme determinado pelo 'sbtype' 
+                    (padrão).
   sb1, sb2, sbpro1, sbpro2, sb16:
-					Use o filtro específico para um modelo do Sound Blaster.
-  off:       		Não filtre a saída.
+                    Use o filtro específico para um modelo do Sound Blaster.
+  off:              Não filtre a saída.
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_CMS_FILTER
 Filtro para a saída de áudio do CMS do Sound Blaster:
-  on:        		Filtrar a saida (padrão).
-  off:       		Não filtre a saída.
+  on:               Filtrar a saída (padrão).
+  off:              Não filtre a saída.
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_GUS
 Ativa a emulação do Gravis UltraSound (desativado por padrão).
 .
 :CONFIG_GUSBASE
-O endereço ES (ou IO) do Gravis UltraSound (240 por padrão).
+O endereço ES (IO) do Gravis UltraSound (240 por padrão).
 .
 :CONFIG_GUSIRQ
 O número do IRQ (Pedido de Interrupção) do Gravis UltraSound (5 por padrão).
 .
 :CONFIG_GUSDMA
-O número do canal DMA (Acesso Direto à Memória) do Gravis UltraSound (3 por padrão).
+Valor do canal DMA (Acesso Direto à Memória) do Gravis UltraSound (3 por padrão).
 .
 :CONFIG_ULTRADIR
-Path to UltraSound directory ('C:\ULTRASND' by default).
-In this directory there should be a MIDI directory that contains the patch
-files for GUS playback. Patch sets used with Timidity should work fine.
+Caminho para o diretório do Gravis UltraSound ('C:\ULTRASND' por padrão).
+Este diretório deverá conter um diretório MIDI com os arquivos de patch a
+serem reproduzidos pelo GUS. O conjunto de patches usados pelo Timidity deverão
+funcionar bem.
 .
 :CONFIG_GUS_FILTER
-Filter for the Gravis UltraSound audio output:
-  off:       Don't filter the output (default).
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída de áudio do Gravis UltraSound:
+  off:              Não filtrar a saída de áudio (padrão).
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_IMFC
-Enable the IBM Music Feature Card (disabled by default).
+Ativa o IBM Music Feature Card (desativado por padrão).
 .
 :CONFIG_IMFC_BASE
-The IO base address of the IBM Music Feature Card (2A20 by default).
+O endereço base ES (IO) para o IBM Music Feature Card (2A20 por padrão).
 .
 :CONFIG_IMFC_IRQ
-The IRQ number of the IBM Music Feature Card (3 by default).
+O número do IRQ (Pedido de Interrupção) do IBM Music Feature Card (3 por padrão).
 .
 :CONFIG_IMFC_FILTER
-Filter for the IBM Music Feature Card output:
-  on:        Filter the output.
-  off:       Don't filter the output (default).
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída de áudio do IBM Music Feature Card:
+  on:               Filtrar a saída de áudio.
+  off:              Não filtrar a saída de áudio (padrão).
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_SIDMODEL
-Model of chip to emulate in the Innovation SSI-2001 card:
-  auto:  Use the 6581 chip.
-  6581:  The original chip, known for its bassy and rich character.
-  8580:  A later revision that more closely matched the SID specification.
-         It fixed the 6581's DC bias and is less prone to distortion.
-         The 8580 is an option on reproduction cards, like the DuoSID.
-  none:  Disable the card (default).
+Modelo de chip a ser emulado pela placa Innovation SSI-2001:
+  auto:  Usa o chip 6581.
+  6581:  O chip original, reconhecido pelos graves e sua riqueza sonora marcante.
+  8580:  Uma revisão posterior que cuidadosamente corresponde com a especificação
+         do chip SID. Isso corrigiu a polarização CC (DC bias) do 6581 e o deixou
+         menos propenso a distorção. O 8580 é uma opção em placas de reprodução,
+		 como o DuoSID.
+  none:  Desativa a placa (padrão).
 .
 :CONFIG_SIDCLOCK
-The SID chip's clock frequency, which is jumperable on reproduction cards.
-  default:  0.895 MHz, per the original SSI-2001 card (default).
-  c64ntsc:  1.023 MHz, per NTSC Commodore PCs and the DuoSID.
-  c64pal:   0.985 MHz, per PAL Commodore PCs and the DuoSID.
-  hardsid:  1.000 MHz, available on the DuoSID.
+A frequência de clock do chip SID, ajustável por jumper nas placas de
+reprodução:
+  default:  0.895 MHz, conforme a placa SSI-2001 original (padrão).
+  c64ntsc:  1.023 MHz, conforme os PCs Commodore NTSC e o DuoSID.
+  c64pal:   0.985 MHz, conforme os PCs Commodore PAL e o DuoSID.
+  hardsid:  1.000 MHz, disponível pelo DuoSID.
 .
 :CONFIG_SIDPORT
-The IO port address of the Innovation SSI-2001 (280 by default).
+O endereço da porta ES (IO) da Innovation SSI-2001 (280 por padrão).
 .
 :CONFIG_6581FILTER
-Adjusts the 6581's filtering strength as a percent from 0 to 100
-(50 by default). The SID's analog filtering meant that each chip was
-physically unique.
+Ajusta a intensidade da filtragem a ser realizada pelo 6581 em porcentagem
+entre 0 até 100 (50 por padrão). A filtragem analógica do SID fez com que cada
+chip fosse fisicamente único.
 .
 :CONFIG_8580FILTER
-Adjusts the 8580's filtering strength as a percent from 0 to 100
-(50 by default).
+Ajusta a intensidade da filtragem a ser realizada pelo 8580 em porcentagem
+entre até o 100 (50 por padrão).
 .
 :CONFIG_INNOVATION_FILTER
-Filter for the Innovation audio output:
-  off:       Don't filter the output (default).
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída de áudio da Innovation:
+  off:              Não filtrar a saída de áudio (padrão).
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_PCSPEAKER
-PC speaker emulation model:
-  discrete:  Waveform is created using discrete steps (default).
-             Works well for games that use RealSound-type effects.
-  impulse:   Waveform is created using sinc impulses.
-             Recommended for square-wave games, like Commander Keen.
-             While improving accuracy, it is more CPU intensive.
-  none/off:  Don't use the PC Speaker.
+Modelo para a emulação do PC speaker da IBM:
+  discrete:  A onda sonora será criada usando etapas discretas (padrão).
+             Funciona bem para jogos que efeitos do tipo RealSound.
+  impulse:   A onda sonora será criada usando impulsos sinc.
+             Recomendado para jogos de onda quadrada, como o Commander Keen.
+             Embora melhora a acurácia, exige mais do processador.
+  none/off:  Não use o PC Speaker.
 .
 :CONFIG_PCSPEAKER_FILTER
-Filter for the PC Speaker output:
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída de áudio do PC Speaker da IBM:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_ZERO_OFFSET
-DC-offset is now eliminated globally from the master mixer output.
+O deslocamento DC agora foi removido globalmente da saída do mixer sonoro 
+principal. 
 .
 :CONFIG_TANDY
-Enable Tandy Sound System emulation ('auto' by default).
-For 'auto', emulation is present only if machine is set to 'tandy'.
+Ativar emulação do Tandy Sound System ('auto' por padrão).
+Quando 'auto', a emulação sera presente apenas se 'machine' for 'tandy'.
 .
 :CONFIG_TANDY_FILTER
-Filter for the Tandy synth output:
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída de sintetizador do Tandy:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_TANDY_DAC_FILTER
-Filter for the Tandy DAC output:
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída DAC (Conversor Digital-Analógico) do Tandy:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_LPT_DAC
-Type of DAC plugged into the parallel port:
-  disney:    Disney Sound Source.
-  covox:     Covox Speech Thing.
-  ston1:     Stereo-on-1 DAC, in stereo up to 30 kHz.
-  none/off:  Don't use a parallel port DAC (default).
+Tipo do DAC (Conversor Digital-Analógico) conectado a porta paralela:
+  disney:    Seleciona o Disney Sound Source.
+  covox:     Seleciona o Covox Speech Thing.
+  ston1:     Seleciona o DAC do Stereo-on-1, som estéreo em até 30 kHz.
+  none/off:  Não use uma porta paralela do DAC (padrão).
 .
 :CONFIG_LPT_DAC_FILTER
-Filter for the LPT DAC audio device(s):
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída do(s) dispositivo(s) de áudio do LPT DAC:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_DISNEY
-Use 'lpt_dac=disney' to enable the Disney Sound Source.
+Use o 'lpt_dac=disney' para ativar o Disney Sound Source.
 .
 :CONFIG_PS1AUDIO
-Enable IBM PS/1 Audio emulation (disabled by default).
+Ativa a emulação de áudio PS/1 da IBM (desabilitado por padrão).
 .
 :CONFIG_PS1AUDIO_FILTER
-Filter for the PS/1 Audio synth output:
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída do sintetizador de áudio PS/1:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_PS1AUDIO_DAC_FILTER
-Filter for the PS/1 Audio DAC output:
-  on:        Filter the output (default).
-  off:       Don't filter the output.
-  <custom>:  Custom filter definition; see 'sb_filter' for details.
+Filtro para a saída DAC (Conversor Digital-Analógico) de áudio PS/1:
+  on:               Filtrar a saída de áudio (padrão).
+  off:              Não filtrar a saída de áudio
+  <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_REELMAGIC
-ReelMagic (aka REALmagic) MPEG playback support:
-  off:       Disable support (default).
-  cardonly:  Initialize the card without loading the FMPDRV.EXE driver.
-  on:        Initialize the card and load the FMPDRV.EXE on start-up.
+Capacidade de reprodução MPEG do ReelMagic (também conhecido como REALmagic):
+  off:       Desativa o suporte (padrão).
+  cardonly:  Inicia a placa sem carregar o driver do FMPDRV.EXE.
+  on:        Inicia a placa e carrega o FMPDRV.EXE durante a inicialização.
 .
 :CONFIG_REELMAGIC_KEY
-Set the 32-bit magic key used to decode the game's videos:
-  auto:      Use the built-in routines to determine the key (default).
-  common:    Use the most commonly found key, which is 0x40044041.
-  thehorde:  Use The Horde's key, which is 0xC39D7088.
-  <custom>:  Set a custom key in hex format (e.g., 0x12345678).
+Defina a chave mágica de 32 bits a ser usada para decodificar os vídeos do jogo:
+  auto:             Usa rotinas internas para determinar a chave selecionada
+                    (padrão).
+  common:           Usa a chave mais frequentemente encontrada, que é 0x40044041.
+  thehorde:         Usa a chave do The Horde, que é 0xC39D7088.
+  <personalizado>:  Defina uma chave personalizada em formato hex 
+                    (ex., 0x12345678).
 .
 :CONFIG_REELMAGIC_FCODE
-Override the frame rate code used during video playback:
-  0:       No override: attempt automatic rate discovery (default).
-  1 to 7:  Override the frame rate to one the following (use 1 through 7):
-           1=23.976, 2=24, 3=25, 4=29.97, 5=30, 6=50, or 7=59.94 FPS.
+Sobrescreve o código da taxa de quadros usado durante a reprodução de vídeo:
+  0:       Não sobrescreve: tenta encontrar a taxa automática (padrão).
+  1 to 7:  Sobrescreve a taxa de quadros para uma das seguintes (de 1 a 7):
+           1=23.976, 2=24, 3=25, 4=29.97, 5=30, 6=50 ou 7=59.94 FPS.
 .
 :CONFIG_JOYSTICKTYPE
-Type of joystick to emulate:
-  auto:      Detect and use any joystick(s), if possible (default).
-  2axis:     Support up to two joysticks, each with 2 axis
-  4axis:     Support the first joystick only, as a 4-axis type.
-  4axis_2:   Support the second joystick only, as a 4-axis type.
-  fcs:       Emulate joystick as an original Thrustmaster FCS.
-  ch:        Emulate joystick as an original CH Flightstick.
-  hidden:    Prevent DOS from seeing the joystick(s), but enable them
-             for mapping.
-  disabled:  Fully disable joysticks: won't be polled, mapped,
-             or visible in DOS.
-Remember to reset DOSBox's mapperfile if you saved it earlier.
+Tipo de emulação de joystick:
+  auto:      Detecta e usa qualquer joystick(s), se possível (padrão).
+  2axis:     Compatibilidade com até dois joysticks, cada um com 2 eixos.
+  4axis:     Compatibilidade com apenas o primeiro joystick, de 4 eixos.
+  4axis_2:   Compatibilidade com apenas o segundo joystick, de 4 eixos.
+  fcs:       Emula um joystick Thrustmaster FCS original.
+  ch:        Emula un joystick CH Flightstick original.
+  hidden:    Impede o DOS que veja o(s) joystick(s), mas os ativa 
+             para mapeamento.
+  disabled:  Desativa completamente os joysticks: eles não serão pesquisados,
+             mapeados, ou visíveis no DOS.
+Lembre-se de resetar o arquivo de mapeamento do DOSBox se foi salvo antes.
 .
 :CONFIG_TIMED
-Enable timed intervals for axis (disabled by default).
-Experiment with this option, if your joystick drifts away.
+Ative intervalos programados para os eixos (desativado por padrão).
+Experimente essa opção caso o joystick deslize sozinho (conhecido como 'drift').
 .
 :CONFIG_AUTOFIRE
-Fire continuously as long as the button is pressed
-(disabled by default).
+Atire permanentemente enquanto o botão estiver pressionado
+(desabilitado por padrão).
 .
 :CONFIG_SWAP34
-Swap the 3rd and the 4th axis (disabled by default).
-Can be useful for certain joysticks.
+Troque entre 3º e o 4º eixo (desativado por padrão).
+Pode ser útil para determinados joysticks.
 .
 :CONFIG_BUTTONWRAP
-Enable button wrapping at the number of emulated buttons (disabled by default).
+Ativa o wrapping de butão, permitindo que todos os botões do joystick sejam
+utilizados pelo jogo (desativado por padrão).
 .
 :CONFIG_CIRCULARINPUT
-Enable translation of circular input to square output (disabled by default).
-Try enabling this if your left analog stick can only move in a circle.
+Ative a tradução da entrada circular para saída quadrada (desativado por padrão).
+Ative isso caso seu analógico esquerdo só puder se mover em um círculo.
 .
 :CONFIG_DEADZONE
-Percentage of motion to ignore (10 by default).
-100 turns the stick into a digital one.
+Porcentagem do movimento a ser ignorado (10 por padrão).
+100 faz o joystick virar digital.
 .
 :CONFIG_USE_JOY_CALIBRATION_HOTKEYS
-Enable hotkeys to allow realtime calibration of the joystick's x and y axis
-(disabled by default). Only consider this if in-game calibration fails and
-other settings have been tried.
-  - Ctrl/Cmd+Arrow-keys adjusts the axis' scalar value:
-      - left and right diminish or magnify the x-axis scalar, respectively.
-      - down and up diminish or magnify the y-axis scalar, respectively.
-  - Alt+Arrow-keys adjusts the axis' offset position:
-      - left and right shift x-axis offset in the given direction.
-      - down and up shift the y-axis offset in the given direction.
-  - Reset the X and Y calibration using Ctrl+Delete and Ctrl+Home,
-    respectively.
-Each tap will report X or Y calibration values you can set below. When you find
-parameters that work, quit the game, switch this setting back to false, and
-populate the reported calibration parameters.
+Ative teclas de atalho para permitir a calibração em tempo real do joystick
+(desativado por padrão). Considere isso somente em casos que em que a calibração
+do jogo falhar e outras configurações já tiverem sido tentadas. 
+  - Ctrl ou Cmd + Setas do teclado: ajustam o valor escalar dos eixos:
+      - esquerda e direita amplia ou reduze o escalar do eixo X, nessa ordem.
+      - baixo e cima amplia ou reduze o escalar do eixo Y, nessa ordem.
+  - Alt + Setas do teclado: ajustam a posição de compensação (offset) dos eixos:
+      - esquerda e direita desloca a compensação do eixo x na direção indicada.
+      - baixo e cima desloca a compensação do eixo y na direção indicada.
+  - Resete a calibração dos eixos X e Y usando Ctrl+Delete e Ctrl+Home,
+    respectivamente.
+Cada movimento informará os valores de calibração X ou Y que você pode definir
+abaixo. Assim que encontrar os parâmetros que funcionem, feche o jogo, mude esta
+configuração de volta para 'false' e insira os parâmetros de calibração que lhe
+foram informados.
 .
 :CONFIG_JOY_X_CALIBRATION
-Apply x-axis calibration parameters from the hotkeys ('auto' by default).
+Aplique os parâmetros de calibração do eixo x sobre as teclas (padrão é 'auto').
 .
 :CONFIG_JOY_Y_CALIBRATION
-Apply Y-axis calibration parameters from the hotkeys ('auto' by default).
+Aplique os parâmetros de calibração do eixo Y sobre as teclas (padrão é 'auto').
 .
 :CONFIG_SERIAL1
-Set type of device connected to COM port.
-Can be disabled, dummy, mouse, modem, nullmodem, direct ('dummy' by default).
-Additional parameters must be on the same line in the form of
-parameter:value. Parameter for all types is irq (optional).
-  - for 'mouse':      model, overrides setting from [mouse] section
-  - for 'direct':     realport (required), rxdelay (optional).
+Defina o tipo de dispositivo a ser conectado na porta COM.
+Pode ser: disabled, dummy, mouse, modem, nullmodem, direct ('dummy' por padrão).
+Parâmetros adicionais devem estar na mesma linha usando o formato
+parâmetro:valor. O parâmetro que serve para todos os tipos é 'irq' (opcional).
+  - para 'mouse':      model, substitui a configuração da seção [mouse].
+  - para 'direct':     realport (obrigatório), rxdelay (opcional).
                       (realport:COM1 realport:ttyS0).
-  - for 'modem':      listenport, sock, baudrate (all optional).
-  - for 'nullmodem':  server, rxdelay, txdelay, telnet, usedtr,
-                      transparent, port, inhsocket, sock (all optional).
-SOCK parameter specifies the protocol to be used by both sides
-of the conection. 0 for TCP and 1 for ENet reliable UDP.
-Example: serial1=modem listenport:5000 sock:1
+  - para 'modem':      listenport, sock, baudrate (todos opcionais).
+  - para 'nullmodem':  server, rxdelay, txdelay, telnet, usedtr,
+                       transparent, port, inhsocket, sock (todos opcionais).
+O parâmetro SOCK especifica o protocolo a ser usado por ambos os lados da 
+conexão. '0' se preferir TCP e '1' se preferir ENet reliable UDP.
+Exemplo: serial1=modem listenport:5000 sock:1
 .
 :CONFIG_SERIAL2
-See 'serial1'
+Veja 'serial1'
 .
 :CONFIG_SERIAL3
-See 'serial1'
+Veja 'serial1'
 .
 :CONFIG_SERIAL4
-See 'serial1'
+Veja 'serial1'
 .
 :CONFIG_PHONEBOOKFILE
-File used to map fake phone numbers to addresses
-('phonebook.txt' by default).
+Arquivo usado para mapear números de telefone falsos para endereços
+('phonebook.txt' por padrão).
 .
 :CONFIG_XMS
-Enable XMS support (enabled by default).
+Ative compatibilidade com o XMS (memória estendida) (ativo por padrão).
 .
 :CONFIG_EMS
-Enable EMS support (enabled by default). Enabled provides the best
-compatibility but certain applications may run better with other choices,
-or require EMS support to be disabled to work at all.
+Ative compatibilidade com o EMS (memória expandida) (ativo por padrão). Ao ser
+ativado oferece a melhor suporte, porém alguns aplicativos podem funcionar melhor
+com outras opções ou requerer que essa compatibilidade com o EMS seja desativada 
+para funcionarem.
 .
 :CONFIG_UMB
-Enable UMB support (enabled by default).
+Ative compatibilidade com o UMB (Bloco de Memória Superior) (ativo por padrão).
 .
 :CONFIG_VER
-Set DOS version (5.0 by default). Specify in major.minor format.
-A single number is treated as the major version.
-Common settings are 3.3, 5.0, 6.22, and 7.1.
+Define uma versão do DOS (5.0 por padrão). Especifique-a no formato 
+principal.secundário. Apenas um número será tratado como a versão principal.
+As definições comuns são: 3.3, 5.0, 6.22 e 7.1.
 .
 :CONFIG_COUNTRY
-Set DOS country code (0 by default).
-This affects country-specific information such as date, time, and decimal
-formats. If set to 0, the country code corresponding to the selected keyboard
-layout will be used.
+Define o código de país do DOS (0 por padrão, 055 para o Brasil).
+Isso afeta informações específicas do país como data, hora e formatos decimais.
+Caso definido como 0, o código de país corresponderá ao layout do teclado
+selecionado.
 .
 :CONFIG_EXPAND_SHELL_VARIABLE
-Enable expanding environment variables such as %PATH% in the DOS command shell
-(disabled by default).
-FreeDOS and MS-DOS 7/8 COMMAND.COM supports this behavior.
+Amplia as variáveis de ambiente, como o %PATH% na interface de comando do DOS
+(desativado por padrão).
+O COMMAND.COM do FreeDOS e o MS-DOS 7/8 é compatível com essa funcionalidade.
 .
 :CONFIG_KEYBOARDLAYOUT
-Language code of the keyboard layout, or 'auto' ('auto' by default).
+Código de linguagem do layout do teclado, ou 'auto' 
+('auto' por padrão, 'br274' para o teclado brasileiro).
 .
 :CONFIG_IPX
-Enable IPX over UDP/IP emulation (enabled by default).
+Ativa o protocolo IPX sobre a emulação UDP/IP (ativado por padrão).
 .
 :CONFIG_NE2000
-Enable emulation of a Novell NE2000 network card on a software-based
-network (using libslirp) with properties as follows (enabled by default):
-  - 255.255.255.0:  Subnet mask of the 10.0.2.0 virtual LAN.
-  - 10.0.2.2:       IP of the gateway and DHCP service.
-  - 10.0.2.3:       IP of the virtual DNS server.
-  - 10.0.2.15:      First IP provided by DHCP, your IP!
-Notes: Inside DOS, setting this up requires an NE2000 packet driver, DHCP
-       client, and TCP/IP stack. You might need port-forwarding from the host
-       into the DOS guest, and from your router to your host when acting as the
-       server for multiplayer games.
+Permite emulação de uma placa de rede Novell NE2000 sobre uma rede baseada em 
+software (usando o libslirp) com as seguintes propriedades (ativado por padrão):
+  - 255.255.255.0:  Máscara sub-rede da LAN virtual '10.0.2.0'.
+  - 10.0.2.2:       IP do gateway e do serviço DHCP.
+  - 10.0.2.3:       IP do servidor DNS virtual.
+  - 10.0.2.15:      Primeiro IP a ser fornecido pelo DHCP, seu IP!
+Observações: Dentro do DOS, configurar isso requer um driver do pacote NE2000,  
+             cliente DHCP, e a memória (stack) do TCP/IP. Talvez você necessite
+             de redirecionar portas (port-forwarding) do anfitrião para o DOS
+             convidado e do seu roteador para o seu anfitrião, para utilizar-lo 
+			 como servidores de jogos multiplayer.
 .
 :CONFIG_NICBASE
-Base address of the NE2000 card (300 by default).
-Notes: Addresses 220 and 240 might not be available as they're assigned to the
-       Sound Blaster and Gravis UltraSound by default.
+Endereço base da placa NE2000 (300 por padrão).
+Observações: Os endereços 220 e 240 podem não estar disponíveis, já que são 
+             atribuídos pelo Sound Blaster e o Gravis UltraSound por padrão.
 .
 :CONFIG_NICIRQ
-The interrupt used by the NE2000 card (3 by default).
-Notes: IRQs 3 and 5 might not be available as they're assigned to
-       'serial2' and the Gravis UltraSound by default.
+A interrupção a ser usada pela placa NE2000 (3 por padrão).
+Observações: As IRQs (Pedidos de Interrupção) 3 e 5 podem não estar disponíveis,
+             já que são atribuídos pelo 'serial2' e Gravis UltraSound por padrão.
 .
 :CONFIG_MACADDR
-The MAC address of the NE2000 card ('AC:DE:48:88:99:AA' by default).
+O endereço MAC da placa NE2000 ('AC:DE:48:88:99:AA' por padrão).
 .
 :CONFIG_TCP_PORT_FORWARDS
 Forward one or more TCP ports from the host into the DOS guest
@@ -1537,7 +1547,7 @@ Examples:
 .
 :PROGRAM_INTRO
 [erases=entire][color=green]Welcome to DOSBox Staging[reset], an x86 emulator with sound and graphics.
-DOSBox creates a shell for you which looks like old plain DOS.
+O DOSBox cria uma interface para você que assemelha-se como o antigo DOS.
 
 For information about basic mount type [color=blue]intro mount[reset]
 For information about CD-ROM support type [color=blue]intro cdrom[reset]
@@ -2308,24 +2318,25 @@ A short list of the most often used commands:
 
 .
 :SHELL_CMD_COMMAND_HELP_LONG
-Starts the DOSBox Staging command shell.
-Usage:
+Inicia a interface de comando do DOSBox Staging.
+Utilização:
   [color=green]command[reset]
-  [color=green]command[reset] /c (or /init) [color=cyan]COMMAND[reset]
+  [color=green]command[reset] /c (or /init) [color=cyan]COMANDO[reset]
 
-Where:
-  [color=cyan]COMMAND[reset] is a DOS command, game, or program to run.
+Localização:
+  [color=cyan]COMANDO[reset] é um comando, jogo ou programa executável pelo DOS.
 
 Notes:
-  DOSBox Staging automatically starts a DOS command shell by invoking this
-  command with /init option when it starts, which shows the welcome banner.
-  You can load a new instance of the command shell by running [color=green]command[reset].
-  Adding a /c option along with [color=cyan]COMMAND[reset] allows this command to run the
-  specified command (optionally with parameters) and then exit automatically.
+  O DOSBox Staging automaticamente iniciará a interface de comando do DOS ao
+  executar esse comando com a opção /init durante a inicialização, exibindo a 
+  mensagem de boas-vindas. Você pode carregar uma nova instância da interface de
+  comando executando [color=green]command[reset]. Adicionando a opção /c em
+  conjunto do [color=cyan]COMANDO[reset], permite que seja especificado algum  
+  comando (opcionalmente com parâmetros) e logo depois o fecha automaticamente.
 
-Examples:
+Exemplos:
   [color=green]command[reset]
-  [color=green]command[reset] /c [color=cyan]echo[reset] [color=white]Hello world![reset]
+  [color=green]command[reset] /c [color=cyan]echo[reset] [color=white]Olá mundo![reset]
   [color=green]command[reset] /init [color=cyan]dir[reset]
 
 .
@@ -2545,7 +2556,7 @@ It's only possible to use SUBST on Local drives
 ║ [color=green]Welcome to DOSBox Staging %-40s[color=white] ║
 ║                                                                    ║
 ║ For a short introduction for new users type: [color=yellow]INTRO[color=white]                 ║
-║ For supported shell commands type: [color=yellow]HELP[color=white]                            ║
+║ Para lista de comandos da interface digite: [color=yellow]HELP[color=white]                   ║
 ║                                                                    ║
 ║ To adjust the emulated CPU speed, use [color=red]%s+F11[color=white] and [color=red]%s+F12[color=white].%s%s       ║
 ║ To activate the keymapper [color=red]%s+F1[color=white].%s                                 ║
@@ -2677,7 +2688,7 @@ Examples:
 
 .
 :SHELL_CMD_EXIT_HELP
-Exits from the DOS shell.
+Fecha a interface do DOS.
 
 .
 :SHELL_CMD_EXIT_HELP_LONG
