@@ -283,7 +283,7 @@ Ademais, você pode definir uma paleta de cores personalizada especificando 16
 valores de cores separados por espaço ou vírgula, usando códigos Hex de 3 ou 6
 dígitos (ex. #f00 ou #ff0000 para vermelho), ou valores decimais RGB em tríades 
 (ex. (255, 0, 255) para magenta). As 16 cores são organizadas da seguinte forma:
-  preto, azul, verde, ciano , vermelho, magenta, marrom, cinza claro, cinza
+  preto, azul, verde, ciano, vermelho, magenta, marrom, cinza claro, cinza
   escuro, azul claro, verde claro, ciano claro, vermelho claro, magenta claro,
   amarelo, branco.
 Seus valores padrão, em formato de códigos Hex de 6 dígitos, são:
@@ -748,7 +748,7 @@ Modelo de chip a ser emulado pela placa Innovation SSI-2001:
   8580:  Uma revisão posterior que cuidadosamente corresponde com a especificação
          do chip SID. Isso corrigiu a polarização CC (DC bias) do 6581 e o deixou
          menos propenso a distorção. O 8580 é uma opção em placas de reprodução,
-		 como o DuoSID.
+         como o DuoSID.
   none:  Desativa a placa (padrão).
 .
 :CONFIG_SIDCLOCK
@@ -777,7 +777,7 @@ Filtro para a saída de áudio da Innovation:
   <personalizado>:  Filtro personalizado; veja 'sb_filter' para mais detalhes.
 .
 :CONFIG_PCSPEAKER
-Modelo para a emulação do PC speaker da IBM:
+Modelo para a emulação do PC Speaker da IBM:
   discrete:  A onda sonora será criada usando etapas discretas (padrão).
              Funciona bem para jogos que efeitos do tipo RealSound.
   impulse:   A onda sonora será criada usando impulsos sinc.
@@ -994,11 +994,11 @@ software (usando o libslirp) com as seguintes propriedades (ativado por padrão)
   - 10.0.2.2:       IP do gateway e do serviço DHCP.
   - 10.0.2.3:       IP do servidor DNS virtual.
   - 10.0.2.15:      Primeiro IP a ser fornecido pelo DHCP, seu IP!
-Observações: Dentro do DOS, configurar isso requer um driver do pacote NE2000,  
+Observações: Dentro do DOS, configurar isso requer um driver do NE2000,  
              cliente DHCP, e a memória (stack) do TCP/IP. Talvez você necessite
              de redirecionar portas (port-forwarding) do anfitrião para o DOS
              convidado e do seu roteador para o seu anfitrião, para utilizar-lo 
-			 como servidores de jogos multiplayer.
+             como servidores de jogos multiplayer.
 .
 :CONFIG_NICBASE
 Endereço base da placa NE2000 (300 por padrão).
@@ -1014,204 +1014,209 @@ Observações: As IRQs (Pedidos de Interrupção) 3 e 5 podem não estar dispon�
 O endereço MAC da placa NE2000 ('AC:DE:48:88:99:AA' por padrão).
 .
 :CONFIG_TCP_PORT_FORWARDS
-Forward one or more TCP ports from the host into the DOS guest
-(unset by default).
-The format is:
-  port1  port2  port3 ... (e.g., 21 80 443)
-  This will forward FTP, HTTP, and HTTPS into the DOS guest.
-If the ports are privileged on the host, a mapping can be used
-  host:guest  ..., (e.g., 8021:21 8080:80)
-  This will forward ports 8021 and 8080 to FTP and HTTP in the guest
-A range of adjacent ports can be abbreviated with a dash:
-  start-end ... (e.g., 27910-27960)
-  This will forward ports 27910 to 27960 into the DOS guest.
-Mappings and ranges can be combined, too:
-  hstart-hend:gstart-gend ..., (e.g, 8040-8080:20-60)
-  This forwards ports 8040 to 8080 into 20 to 60 in the guest
-Notes: If mapped ranges differ, the shorter range is extended to fit.
-       If conflicting host ports are given, only the first one is setup.
-       If conflicting guest ports are given, the latter rule takes precedent.
+Redirecione uma ou mais portas TCP do anfitrião para o DOS convidado
+(não configurado por padrão).
+O formato é:
+  porta1  porta2  porta3 ... (ex. 21 80 443)
+  Isso encaminhará o FTP, HTTP, e HTTPS para o DOS convidado.
+Se no anfitrião as portas estiverem privilegiadas, um mapeamento pode ser usado
+  anfitrião:convidado  ..., (ex. 8021:21 8080:80)
+  Isso encaminhará as portas 8021 e 8080 para FTP e HTTP dentro do convidado
+Uma série de portas adjacentes podem ser abreviado com um traço:
+  começo-fim ... (ex. 27910-27960)
+  Isso encaminhará as portas 27910 a 27960 para o DOS convidado.
+Mapeamentos e a série de portas podem ser combinados também:
+  acomeço-afim:ccomeço-cfim ..., (ex. 8040-8080:20-60)
+  Isso encaminhará as portas 8040 a 8080 para entre 20 até 60 no convidado
+Observações: Se as séries de portas mapeadas se diferem, o intervalo mais curto
+             será estendido para se ajustar.
+             Se forem fornecidas portas anfitriãs conflitantes, apenas a 
+             primeira será configurada.
+             Se forem fornecidas portas de convidado conflitantes, terá 
+             precedência a última regra.
 .
 :CONFIG_UDP_PORT_FORWARDS
-Forward one or more UDP ports from the host into the DOS guest
-(unset by default). The format is the same as for TCP port forwards.
+Redireciona uma ou mais portas UDP do anfitrião para o DOS convidado
+(não configurado por padrão). Segue o mesmo formato dos redirecionamentos das 
+portas TCP.
 .
 :AUTOEXEC_CONFIGFILE_HELP
-Lines in this section will be run at startup.
-You can put your MOUNT lines here.
+Linhas acrescentadas nessa seção serão executadas durante a inicialização.
+Você pode colocar seus comandos MOUNT aqui.
 
 .
 :CONFIGFILE_INTRO
-# This is the configuration file for dosbox-staging (%s).
-# Lines starting with a '#' character are comments.
+# Esse é o arquivo de configuração da versão (%s) do dosbox-staging.
+# Linhas que começam com o caractere '#' são comentários.
 
 .
 :CONFIG_VALID_VALUES
-Possible values
+Valores possíveis
 .
 :PROGRAM_CONFIG_PROPERTY_ERROR
-No such section or property: %s
+Seção ou propriedade não encontrada: %s
 
 .
 :PROGRAM_CONFIG_NO_PROPERTY
-There is no property "%s" in section "%s".
+Não existe propriedade "%s" dentro da seção "%s".
 
 .
 :PROGRAM_CONFIG_SET_SYNTAX
-Correct syntax: config -set "[section] property=value".
+Sintaxe correta: config -set "[seção] propriedade=valor".
 
 .
 :PROGRAM_CONFIG_NOCONFIGFILE
-No config file loaded!
+Não há nenhum arquivo de configuração carregado!
 
 .
 :PROGRAM_CONFIG_PRIMARY_CONF
-Primary config file: 
+Arquivo de configuração primário: 
 %s
 
 .
 :PROGRAM_CONFIG_ADDITIONAL_CONF
-Additional config files:
+Arquivos de configuração adicionais:
 
 .
 :PROGRAM_CONFIG_CONFDIR
-DOSBox Staging %s configuration directory: 
+Diretório de configuração do DOSBox Staging %s : 
 %s
 
 
 .
 :PROGRAM_CONFIG_FILE_ERROR
 
-Can't open file %s
+Não foi possível abrir o arquivo %s
 
 .
 :PROGRAM_CONFIG_FILE_WHICH
-Writing config file %s
+Escrevendo o arquivo de configuração %s
 
 .
 :SHELL_CMD_CONFIG_HELP_LONG
-Adjusts DOSBox Staging's configurable parameters.
--writeconf or -wc without parameter: write to primary loaded config file.
--writeconf or -wc with filename: write file to config directory.
-Use -writelang or -wl filename to write the current language strings.
--r [parameters]
- Restart DOSBox, either using the previous parameters or any that are appended.
--wcp [filename]
- Write config file to the program directory, dosbox.conf or the specified
- filename.
+Ajusta os parâmetros configuráveis do DOSBox Staging.
+-writeconf ou -wc sem parâmetro: Escreve sobre arquivo de configuração primário.
+-writeconf ou -wc [nome do arquivo]: Escreve o arquivo no diretório do config.
+Use -writelang ou -wl [nome do arquivo] para escrever as linhas do idioma atual.
+-r [parâmetros]
+ Reinicia o DOSBox, usando os parâmetros prévios ou qualquer acrescentado. 
+-wcp [nome do arquivo]
+ Escreve o arquivo de configuração no diretório aonde está o programa,
+ o dosbox.conf ou aonde está o arquivo especificado.
 -wcd
- Write to the default config file in the config directory.
--l lists configuration parameters.
--h, -help, -? sections / sectionname / propertyname
- Without parameters, displays this help screen. Add "sections" for a list of
- sections. For info about a specific section or property add its name behind.
--axclear clears the autoexec section.
--axadd [line] adds a line to the autoexec section.
--axtype prints the content of the autoexec section.
--securemode switches to secure mode.
--avistart starts AVI recording.
--avistop stops AVI recording.
--startmapper starts the keymapper.
--get "section property" returns the value of the property.
--set "section property=value" sets the value.
+ Escreve o arquivo de configuração padrão no diretório de configuração.
+-l lista os parâmetros de configuração.
+-h, -help, -? sections / nomeDaSeção / nomeDaPropriedade
+ Sem nenhum parâmetro, exibe a tela de ajuda. Acrescente "sections" para exibir
+ uma lista das seções. Para informações sobre uma propriedade ou seção 
+ especifica acrescente o nome dela atrás.
+-axclear limpa a seção autoexec.
+-axadd [linha] adiciona uma linha à seção autoexec.
+-axtype copia o conteúdo na seção autoexec.
+-securemode altere para o modo de segurança.
+-avistart começa a gravar um vídeo AVI.
+-avistop para a gravação do vídeo AVI.
+-startmapper começa o mapeamento de tecla.
+-get "propriedade da seção" retorna o valor da propriedade.
+-set "propriedade da seção=valor" define o valor da propriedade.
 
 .
 :PROGRAM_CONFIG_HLP_PROPHLP
-Purpose of property "%s" (contained in section "%s"):
+Propósito da propriedade "%s" (contida na seção "%s"):
 %s
 
-Possible Values: %s
-Default value: %s
-Current value: %s
+Valores possíveis: %s
+Valor padrão: %s
+Valor atual: %s
 
 .
 :PROGRAM_CONFIG_HLP_LINEHLP
-Purpose of section "%s":
+Propósito da seção "%s":
 %s
-Current value:
+Valor atual:
 %s
 
 .
 :PROGRAM_CONFIG_HLP_NOCHANGE
-This property cannot be changed at runtime.
+Essa propriedade não pode ser mudada durante o funcionamento.
 
 .
 :PROGRAM_CONFIG_HLP_POSINT
-positive integer
+número inteiro positivo
 .
 :PROGRAM_CONFIG_HLP_SECTHLP
-Section %s contains the following properties:
+A seção %s contém as seguintes propriedades:
 
 .
 :PROGRAM_CONFIG_HLP_SECTLIST
-DOSBox configuration contains the following sections:
+A configuração do DOSBox contém as seguintes seções:
 
 
 .
 :PROGRAM_CONFIG_SECURE_ON
-Switched to secure mode.
+Mudou para o modo de segurança.
 
 .
 :PROGRAM_CONFIG_SECURE_DISALLOW
-This operation is not permitted in secure mode.
+Essa operação não é permitida no modo de segurança.
 
 .
 :PROGRAM_CONFIG_SECTION_ERROR
-Section "%s" doesn't exist.
+A seção "%s" não existe.
 
 .
 :PROGRAM_CONFIG_VALUE_ERROR
-"%s" is not a valid value for property "%s".
+"%s" não é um valor valido para a propriedade "%s".
 
 .
 :PROGRAM_CONFIG_GET_SYNTAX
-Correct syntax: config -get "section property".
+Sintaxe correta: config -get "propriedade da seção".
 
 .
 :PROGRAM_CONFIG_PRINT_STARTUP
 
-DOSBox was started with the following command line parameters:
+O DOSBox foi iniciado com os seguintes parâmetros da linha de comando:
 %s
 
 .
 :PROGRAM_CONFIG_MISSINGPARAM
-Missing parameter.
+Parâmetro ausente.
 
 .
 :PROGRAM_PATH_TOO_LONG
-The path "%s" exceeds the DOS maximum length of %d characters
+O caminho de "%s" ultrapassa o máximo número de %d caracteres do DOS
 
 .
 :PROGRAM_EXECUTABLE_MISSING
-Executable file not found: %s
+Arquivo executável não encontrado: %s
 
 .
 :CONJUNCTION_AND
-and
+e
 .
 :MIDI_DEVICE_LIST_NOT_SUPPORTED
-listing not supported
+listagem não compatível
 .
 :MIDI_DEVICE_NOT_CONFIGURED
-device not configured
+dispositivo não configurado
 .
 :MOUNT_TYPE_LOCAL_DIRECTORY
-Local directory
+Diretório local
 .
 :MOUNT_TYPE_CDROM
-CD-ROM drive
+Leitor de CD-ROM
 .
 :MOUNT_TYPE_FAT
-FAT image
+Imagem FAT
 .
 :MOUNT_TYPE_ISO
-ISO image
+Imagem ISO
 .
 :MOUNT_TYPE_VIRTUAL
-Internal virtual drive
+Unidade de disco virtual interna
 .
 :MOUNT_TYPE_UNKNOWN
-unknown drive
+unidade de disco desconhecida
 .
 :WIKI_ADD_UTILITIES_ARTICLE
 https://github.com/dosbox-staging/dosbox-staging/wiki/Add-Utilities
@@ -1220,25 +1225,27 @@ https://github.com/dosbox-staging/dosbox-staging/wiki/Add-Utilities
 https://github.com/dosbox-staging/dosbox-staging/wiki
 .
 :PROGRAM_AUTOTYPE_HELP_LONG
-Performs scripted keyboard entry into a running DOS game.
+Executa uma entrada de teclado com script dentro de um jogo rodando no DOS.
 
-Usage:
+Utilização:
   [color=green]autotype[reset] -list
-  [color=green]autotype[reset] [-w [color=white]WAIT[reset]] [-p [color=white]PACE[reset]] [color=cyan]BUTTONS[reset]
+  [color=green]autotype[reset] [-w [color=white]ESPERA[reset]] [-p [color=white]CADÊNCIA[reset]] [color=cyan]BOTÕES[reset]
 
-Where:
-  [color=white]WAIT[reset]    is the number of seconds to wait before typing begins (max of 30).
-  [color=white]PACE[reset]    is the number of seconds before each keystroke (max of 10).
-  [color=cyan]BUTTONS[reset] is one or more space-separated buttons.
+Sendo que:
+  [color=white]ESPERA[reset] é o número de segundos de espera antes da digitação (máx. 30).
+  [color=white]CADÊNCIA[reset] é o número de segundos antes da tecla ser pressionada (máx. 10).
+  [color=cyan]BOTÕES[reset] é um ou vários botões separados por espaço.
 
-Notes:
-  The [color=cyan]BUTTONS[reset] supplied in the command will be autotyped into running DOS games
-  after they start. Autotyping begins after [color=cyan]WAIT[reset] seconds, and each button is
-  entered every [color=white]PACE[reset] seconds. The [color=cyan],[reset] character inserts an extra [color=white]PACE[reset] delay.
-  [color=white]WAIT[reset] and [color=white]PACE[reset] default to 2 and 0.5 seconds respectively if not specified.
-  A list of all available button names can be obtained using the -list option.
+Observações:
+  Os [color=cyan]BOTÕES[reset] supridos pelo comando serão preenchidos automaticamente ao iniciar
+  os jogos do DOS. O preenchimento automático começa depois que ele [color=cyan]ESPERA[reset] 
+  alguns segundos, e cada botão é inserido em intervalos de [color=white]CADÊNCIA[reset] em 
+  segundos. O caractere [color=cyan],[reset] insere um atraso extra sobre a [color=white]CADÊNCIA[reset]. 
+  Os padrões da [color=white]ESPERA[reset] e da [color=white]CADÊNCIA[reset] são respectivamente 2 e 0.5 segundos,
+  se não forem especificados. Uma lista contendo todos os botões disponíveis
+  pode ser obtida usando a opção -list.
 
-Examples:
+Exemplos:
   [color=green]autotype[reset] -list
   [color=green]autotype[reset] -w [color=white]1[reset] -p [color=white]0.3[reset] [color=cyan]up enter , right enter[reset]
   [color=green]autotype[reset] -p [color=white]0.2[reset] [color=cyan]f1 kp_8 , , enter[reset]
@@ -1246,18 +1253,18 @@ Examples:
 [reset]
 .
 :PROGRAM_BOOT_HELP_LONG
-Boots DOSBox Staging from a DOS drive or disk image.
+Inicializa o DOSBox Staging de um driver do ou uma imagem de unidade de disco.
 
-Usage:
-  [color=green]boot[reset] [color=white]DRIVE[reset]
-  [color=green]boot[reset] [color=cyan]IMAGEFILE[reset]
+Utilização:
+  [color=green]boot[reset] [color=white]UNIDADE[reset]
+  [color=green]boot[reset] [color=cyan]IMAGEM[reset]
 
-Where:
-  [color=white]DRIVE[reset] is a drive to boot from, must be [color=white]A:[reset], [color=white]C:[reset], or [color=white]D:[reset].
-  [color=cyan]IMAGEFILE[reset] is one or more floppy images, separated by spaces.
+Sendo que:
+  [color=white]UNIDADE[reset] é a unidade de disco de inicialização, deve ser [color=white]A:[reset], [color=white]C:[reset], ou [color=white]D:[reset].
+  [color=cyan]IMAGEM[reset] é uma imagem de disquete ou várias, separada por espaços.
 
-Notes:
-  A DOS drive letter must have been mounted previously with [color=green]imgmount[reset] command.
+Observações:
+  Uma letra de unidade de disco do DOS deve ser montada com o comando [color=green]imgmount[reset].
   The DOS drive or disk image must be bootable, containing DOS system files.
   If more than one disk images are specified, you can swap them with a hotkey.
 
@@ -1547,7 +1554,7 @@ Examples:
 .
 :PROGRAM_INTRO
 [erases=entire][color=green]Welcome to DOSBox Staging[reset], an x86 emulator with sound and graphics.
-O DOSBox cria uma interface para você que assemelha-se como o antigo DOS.
+O DOSBox cria para você uma interface que se assemelha com aquela do antigo DOS.
 
 For information about basic mount type [color=blue]intro mount[reset]
 For information about CD-ROM support type [color=blue]intro cdrom[reset]
@@ -2323,10 +2330,10 @@ Utilização:
   [color=green]command[reset]
   [color=green]command[reset] /c (or /init) [color=cyan]COMANDO[reset]
 
-Localização:
+Sendo que:
   [color=cyan]COMANDO[reset] é um comando, jogo ou programa executável pelo DOS.
 
-Notes:
+Observações:
   O DOSBox Staging automaticamente iniciará a interface de comando do DOS ao
   executar esse comando com a opção /init durante a inicialização, exibindo a 
   mensagem de boas-vindas. Você pode carregar uma nova instância da interface de
