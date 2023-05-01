@@ -782,7 +782,7 @@ Modelo para a emulação do PC Speaker da IBM:
              Funciona bem para jogos que efeitos do tipo RealSound.
   impulse:   A onda sonora será criada usando impulsos sinc.
              Recomendado para jogos de onda quadrada, como o Commander Keen.
-             Embora melhora a acurácia, exige mais do processador.
+             Embora melhore sua precisão, exige mais do processador.
   none/off:  Não use o PC Speaker.
 .
 :CONFIG_PCSPEAKER_FILTER
