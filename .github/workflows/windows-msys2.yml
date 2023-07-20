@@ -104,6 +104,7 @@ jobs:
             mingw-w64-${{matrix.conf.toolchain}}${{matrix.conf.arch}}-zlib
             mingw-w64-${{matrix.conf.toolchain}}${{matrix.conf.arch}}-speexdsp
             mingw-w64-${{matrix.conf.toolchain}}${{matrix.conf.arch}}-python-pip
+            mingw-w64-${{matrix.conf.toolchain}}${{matrix.conf.arch}}-fluidsynth
 
       - name:  Prepare compiler cache
         id:    prep-ccache
