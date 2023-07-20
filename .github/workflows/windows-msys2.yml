@@ -230,6 +230,7 @@ jobs:
             mingw-w64-clang-${{matrix.conf.arch}}-zlib
             mingw-w64-clang-${{matrix.conf.arch}}-speexdsp
             mingw-w64-clang-${{matrix.conf.arch}}-python-pip
+            mingw-w64-clang-${{matrix.conf.arch}}-fluidsynth
 
       - name:  Prepare compiler cache
         id:    prep-ccache
