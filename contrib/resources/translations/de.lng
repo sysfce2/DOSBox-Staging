@@ -447,9 +447,6 @@ Zyklen/ms
 :TITLEBAR_PAUSED
 PAUSIERT
 .
-:TITLEBAR_HINT_NOMOUSE
-Keine Maus
-.
 :TITLEBAR_HINT_CAPTURED_HOTKEY
 Maus umgeschaltet, %s+F10 zum Freigeben
 .

@@ -433,9 +433,6 @@ cykli/ms
 :TITLEBAR_PAUSED
 PAUZA
 .
-:TITLEBAR_HINT_NOMOUSE
-tryb bez użycia myszy
-.
 :TITLEBAR_HINT_CAPTURED_HOTKEY
 mysz przejęta, wciśnij %s+F10 aby zwolnić
 .

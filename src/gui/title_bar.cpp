@@ -406,9 +406,7 @@ void GFX_SetMouseHint(const MouseHint hint_id)
 
 	std::string hint = {};
 	switch (hint_id) {
-	case MouseHint::None: break;
-	case MouseHint::NoMouse:
-		hint = prexix + MSG_GetRaw("TITLEBAR_HINT_NOMOUSE");
+	case MouseHint::None:
 		break;
 	case MouseHint::CapturedHotkey:
 		hint = create_hint_str("TITLEBAR_HINT_CAPTURED_HOTKEY");
@@ -558,7 +556,6 @@ void TITLEBAR_AddMessages()
 	MSG_Add("TITLEBAR_CYCLES_MS", "cycles/ms");
 	MSG_Add("TITLEBAR_PAUSED", "PAUSED");
 
-	MSG_Add("TITLEBAR_HINT_NOMOUSE", "no-mouse mode");
 	MSG_Add("TITLEBAR_HINT_CAPTURED_HOTKEY", "mouse captured, %s+F10 to release");
 	MSG_Add("TITLEBAR_HINT_CAPTURED_HOTKEY_MIDDLE",
 	        "mouse captured, %s+F10 or middle-click to release");

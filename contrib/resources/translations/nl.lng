@@ -450,9 +450,6 @@ cycli/ms
 :TITLEBAR_PAUSED
 PAUZE
 .
-:TITLEBAR_HINT_NOMOUSE
-geen-muis-modus
-.
 :TITLEBAR_HINT_CAPTURED_HOTKEY
 muis gevangen, %s+F10 om los te laten
 .

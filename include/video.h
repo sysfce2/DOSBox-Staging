@@ -412,7 +412,6 @@ void GFX_SetCycles(const int32_t cycles);
 
 enum class MouseHint {
     None,                    // no hint to display
-    NoMouse,                 // no mouse mode
     CapturedHotkey,          // mouse captured, use hotkey to release
     CapturedHotkeyMiddle,    // mouse captured, use hotkey or middle-click to release
     ReleasedHotkey,          // mouse released, use hotkey to capture

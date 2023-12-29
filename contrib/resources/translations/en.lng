@@ -436,9 +436,6 @@ cycles/ms
 :TITLEBAR_PAUSED
 PAUSED
 .
-:TITLEBAR_HINT_NOMOUSE
-no-mouse mode
-.
 :TITLEBAR_HINT_CAPTURED_HOTKEY
 mouse captured, %s+F10 to release
 .
