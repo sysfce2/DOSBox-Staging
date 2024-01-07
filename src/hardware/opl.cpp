@@ -513,9 +513,8 @@ io_port_t OPL::WriteAddr(const io_port_t port, const uint8_t val)
 
 AudioFrame OPL::RenderFrame()
 {
-	static int16_t buf[2] = {};
-	OPL3_GenerateStream(&oplchip, buf, 1);
-
+	static float buf[2] = {};
+	OPL3_Generate(&oplchip, buf);
 	AudioFrame frame = {};
 	if (adlib_gold) {
 		adlib_gold->Process(buf, 1, &frame[0]);
@@ -903,9 +902,11 @@ OPL::OPL(Section *configuration, const OplMode oplmode)
 	                                      this,
 	                                      std::placeholders::_1);
 
+	constexpr uint16_t opl_sample_rate = 49716;
+
 	// Register the audio channel
 	channel = MIXER_AddChannel(mixer_callback,
-	                           use_mixer_rate,
+	                           opl_sample_rate,
 	                           ChannelName::Opl,
 	                           channel_features);
 

@@ -130,7 +130,7 @@ public:
 	void StereoControlWrite(const StereoProcessorControlReg reg,
 	                        const uint8_t data);
 
-	void Process(const int16_t* in, const uint32_t frames, float* out);
+	void Process(const float* in, const uint32_t frames, float* out);
 
 private:
 	std::unique_ptr<SurroundProcessor> surround_processor = {};

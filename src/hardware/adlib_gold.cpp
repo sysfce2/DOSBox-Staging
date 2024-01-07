@@ -347,13 +347,12 @@ void AdlibGold::SurroundControlWrite(const uint8_t val)
 	surround_processor->ControlWrite(val);
 }
 
-void AdlibGold::Process(const int16_t* in, const uint32_t frames, float* out)
+void AdlibGold::Process(const float* in, const uint32_t frames, float* out)
 {
 	auto frames_remaining = frames;
 
 	while (frames_remaining--) {
-		AudioFrame frame = {static_cast<float>(in[0]),
-		                    static_cast<float>(in[1])};
+		AudioFrame frame = {in[0], in[1]};
 
 		const auto wet = surround_processor->Process(frame);
 
