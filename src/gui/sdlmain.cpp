@@ -3357,7 +3357,7 @@ static void set_priority_levels(const std::string& active_pref,
 	sdl.priority.inactive = to_level(inactive_pref);
 }
 
-static void GUI_StartUp(Section* sec)
+static void read_gui_config(Section* sec)
 {
 	sec->AddDestroyFunction(&GUI_ShutDown);
 	Section_prop* section = static_cast<Section_prop*>(sec);
@@ -3494,6 +3494,17 @@ static void GUI_StartUp(Section* sec)
 
 	// Notify MOUSE subsystem that it can start now
 	MOUSE_NotifyReadyGFX();
+}
+
+static void read_config(Section* sec)
+{
+	static bool first_time = true;
+	if (first_time) {
+		read_gui_config(sec);
+		first_time = false;
+	}
+
+	TITLEBAR_ReadConfig(sec);
 }
 
 static void handle_mouse_motion(SDL_MouseMotionEvent* motion)
@@ -4182,10 +4193,15 @@ static void messages_add_sdl()
 	MSG_Add("PROGRAM_CONFIG_SET_SYNTAX",
 	        "Usage: [color=light-green]config [reset]-set [color=light-cyan][SECTION][reset] "
 	        "[color=white]PROPERTY[reset][=][color=white]VALUE[reset]\n");
+
+	TITLEBAR_AddMessages();
 }
 
-static void config_add_sdl() {
-	Section_prop *sdl_sec=control->AddSection_prop("sdl", &GUI_StartUp);
+static void config_add_sdl()
+{
+	constexpr bool changeable_at_runtime = true;
+	Section_prop *sdl_sec=control->AddSection_prop("sdl", &read_config,
+	                                               changeable_at_runtime);
 	sdl_sec->AddInitFunction(&MAPPER_StartUp);
 	Prop_bool *Pbool; // use pbool for new properties
 	Prop_bool *pbool;
@@ -4376,6 +4392,8 @@ static void config_add_sdl() {
 	        "running ('auto' by default).");
 	const char *ssopts[] = {"auto", "allow", "block", nullptr};
 	pstring->Set_values(ssopts);
+
+	TITLEBAR_AddConfig(*sdl_sec);
 }
 
 static int edit_primary_config()
@@ -4667,9 +4685,7 @@ int sdl_main(int argc, char* argv[])
 		DOS_Locale_AddMessages();
 		RENDER_AddMessages();
 		messages_add_sdl();
-		TITLEBAR_AddMessages();
 		config_add_sdl();
-		TITLEBAR_ConfigAdd();
 
 		// Register DOSBox's (and all modules) messages and conf sections
 		DOSBOX_Init();

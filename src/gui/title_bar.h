@@ -1,7 +1,7 @@
 /*
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *
- *  Copyright (C) 2023-2023  The DOSBox Staging Team
+ *  Copyright (C) 2023-2024  The DOSBox Staging Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,10 @@
 #ifndef DOSBOX_TITLE_BAR_H
 #define DOSBOX_TITLE_BAR_H
 
+#include "setup.h"
+
 void TITLEBAR_AddMessages();
-void TITLEBAR_ConfigAdd();
+void TITLEBAR_AddConfig(Section_prop &secprop);
+void TITLEBAR_ReadConfig(Section* section);
 
 #endif // DOSBOX_TITLE_BAR_H

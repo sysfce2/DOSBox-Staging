@@ -1,7 +1,7 @@
 /*
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *
- *  Copyright (C) 2023-2023  The DOSBox Staging Team
+ *  Copyright (C) 2023-2024  The DOSBox Staging Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -439,10 +439,10 @@ void GFX_SetMouseHint(const MouseHint hint_id)
 }
 
 // ***************************************************************************
-// Configuration file handling
+// Lifecycle
 // ***************************************************************************
 
-static void config_read(Section* section)
+void TITLEBAR_ReadConfig(Section* section)
 {
 	assert(section);
 	const Section_prop* conf = dynamic_cast<Section_prop*>(section);
@@ -492,7 +492,7 @@ static void config_read(Section* section)
 	}
 }
 
-static void config_init(Section_prop& secprop)
+void TITLEBAR_AddConfig(Section_prop &secprop)
 {
 	constexpr auto always = Property::Changeable::Always;
 
@@ -547,10 +547,6 @@ static void config_init(Section_prop& secprop)
 	prop_str->Set_values(program_prefs);
 }
 
-// ***************************************************************************
-// Lifecycle
-// ***************************************************************************
-
 void TITLEBAR_AddMessages()
 {
 	MSG_Add("TITLEBAR_CYCLES_MS", "cycles/ms");
@@ -567,16 +563,4 @@ void TITLEBAR_AddMessages()
 	MSG_Add("TITLEBAR_HINT_SEAMLESS_HOTKEY", "seamless mouse, %s+F10 to capture");
 	MSG_Add("TITLEBAR_HINT_SEAMLESS_HOTKEY_MIDDLE",
 	        "seamless mouse, %s+F10 or middle-click to capture");
-}
-
-void TITLEBAR_ConfigAdd()
-{
-	constexpr auto changeable_at_runtime = true;
-
-	assert(control);
-	Section_prop* sec = control->AddSection_prop("titlebar",
-	                                             &config_read,
-	                                             changeable_at_runtime);
-	assert(sec);
-	config_init(*sec);
 }
