@@ -40,17 +40,16 @@ CHECK_NARROWING();
 // Datat types and storage
 // ***************************************************************************
 
-enum class TitleBarStyle : uint8_t { Program, DosBox, ProgramDosBox, Custom };
-enum class ProgramDisplay : uint8_t { Name, Path, Segment };
+enum class ProgramDisplay : uint8_t { None, Name, Path, Segment };
 enum class VersionDisplay : uint8_t { None, Simple, Detailed };
 
-static struct {
-	TitleBarStyle style      = TitleBarStyle::ProgramDosBox;
-	std::string custom_title = {};
-	bool show_cycles         = false;
-	bool animated_rec        = true;
-	ProgramDisplay program   = ProgramDisplay::Name;
-	VersionDisplay version   = VersionDisplay::None;
+static struct TitlebarConfig {
+	std::string titlebar_text = {};
+	bool animated_rec         = false;
+	bool show_cycles          = false;
+	bool show_dosbox          = false;
+	ProgramDisplay program    = ProgramDisplay::None;
+	VersionDisplay version    = VersionDisplay::None;
 } config = {};
 
 static struct {
@@ -59,7 +58,7 @@ static struct {
 	bool guest_os_booted = false;
 
 	std::string segment_name   = {};
-	std::string canonical_name = {}; // path+name+extension
+	std::string canonical_name = {}; // path + name + extension
 	std::string hint_mouse     = {};
 
 	int num_cycles = 0;
@@ -218,13 +217,17 @@ static std::string get_program_name()
 		result = state.canonical_name;
 		strip_path(result);
 		break;
-	case ProgramDisplay::Path: result = state.canonical_name; break;
-	default: // includes ProgramDisplay::Segment
+	case ProgramDisplay::Path:
+		result = state.canonical_name;
+		break;
+	case ProgramDisplay::Segment:
 		return state.segment_name;
+	default:
+		return result;
 	}
 
 	if (result.empty() && !state.segment_name.empty()) {
-		// Might happen, for example, if Windows 3.1x is running
+		// Most likely due to Windows 3.1x running in enhanced mode
 		return state.segment_name;
 	}
 
@@ -233,31 +236,22 @@ static std::string get_program_name()
 
 static std::string get_dosbox_program_display()
 {
-	std::string program_name = {};
+	std::string title = {};
 
-	switch (config.style) {
-	case TitleBarStyle::Custom:
-		if (!config.custom_title.empty()) {
-			return config.custom_title;
-		}
-		break;
-	case TitleBarStyle::Program:
-		program_name = get_program_name();
-		if (!state.guest_os_booted && !program_name.empty()) {
-			return program_name;
-		}
-		break;
-	case TitleBarStyle::ProgramDosBox:
-		program_name = get_program_name();
-		if (!state.guest_os_booted && !program_name.empty()) {
-			return program_name + " - " + get_app_name_str();
-		}
-		break;
-	default: // includes TitleBarStyle::DosBox
-		break;
+	if (config.program == ProgramDisplay::None) {
+		title = config.titlebar_text;
+	} else {
+		title = get_program_name();
+	}
+	trim(title);
+
+	if (title.empty()) {
+		return get_app_name_str();
+	} else if (config.show_dosbox) {
+		return title + " - " + get_app_name_str();
 	}
 
-	return get_app_name_str(); // fallback
+	return title;
 }
 
 static std::string get_cycles_display()
@@ -451,100 +445,140 @@ void TITLEBAR_ReadConfig(Section* section)
 		return;
 	}
 
-	const std::string bar_pref = conf->Get_string("bar_style");
-	if (bar_pref == "program") {
-		config.style = TitleBarStyle::Program;
-	} else if (bar_pref == "dosbox") {
-		config.style = TitleBarStyle::DosBox;
-	} else if (bar_pref == "program+dosbox") {
-		config.style = TitleBarStyle::ProgramDosBox;
-	} else if (bar_pref == "custom") {
-		config.style = TitleBarStyle::Custom;
-	} else {
-		assert(false);
+	bool warned_double_animation = false;
+	bool warned_double_cycles    = false;
+	bool warned_double_dosbox    = false;
+	bool warned_double_program   = false;
+	bool warned_double_version   = false;
+
+	auto check_not_set_animation = [&]() {
+		if (config.animated_rec && !warned_double_animation) {
+			LOG_WARNING("SDL: 'animation' specified more than once in 'titlebar_content'");
+			warned_double_animation = true;
+		}
+	};
+
+	auto check_not_set_cycles = [&]() {
+		if (config.show_cycles && !warned_double_cycles) {
+			LOG_WARNING("SDL: 'cycles' specified more than once in 'titlebar_content'");
+			warned_double_cycles = true;
+		}
+	};
+
+	auto check_not_set_dosbox = [&]() {
+		if (config.show_dosbox && !warned_double_dosbox) {
+			LOG_WARNING("SDL: 'dosbox' specified more than once in 'titlebar_content'");
+			warned_double_dosbox = true;
+		}
+	};
+
+	auto check_not_set_program = [&]() {
+		if (config.program != ProgramDisplay::None && !warned_double_program) {
+			LOG_WARNING("SDL: 'program' specified more than once in 'titlebar_content'");
+			warned_double_program = true;
+		}
+	};
+
+	auto check_not_set_version = [&]() {
+		if (config.version != VersionDisplay::None && !warned_double_version) {
+			LOG_WARNING("SDL: 'version' specified more than once in 'titlebar_content'");
+			warned_double_version = true;
+		}
+	};
+
+	config = TitlebarConfig();
+
+	const auto titlebar_content = split(conf->Get_string("titlebar_content"));
+	for (const auto& setting : titlebar_content) {
+		if (iequals(setting, "animation")) {
+			check_not_set_animation();
+			config.animated_rec = true;
+			continue;
+		}
+
+		if (iequals(setting, "cycles")) {
+			check_not_set_cycles();
+			config.show_cycles = true;
+			continue;
+		}
+
+		if (iequals(setting, "dosbox")) {
+			check_not_set_dosbox();
+			config.show_dosbox = true;
+			continue;
+		}
+
+		if (iequals(setting, "program") ||
+		    iequals(setting, "program=name")) {
+			check_not_set_program();
+			config.program = ProgramDisplay::Name;
+			continue;
+		}
+
+		if (iequals(setting, "program=path")) {
+			check_not_set_program();
+			config.program = ProgramDisplay::Path;
+			continue;
+		}
+
+		if (iequals(setting, "program=segment")) {
+			check_not_set_program();
+			config.program = ProgramDisplay::Segment;
+			continue;
+		}
+
+		if (iequals(setting, "version") ||
+		    iequals(setting, "version=simple")) {
+			check_not_set_version();
+			config.version = VersionDisplay::Simple;
+			continue;
+		}
+
+		if (iequals(setting, "version=detailed")) {
+			check_not_set_version();
+			config.version = VersionDisplay::Detailed;
+			continue;
+		}
+
+		LOG_WARNING("SDL: Unknown setting '%s' in 'titlebar_content'",
+		            setting.c_str());
 	}
 
-	config.custom_title = conf->Get_string("custom_title");
-	trim(config.custom_title);
-	config.show_cycles  = conf->Get_bool("show_cycles");
-	config.animated_rec = conf->Get_bool("animated_rec");
-
-	const std::string version_pref = conf->Get_string("version_display");
-	if (version_pref == "none") {
-		config.version = VersionDisplay::None;
-	} else if (version_pref == "simple") {
-		config.version = VersionDisplay::Simple;
-	} else if (version_pref == "detailed") {
-		config.version = VersionDisplay::Detailed;
-	} else {
-		assert(false);
-	}
-
-	const std::string program_pref = conf->Get_string("program_display");
-	if (program_pref == "name") {
-		config.program = ProgramDisplay::Name;
-	} else if (program_pref == "path") {
-		config.program = ProgramDisplay::Path;
-	} else if (program_pref == "segment") {
-		config.program = ProgramDisplay::Segment;
-	} else {
-		assert(false);
-	}
+	config.titlebar_text = conf->Get_string("titlebar_text");
+	trim(config.titlebar_text);
 }
 
 void TITLEBAR_AddConfig(Section_prop &secprop)
 {
 	constexpr auto always = Property::Changeable::Always;
 
-	Prop_bool* prop_bool  = nullptr;
 	Prop_string* prop_str = nullptr;
 
-	const std::vector<std::string> title_prefs = {
-		"program", "dosbox", "program+dosbox", "custom"
-	};
-	prop_str = secprop.Add_string("bar_style", always, "program");
+	prop_str = secprop.Add_string("titlebar_content", always,
+	                              "animation cycles dosbox program=name");
 	prop_str->Set_help(
-	        "Set the title bar display style:\n"
-	        "  program:         Name of the program running under the emulated DOS (default).\n"
-	        "  dosbox:          DOSBox application name.\n"
-	        "  program+dosbox:  Both program name and DOSBox application name.\n"
-	        "  custom:          Display the specified 'custom_title'.\n"
-	        "If the information needed to display on the title bar cannot be determined, 'dosbox'\n"
-	        "is used as a fallback style.");
-	prop_str->Set_values(title_prefs);
+	        "Space separated list of information to be displayed on the window title bar\n"
+	        "('animation cycles dosbox program=name' by default). Possible information are:\n"
+	        "  animation:          Animates title bar audio/video recording mark. Results\n"
+	        "                      might depend on your screen font.\n"
+	        "  cycles:             Show CPU cycles setting.\n"
+	        "  dosbox:             DOSBox emulator name.\n"
+	        "  program[=<value>]:  Display the name of a running program instead of\n"
+	        "                      'titlebarbar_text'. The <value> can be one of:\n"
+	        "                        name:     Program name, with file extension (default).\n"
+	        "                        path:     Name, extension, and full absolute path.\n"
+	        "                        segment:  Displays program memory segment name.\n"
+	        " 	                  Note: With some software (like Windows 3.1x in enhanced\n"
+	        "                      mode) it is impossible to recognize the full program name\n"
+	        "                      or path; in such case 'segment' value is used instead.\n"
+	        "  version[=<value>]:  Display DOSBox version information after emulator name.\n"
+	        "                      The <value> can be one of:\n"
+	        "                        simple:    Simple version format (default).\n"
+	        "                        detailed:  Include GIT hash, if available.");
 
-	prop_str = secprop.Add_string("custom_title", always, "");
+	prop_str = secprop.Add_string("titlebar_text", always, "");
 	prop_str->Set_help(
 	        "Text to display on the custom title bar (unset by default).");
-
-	prop_bool = secprop.Add_bool("show_cycles", always, true);
-	prop_bool->Set_help(
-	        "Show cycles information on the title bar (enabled by default).");
-
-	prop_bool = secprop.Add_bool("animated_rec", always, true);
-	prop_bool->Set_help(
-	        "Animates title bar audio/video recording mark (enabled by default). If a junk character\n"
-	        "appears on the title bard while capturing, change your screen font or disable animations.");
-
-	const std::vector<std::string> version_prefs = {"none", "simple", "detailed"};
-	prop_str = secprop.Add_string("version_display", always, "none");
-	prop_str->Set_help(
-	        "Version information to display with emulator name:\n"
-	        "  none:            Do not display program version (default).\n"
-	        "  simple:          Display version in a simple format, without GIT hash.\n"
-	        "  detailed:        Display detailed version information, if availabe.");
-	prop_str->Set_values(version_prefs);
-
-	const std::vector<std::string> program_prefs = {"name", "path", "segment"};
-	prop_str = secprop.Add_string("program_display", always, "name");
-	prop_str->Set_help(
-	        "Set the program name display:\n"
-	        "  name:            Program name, with extension.\n"
-	        "  path:            name, extension, and full absolute path.\n"
-	        "  segment:         Displays program memory segment name.\n"
-	        "Notes: Some software (like protected mode Windows 3.1x) makes it impossible to recognize\n"
-	        "real program name - in such case 'segment' is used instead.");
-	prop_str->Set_values(program_prefs);
 }
 
 void TITLEBAR_AddMessages()
