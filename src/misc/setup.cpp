@@ -277,7 +277,7 @@ static std::string create_config_name(const std::string& propname)
 
 void Property::Set_help(const std::string& in)
 {
-	MSG_Add(create_config_name(propname).c_str(), in.c_str());
+	MSG_Add(create_config_name(propname), in);
 }
 
 static std::string create_config_item_name(const std::string& propname,
@@ -293,19 +293,19 @@ static std::string create_config_item_name(const std::string& propname,
 
 void Property::SetOptionHelp(const std::string& option, const std::string& in)
 {
-	MSG_Add(create_config_item_name(propname, option).c_str(), in.c_str());
+	MSG_Add(create_config_item_name(propname, option), in);
 }
 
 void Property::SetOptionHelp(const std::string& in)
 {
-	MSG_Add(create_config_item_name(propname, {}).c_str(), in.c_str());
+	MSG_Add(create_config_item_name(propname, {}), in);
 }
 
 std::string Property::GetHelp() const
 {
 	std::string result = {};
-	if (MSG_Exists(create_config_name(propname).c_str())) {
-		std::string help_text = MSG_Get(create_config_name(propname).c_str());
+	if (MSG_Exists(create_config_name(propname))) {
+		std::string help_text = MSG_Get(create_config_name(propname));
 		// Fill in the default value if the help text contains '%s'.
 		if (help_text.find("%s") != std::string::npos) {
 			help_text = format_str(help_text,
@@ -315,9 +315,9 @@ std::string Property::GetHelp() const
 	}
 
 	const auto configitem_has_message = [this](const auto& val) {
-		return MSG_Exists(create_config_item_name(propname, val).c_str()) ||
+		return MSG_Exists(create_config_item_name(propname, val)) ||
 		       (iequals(val, propname) &&
-		        MSG_Exists(create_config_item_name(propname, {}).c_str()));
+		        MSG_Exists(create_config_item_name(propname, {})));
 	};
 	if (std::any_of(enabled_options.begin(),
 	                enabled_options.end(),
@@ -327,12 +327,12 @@ std::string Property::GetHelp() const
 				result.append("\n");
 			}
 			if (iequals(val, propname) &&
-			    MSG_Exists(create_config_item_name(propname, {}).c_str())) {
+			    MSG_Exists(create_config_item_name(propname, {}))) {
 				result.append(MSG_Get(
-				        create_config_item_name(propname, {}).c_str()));
+				        create_config_item_name(propname, {})));
 			} else {
 				result.append(MSG_Get(
-				        create_config_item_name(propname, val).c_str()));
+				        create_config_item_name(propname, val)));
 			}
 		}
 	}
@@ -343,11 +343,11 @@ std::string Property::GetHelp() const
 	return result;
 }
 
-std::string Property::GetHelpUtf8() const
+std::string Property::GetHelpForHost() const
 {
 	std::string result = {};
-	if (MSG_Exists(create_config_name(propname).c_str())) {
-		std::string help_text = MSG_GetRaw(create_config_name(propname).c_str());
+	if (MSG_Exists(create_config_name(propname))) {
+		std::string help_text = MSG_GetForHost(create_config_name(propname));
 		// Fill in the default value if the help text contains '%s'.
 		if (help_text.find("%s") != std::string::npos) {
 			help_text = format_str(help_text,
@@ -357,9 +357,9 @@ std::string Property::GetHelpUtf8() const
 	}
 
 	const auto configitem_has_message = [this](const auto& val) {
-		return MSG_Exists(create_config_item_name(propname, val).c_str()) ||
+		return MSG_Exists(create_config_item_name(propname, val)) ||
 		       (iequals(val, propname) &&
-		        MSG_Exists(create_config_item_name(propname, {}).c_str()));
+		        MSG_Exists(create_config_item_name(propname, {})));
 	};
 	if (std::any_of(enabled_options.begin(),
 	                enabled_options.end(),
@@ -369,12 +369,12 @@ std::string Property::GetHelpUtf8() const
 				result.append("\n");
 			}
 			if (iequals(val, propname) &&
-			    MSG_Exists(create_config_item_name(propname, {}).c_str())) {
-				result.append(MSG_GetRaw(
-				        create_config_item_name(propname, {}).c_str()));
+			    MSG_Exists(create_config_item_name(propname, {}))) {
+				result.append(MSG_GetForHost(
+				        create_config_item_name(propname, {})));
 			} else {
-				result.append(MSG_GetRaw(
-				        create_config_item_name(propname, val).c_str()));
+				result.append(MSG_GetForHost(
+				        create_config_item_name(propname, val)));
 			}
 		}
 	}
@@ -453,13 +453,14 @@ bool Prop_int::IsValidValue(const Value& in)
 		return true;
 	}
 
-	LOG_WARNING("CONFIG: Invalid '%s' setting: '%s'. "
-	            "Value outside of the valid %s-%s range, using '%s'",
-	            propname.c_str(),
-	            in.ToString().c_str(),
-	            min_value.ToString().c_str(),
-	            max_value.ToString().c_str(),
-	            default_value.ToString().c_str());
+	LOG_WARNING(
+	        "CONFIG: Invalid '%s' setting: '%s'. "
+	        "Value outside of the valid range %s-%s, using '%s'",
+	        propname.c_str(),
+	        in.ToString().c_str(),
+	        min_value.ToString().c_str(),
+	        max_value.ToString().c_str(),
+	        default_value.ToString().c_str());
 
 	return false;
 }
@@ -746,6 +747,17 @@ std::vector<Value> Property::GetDeprecatedValues() const
 	return values;
 }
 
+void Property::SetQueueableValue(std::string&& value)
+{
+	assert(!value.empty());
+	queueable_value = std::move(value);
+}
+
+const std::optional<std::string>& Property::GetQueuedValue() const
+{
+	return queueable_value;
+}
+
 const Value& Property::GetAlternateForDeprecatedValue(const Value& val) const
 {
 	const auto it = deprecated_and_alternate_values.find(val);
@@ -958,7 +970,7 @@ Property* Section_prop::Get_prop(int index)
 Property* Section_prop::Get_prop(const std::string_view propname)
 {
 	for (Property* property : properties) {
-		if (property->propname == propname) {
+		if (iequals(property->propname, propname)) {
 			return property;
 		}
 	}
@@ -968,7 +980,7 @@ Property* Section_prop::Get_prop(const std::string_view propname)
 std::string Section_prop::Get_string(const std::string& _propname) const
 {
 	for (const_it tel = properties.begin(); tel != properties.end(); ++tel) {
-		if ((*tel)->propname == _propname) {
+		if (iequals((*tel)->propname, _propname)) {
 			return ((*tel)->GetValue());
 		}
 	}
@@ -978,7 +990,7 @@ std::string Section_prop::Get_string(const std::string& _propname) const
 Prop_bool* Section_prop::GetBoolProp(const std::string& propname) const
 {
 	for (const auto property : properties) {
-		if (property->propname == propname) {
+		if (iequals(property->propname, propname)) {
 			return dynamic_cast<Prop_bool*>(property);
 		}
 	}
@@ -989,7 +1001,7 @@ Prop_bool* Section_prop::GetBoolProp(const std::string& propname) const
 Prop_string* Section_prop::GetStringProp(const std::string& propname) const
 {
 	for (const auto property : properties) {
-		if (property->propname == propname) {
+		if (iequals(property->propname, propname)) {
 			return dynamic_cast<Prop_string*>(property);
 		}
 	}
@@ -999,7 +1011,7 @@ Prop_string* Section_prop::GetStringProp(const std::string& propname) const
 Hex Section_prop::Get_hex(const std::string& _propname) const
 {
 	for (const_it tel = properties.begin(); tel != properties.end(); ++tel) {
-		if ((*tel)->propname == _propname) {
+		if (iequals((*tel)->propname, _propname)) {
 			return ((*tel)->GetValue());
 		}
 	}
@@ -1035,8 +1047,9 @@ bool Section_prop::HandleInputline(const std::string& line)
 		}
 
 		if (p->IsDeprecated()) {
-			LOG_WARNING("CONFIG: Deprecated option '%s'", name.c_str());
-			LOG_WARNING("CONFIG: %s", p->GetHelp().c_str());
+			LOG_WARNING("CONFIG: Deprecated option '%s'\n\n%s\n",
+			            name.c_str(),
+			            p->GetHelpForHost().c_str());
 
 			if (!p->IsDeprecatedButAllowed()) {
 				return false;
@@ -1115,7 +1128,7 @@ bool Config::WriteConfig(const std_fs::path& path) const
 	}
 
 	// Print start of config file and add a return to improve readibility
-	fprintf(outfile, MSG_GetRaw("CONFIGFILE_INTRO"), DOSBOX_VERSION);
+	fprintf(outfile, MSG_GetForHost("CONFIGFILE_INTRO"), DOSBOX_VERSION);
 	fprintf(outfile, "\n");
 
 	for (auto tel = sectionlist.cbegin(); tel != sectionlist.cend(); ++tel) {
@@ -1145,7 +1158,7 @@ bool Config::WriteConfig(const std_fs::path& path) const
 					continue;
 				}
 
-				auto help = p->GetHelpUtf8();
+				auto help = p->GetHelpForHost();
 
 				std::string::size_type pos = std::string::npos;
 
@@ -1175,7 +1188,7 @@ bool Config::WriteConfig(const std_fs::path& path) const
 					fprintf(outfile,
 					        "%s%s:",
 					        prefix,
-					        MSG_GetRaw(values_msg_key));
+					        MSG_GetForHost(values_msg_key));
 
 					std::vector<Value>::const_iterator it =
 					        values.begin();
@@ -1198,15 +1211,18 @@ bool Config::WriteConfig(const std_fs::path& path) const
 					}
 					fprintf(outfile, ".");
 				};
+
 				print_values("CONFIG_VALID_VALUES", p->GetValues());
 				print_values("CONFIG_DEPRECATED_VALUES", p->GetDeprecatedValues());
+
 				fprintf(outfile, "\n");
+				fprintf(outfile, "#\n");
 			}
 		} else {
 			upcase(temp);
 			strcat(temp, "_CONFIGFILE_HELP");
 
-			const char* helpstr   = MSG_GetRaw(temp);
+			const char* helpstr   = MSG_GetForHost(temp);
 			const char* linestart = helpstr;
 			char* helpwrite       = helpline;
 
@@ -1551,6 +1567,50 @@ bool Config::ParseConfigFile(const std::string& type,
 	return true;
 }
 
+// Applies queued configuration settings to CLI arguments. It replaces any
+// existing settings with their latest values. For example, if "machine=value"
+// was set multiple times, only the most recent value is preserved in the final
+// CLI args.
+void Config::ApplyQueuedValuesToCli(std::vector<std::string>& args) const
+{
+	for (const auto section : sectionlist) {
+		const auto properties = dynamic_cast<Section_prop*>(section);
+		if (!properties) {
+			continue;
+		}
+
+		for (const auto property : *properties) {
+			const auto queued_value = property->GetQueuedValue();
+			if (!queued_value) {
+				continue;
+			}
+
+			constexpr auto set_prefix = "--set";
+
+			const auto key_prefix = format_str("%s=",
+			                                   property->propname.c_str());
+
+			// Remove existing matches
+			auto it = args.begin();
+			while (it != args.end() && std::next(it) != args.end()) {
+				const auto current = it;
+				const auto next    = std::next(it);
+
+				if (*current == set_prefix &&
+				    next->starts_with(key_prefix)) {
+					it = args.erase(current, std::next(next));
+				} else {
+					++it;
+				}
+			}
+
+			// Add the new arguments with the queued value
+			args.emplace_back(set_prefix);
+			args.emplace_back(key_prefix + *queued_value);
+		}
+	}
+}
+
 parse_environ_result_t parse_environ(const char* const* envp) noexcept
 {
 	assert(envp);
@@ -1686,7 +1746,7 @@ Verbosity Config::GetStartupVerbosity() const
 	}
 	if (user_choice == "auto") {
 		return (cmdline->HasDirectory() || cmdline->HasExecutableName())
-		             ? Verbosity::InstantLaunch
+		             ? Verbosity::Low
 		             : Verbosity::High;
 	}
 
@@ -1695,51 +1755,9 @@ Verbosity Config::GetStartupVerbosity() const
 	return Verbosity::High;
 }
 
-const std::string& Config::GetLanguage()
+const std::string& Config::GetArgumentLanguage()
 {
-	static bool lang_is_cached = false;
-	static std::string lang    = {};
-
-	if (lang_is_cached) {
-		return lang;
-	}
-
-	// Has the user provided a language on the command line?
-	lang = arguments.lang;
-
-	// Is a language provided in the conf file?
-	if (lang.empty()) {
-		const auto section = GetSection("dosbox");
-		assert(section);
-		lang = static_cast<const Section_prop*>(section)->Get_string("language");
-	}
-
-	// Check the LANG environment variable
-	if (lang.empty()) {
-		const char* envlang = getenv("LANG");
-		if (envlang) {
-			lang = envlang;
-			clear_language_if_default(lang);
-		}
-	}
-
-	// Query the OS using OS-specific calls
-	if (lang.empty()) {
-		lang = get_language_from_os();
-		clear_language_if_default(lang);
-	}
-
-	// Drop the dialect part of the language
-	// (e.g. "en_GB.UTF8" -> "en")
-	if (lang.size() > 2) {
-		lang = lang.substr(0, 2);
-	}
-
-	// Return it as lowercase
-	lowcase(lang);
-
-	lang_is_cached = true;
-	return lang;
+	return arguments.lang;
 }
 
 // forward declaration
@@ -1908,6 +1926,8 @@ void Config::ParseArguments()
 	arguments.nolocalconf = cmdline->FindRemoveBoolArgument("nolocalconf");
 	arguments.fullscreen  = cmdline->FindRemoveBoolArgument("fullscreen");
 	arguments.list_countries = cmdline->FindRemoveBoolArgument("list-countries");
+	arguments.list_layouts = cmdline->FindRemoveBoolArgument("list-layouts");
+	arguments.list_code_pages = cmdline->FindRemoveBoolArgument("list-code-pages");
 	arguments.list_glshaders = cmdline->FindRemoveBoolArgument("list-glshaders");
 	arguments.noconsole   = cmdline->FindRemoveBoolArgument("noconsole");
 	arguments.startmapper = cmdline->FindRemoveBoolArgument("startmapper");

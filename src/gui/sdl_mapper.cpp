@@ -24,18 +24,15 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <chrono>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <atomic>
 #include <list>
-#include <thread>
+#include <queue>
 #include <vector>
 
 #include <SDL.h>
-#include <SDL_thread.h>
 
 #include "control.h"
 #include "joystick.h"
@@ -66,10 +63,7 @@ constexpr Rgb888 color_white(255, 255, 255);
 constexpr Rgb888 color_red(255, 0, 0);
 constexpr Rgb888 color_green(0, 255, 0);
 
-enum BB_Types {
-	BB_Next,BB_Add,BB_Del,
-	BB_Save,BB_Exit
-};
+enum BB_Types { BB_Next, BB_Add, BB_Del, BB_Exit };
 
 enum BC_Types {
 	BC_Mod1,BC_Mod2,BC_Mod3,
@@ -107,12 +101,15 @@ static std::vector<std::unique_ptr<CButton>> buttons;
 static std::vector<CBindGroup *> bindgroups;
 static std::vector<CHandlerEvent *> handlergroup;
 static std::list<CBind *> all_binds;
+static std::queue<std::string> auto_type_queue = {};
 
 typedef std::list<CBind *> CBindList;
 typedef std::list<CBind *>::iterator CBindList_it;
 typedef std::vector<CBindGroup *>::iterator CBindGroup_it;
 
 static CBindList holdlist;
+
+static bool suppress_save_mapper_file_message = false;
 
 class CEvent {
 public:
@@ -205,6 +202,26 @@ public:
 	}
 	virtual void RepostActivity() {}
 };
+
+enum TypeAction : bool { Press, Release };
+
+// A helper function that either presses or releases the named button.
+static void type_button(const std::string& button, const TypeAction action)
+{
+	const auto button_name = "key_" + button;
+
+	// Find the button's event in the mapper's global events vector
+	auto it = std::find_if(events.begin(), events.end(), [&](const auto& event) {
+		return event->GetName() == button_name;
+	});
+	if (it != events.end()) {
+		(*it)->Active(action == TypeAction::Press);
+	} else {
+		LOG_ERR("MAPPER: Couldn't find a button named '%s' to %s",
+		        button.c_str(),
+		        action == TypeAction::Press ? "press" : "release");
+	}
+}
 
 class CBind {
 public:
@@ -486,7 +503,7 @@ public:
 
 	std::string GetBindName() const override
 	{
-		char buf[30];
+		char buf[MaxBindNameLength];
 		safe_sprintf(buf, "%s Axis %d%s", group->BindStart(), axis,
 		             positive ? "+" : "-");
 		return buf;
@@ -516,7 +533,7 @@ public:
 
 	std::string GetBindName() const override
 	{
-		char buf[30];
+		char buf[MaxBindNameLength];
 		safe_sprintf(buf, "%s Button %d", group->BindStart(), button);
 		return buf;
 	}
@@ -559,7 +576,7 @@ public:
 
 	std::string GetBindName() const override
 	{
-		char buf[30];
+		char buf[MaxBindNameLength];
 		safe_sprintf(buf, "%s Hat %" PRIu8 " %s", group->BindStart(), hat,
 		             ((dir == SDL_HAT_UP)      ? "up"
 		              : (dir == SDL_HAT_RIGHT) ? "right"
@@ -659,6 +676,10 @@ public:
 
 		LOG_MSG("MAPPER: Initialised %s with %d axes, %d buttons, and %d hat(s)",
 		        SDL_JoystickNameForIndex(stick_index), axes, buttons, hats);
+
+		// Trigger buttons that are actually analogue axis need special handling
+		// This function detects such triggers and sets the is_trigger variable for them
+		DetectTriggerButtons();
 	}
 
 	~CStickBindGroup() override
@@ -718,9 +739,9 @@ public:
 			if (abs(axis_position) < 25000)
 				return nullptr;
 
-			// Axis IDs 2 and 5 are triggers on six-axis controllers
-			const bool is_trigger = (axis_id == 2 || axis_id == 5) && axes == 6;
-			const bool toggled = axis_position > 0 || is_trigger;
+			// Trigger buttons must be special cased as they have a resting position of close to -32000
+			// We only want the mapped button to be pressed while the trigger is in the positve range (more than half-way pressed)
+			const bool toggled = axis_position > 0 || is_trigger[axis_id];
 			return CreateAxisBind(axis_id, toggled);
 
 		} else if (event->type == SDL_JOYBUTTONDOWN) {
@@ -920,6 +941,49 @@ private:
 		else
 			return "[missing joystick]";
 	}
+
+	void SetTriggerButtonFor(const char* button_name, const char* sdl_mapping)
+	{
+		// Part of the string we care about is in the format of:
+		// "button_name" + ':' + single character button type (a for axis, b for button, h for hat) + axis number
+
+		const char* substring = strstr(sdl_mapping, button_name);
+		if (!substring) {
+			return;
+		}
+		substring += strlen(button_name);
+		if (*substring != 'a') {
+			// Not an axis so no need to do anything
+			return;
+		}
+		++substring;
+		if (!isdigit(*substring)) {
+			// Safety check, this means the string is an invalid format
+			return;
+		}
+		int axis_number = 0;
+		while (isdigit(*substring)) {
+			axis_number *= 10;
+			axis_number += *substring - '0';
+			++substring;
+		}
+		if (axis_number >= 0 && axis_number < MAXAXIS) {
+			is_trigger[axis_number] = true;
+		}
+	}
+
+	void DetectTriggerButtons()
+	{
+		char* sdl_mapping = SDL_GameControllerMappingForDeviceIndex(stick_index);
+		if (!sdl_mapping) {
+			return;
+		}
+		SetTriggerButtonFor("lefttrigger:", sdl_mapping);
+		SetTriggerButtonFor("righttrigger:", sdl_mapping);
+		SDL_free(sdl_mapping);
+	}
+
+	bool is_trigger[MAXAXIS] = {};
 
 protected:
 	CBindList *pos_axis_lists = nullptr;
@@ -1275,125 +1339,65 @@ void MAPPER_TriggerEvent(const CEvent *event, const bool deactivation_state) {
 	}
 }
 
-class Typer {
-public:
-	Typer() = default;
-	Typer(const Typer &) = delete;            // prevent copy
-	Typer &operator=(const Typer &) = delete; // prevent assignment
-	~Typer() { Stop(); }
-	void Start(std::vector<std::unique_ptr<CEvent>> *ext_events,
-	           std::vector<std::string> &ext_sequence,
-	           const uint32_t wait_ms,
-	           const uint32_t pace_ms)
-	{
-		// Guard against empty inputs
-		if (!ext_events || ext_sequence.empty())
-			return;
-		Wait();
-		m_events = ext_events;
-		m_sequence = std::move(ext_sequence);
-		m_wait_ms = wait_ms;
-		m_pace_ms = pace_ms;
-		m_stop_requested = false;
-		m_instance = std::thread(&Typer::Callback, this);
-		set_thread_name(m_instance, "dosbox:autotype");
+// Presses or releases the next button in AUTOTYPE's queue. When the button is
+// released it's popped from the queue.
+static void auto_type_queued_button(uint32_t type_action_value)
+{
+	if (auto_type_queue.empty()) {
+		return;
 	}
-	void Wait()
-	{
-		if (m_instance.joinable())
-			m_instance.join();
-	}
-	void Stop()
-	{
-		m_stop_requested = true;
-		Wait();
-	}
-	void StopImmediately()
-	{
-		m_stop_requested = true;
-		if (m_instance.joinable())
-			m_instance.detach();
-	}
+	auto button = auto_type_queue.front();
 
-private:
-	// find the event for the lshift key and return it
-	CEvent *GetLShiftEvent()
-	{
-		static CEvent *lshift_event = nullptr;
-		for (auto &event : *m_events) {
-			if (std::string("key_lshift") == event->GetName()) {
-				lshift_event = event.get();
-				break;
-			}
+	const auto is_upper_case = button.length() == 1 &&
+	                           std::isupper(button.front());
+
+	const auto action = static_cast<TypeAction>(type_action_value);
+
+	// Upper case buttons are input using shift + lower case button
+	if (is_upper_case) {
+		type_button("lshift", action);
+		button.front() = std::tolower(button.front());
+	}
+	type_button(button, action);
+
+	if (action == TypeAction::Release) {
+		auto_type_queue.pop();
+	}
+}
+
+// Add each of the given buttons with a corresponding pair of press and release
+// PIC-timed events delayed into the future based on the given wait and pace times.
+void MAPPER_AutoType(std::vector<std::string>& buttons, uint32_t wait_ms,
+                     uint32_t pace_ms)
+{
+	uint32_t running_delay_ms = wait_ms;
+
+	for (auto& button : buttons) {
+		if (button == ",") {
+			running_delay_ms += pace_ms;
+		} else {
+			auto_type_queue.emplace(std::move(button));
+
+			PIC_AddEvent(auto_type_queued_button,
+			             running_delay_ms,
+			             static_cast<uint32_t>(TypeAction::Press));
+
+			constexpr auto ReleaseDelayMs = 50;
+			running_delay_ms += ReleaseDelayMs;
+
+			PIC_AddEvent(auto_type_queued_button,
+			             running_delay_ms,
+			             static_cast<uint32_t>(TypeAction::Release));
 		}
-		assert(lshift_event);
-		return lshift_event;
+		running_delay_ms += pace_ms;
 	}
+}
 
-	void Callback()
-	{
-		// quit before our initial wait time
-		if (m_stop_requested)
-			return;
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_wait_ms));
-		for (const auto &button : m_sequence) {
-			if (m_stop_requested)
-				return;
-			bool found = false;
-			// comma adds an extra pause, similar to on phones
-			if (button == ",") {
-				found = true;
-				// quit before the pause
-				if (m_stop_requested)
-					return;
-				std::this_thread::sleep_for(std::chrono::milliseconds(m_pace_ms));
-				// Otherwise trigger the matching button if we have one
-			} else {
-				// is the button an upper case letter?
-				const auto is_cap = button.length() == 1 && isupper(button[0]);
-				const auto maybe_lshift = is_cap ? GetLShiftEvent() : nullptr;
-				const std::string lbutton = is_cap ? std::string{int_to_char(
-				                                             tolower(button[0]))}
-				                                   : button;
-				const std::string bind_name = "key_" + lbutton;
-				for (auto &event : *m_events) {
-					if (bind_name == event->GetName()) {
-						found = true;
-						if (maybe_lshift)
-							maybe_lshift->Active(true);
-						event->Active(true);
-						std::this_thread::sleep_for(
-						        std::chrono::milliseconds(50));
-						event->Active(false);
-						if (maybe_lshift)
-							maybe_lshift->Active(false);
-						break;
-					}
-				}
-			}
-			/*
-			 *  Terminate the sequence for safety reasons if we can't find
-			 * a button. For example, we don't wan't DEAL becoming DEL, or
-			 * 'rem' becoming 'rm'
-			 */
-			if (!found) {
-				LOG_MSG("MAPPER: Couldn't find a button named '%s', stopping.",
-				        button.c_str());
-				return;
-			}
-			if (m_stop_requested) // quit before the pacing delay
-				return;
-			std::this_thread::sleep_for(std::chrono::milliseconds(m_pace_ms));
-		}
-	}
-
-	std::thread m_instance = {};
-	std::vector<std::string> m_sequence = {};
-	std::vector<std::unique_ptr<CEvent>>* m_events = nullptr;
-	uint32_t m_wait_ms = 0;
-	uint32_t m_pace_ms = 0;
-	std::atomic_bool m_stop_requested{false};
-};
+void MAPPER_StopAutoTyping()
+{
+	auto_type_queue = {};
+	PIC_RemoveEvents(auto_type_queued_button);
+}
 
 static struct CMapper {
 	SDL_Window *window = nullptr;
@@ -1410,8 +1414,7 @@ static struct CMapper {
 		CStickBindGroup *stick[MAXSTICKS] = {nullptr};
 		unsigned int num = 0;
 		unsigned int num_groups = 0;
-	} sticks = {};
-	Typer typist = {};
+	} sticks             = {};
 	std::string filename = "";
 } mapper;
 
@@ -1624,8 +1627,12 @@ public:
 				if (mapper.abindit == mapper.aevent->bindlist.end())
 					mapper.abindit=mapper.aevent->bindlist.begin();
 			}
-			if (mapper.abindit!=mapper.aevent->bindlist.end()) SetActiveBind(*(mapper.abindit));
-			else SetActiveBind(nullptr);
+			if (mapper.abindit != mapper.aevent->bindlist.end()) {
+				SetActiveBind(*(mapper.abindit));
+			} else {
+				SetActiveBind(nullptr);
+			}
+			MAPPER_SaveBinds();
 			break;
 		case BB_Next:
 			if (mapper.abindit != mapper.aevent->bindlist.end())
@@ -1633,9 +1640,6 @@ public:
 			if (mapper.abindit == mapper.aevent->bindlist.end())
 				mapper.abindit = mapper.aevent->bindlist.begin();
 			SetActiveBind(*(mapper.abindit));
-			break;
-		case BB_Save:
-			MAPPER_SaveBinds();
 			break;
 		case BB_Exit:
 			mapper.exit=true;
@@ -1689,15 +1693,19 @@ public:
 		switch (type) {
 		case BC_Mod1:
 			mapper.abind->mods^=BMOD_Mod1;
+			MAPPER_SaveBinds();
 			break;
 		case BC_Mod2:
 			mapper.abind->mods^=BMOD_Mod2;
+			MAPPER_SaveBinds();
 			break;
 		case BC_Mod3:
 			mapper.abind->mods^=BMOD_Mod3;
+			MAPPER_SaveBinds();
 			break;
 		case BC_Hold:
 			mapper.abind->flags^=BFLG_Hold;
+			MAPPER_SaveBinds();
 			break;
 		}
 		mapper.redraw=true;
@@ -2465,7 +2473,6 @@ static void CreateLayout() {
 	bind_but.del = new CBindButton(250, 400, 100, 20, "Remove bind", BB_Del);
 	bind_but.next = new CBindButton(250, 420, 100, 20, "Next bind", BB_Next);
 
-	bind_but.save=new CBindButton(400,450,50,20,"Save",BB_Save);
 	bind_but.exit=new CBindButton(450,450,50,20,"Exit",BB_Exit);
 
 	bind_but.bind_title->Change("Bind Title");
@@ -2621,9 +2628,9 @@ static struct {
 
                    {nullptr, SDL_SCANCODE_UNKNOWN}};
 
-static void ClearAllBinds() {
-	// wait for the auto-typer to complete because it might be accessing events
-	mapper.typist.Wait();
+static void ClearAllBinds()
+{
+	MAPPER_StopAutoTyping();
 
 	for (const auto& event : events) {
 		event->ClearBinds();
@@ -2730,8 +2737,11 @@ static void MAPPER_SaveBinds() {
 		fprintf(savefile,"\n");
 	}
 	fclose(savefile);
-	change_action_text("Mapper file saved.", color_white);
-	LOG_MSG("MAPPER: Wrote key bindings to %s", filename);
+	change_action_text("Mapping updated.", color_white);
+	if (!suppress_save_mapper_file_message) {
+		suppress_save_mapper_file_message = true;
+		LOG_INFO("MAPPER: Wrote input bindings to %s", filename);
+	}
 }
 
 static bool load_binds_from_file(const std::string_view mapperfile_path,
@@ -2744,9 +2754,11 @@ static bool load_binds_from_file(const std::string_view mapperfile_path,
 
 	auto try_loading = [](const std_fs::path &mapper_path) -> bool {
 		constexpr auto optional = ResourceImportance::Optional;
-		auto lines = GetResourceLines(mapper_path, optional);
+		auto lines = get_resource_lines(mapper_path, optional);
 		if (lines.empty())
 			return false;
+
+		suppress_save_mapper_file_message = true;
 
 		ClearAllBinds();
 		for (auto &line : lines)
@@ -2865,6 +2877,7 @@ void BIND_MappingEvents() {
 				mapper.aevent->AddBind(newbind);
 				SetActiveEvent(mapper.aevent);
 				mapper.addbind=false;
+				MAPPER_SaveBinds();
 				break;
 			}
 		}
@@ -3212,8 +3225,7 @@ static void MAPPER_Destroy(Section *sec) {
 	(void) sec; // unused but present for API compliance
 
 	// Stop any ongoing typing as soon as possible (because it access events)
-	mapper.typist.Stop();
-
+	MAPPER_StopAutoTyping();
 	// Release all the accumulated allocations by the mapper
 	events.clear();
 
@@ -3318,17 +3330,6 @@ std::vector<std::string> MAPPER_GetEventNames(const std::string &prefix) {
 		}
 	}
 	return key_names;
-}
-
-void MAPPER_AutoType(std::vector<std::string> &sequence,
-                     const uint32_t wait_ms,
-                     const uint32_t pace_ms) {
-	mapper.typist.Start(&events, sequence, wait_ms, pace_ms);
-}
-
-void MAPPER_AutoTypeStopImmediately()
-{
-	mapper.typist.StopImmediately();
 }
 
 void MAPPER_StartUp(Section* sec)

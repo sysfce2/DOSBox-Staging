@@ -228,6 +228,8 @@ bool DOS_CreateTempFile(char* const name, uint16_t* entry);
 bool DOS_FileExists(const char* const name);
 bool DOS_LockFile(const uint16_t entry, const uint32_t pos, const uint32_t len);
 bool DOS_UnlockFile(const uint16_t entry, const uint32_t pos, const uint32_t len);
+void DOS_InitFileLocking(Section* sec);
+bool DOS_IsFileLocking();
 
 /* Helper Functions */
 bool DOS_MakeName(const char* const name, char* const fullname, uint8_t* drive);
@@ -309,14 +311,6 @@ bool DOS_LayoutKey(const uint8_t key, const uint8_t flags1,
                    const uint8_t flags2, const uint8_t flags3);
 
 DOS_Version DOS_ParseVersion(const char *word, const char *args);
-
-enum KeyboardErrorCode : uint8_t {
-	KEYB_NOERROR = 0,
-	KEYB_FILENOTFOUND,
-	KEYB_INVALIDFILE,
-	KEYB_LAYOUTNOTFOUND,
-	KEYB_INVALIDCPFILE
-};
 
 static inline uint16_t long2para(uint32_t size) {
 	if (size>0xFFFF0) return 0xffff;
@@ -958,6 +952,7 @@ struct DOS_Block {
 		uint16_t dpb = {};
 	} tables = {};
 
+	uint16_t country_code    = {};
 	uint16_t loaded_codepage = {};
 	uint16_t dcp = {};
 };

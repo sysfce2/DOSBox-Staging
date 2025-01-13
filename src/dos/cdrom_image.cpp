@@ -488,7 +488,8 @@ CDROM_Interface_Image::CDROM_Interface_Image()
 {
 	if (refCount == 0) {
 		if (!player.channel) {
-			const auto mixer_callback = std::bind(&CDROM_Interface_Image::CDAudioCallBack,
+			MIXER_LockMixerThread();
+			const auto mixer_callback = std::bind(&CDROM_Interface_Image::CDAudioCallback,
 			                                      this, std::placeholders::_1);
 
 			player.channel = MIXER_AddChannel(mixer_callback,
@@ -498,6 +499,7 @@ CDROM_Interface_Image::CDROM_Interface_Image()
 			                                   ChannelFeature::DigitalAudio});
 
 			player.channel->Enable(false); // only enabled during playback periods
+			MIXER_UnlockMixerThread();
 		}
 #ifdef DEBUG
 		LOG_MSG("CDROM: Initialised the %s audio channel", ChannelName::CdAudio);
@@ -508,6 +510,7 @@ CDROM_Interface_Image::CDROM_Interface_Image()
 
 CDROM_Interface_Image::~CDROM_Interface_Image()
 {
+	MIXER_LockMixerThread();
 	refCount--;
 
 	// Stop playback before wiping out the CD Player
@@ -523,6 +526,7 @@ CDROM_Interface_Image::~CDROM_Interface_Image()
 	if (player.cd == this) {
 		player.cd = nullptr;
 	}
+	MIXER_UnlockMixerThread();
 }
 
 bool CDROM_Interface_Image::SetDevice(const char* path)
@@ -997,7 +1001,7 @@ bool CDROM_Interface_Image::ReadSectorsHost(void *buffer, bool raw, unsigned lon
 	return success;
 }
 
-void CDROM_Interface_Image::CDAudioCallBack(uint16_t desired_track_frames)
+void CDROM_Interface_Image::CDAudioCallback(const int desired_track_frames)
 {
 	/**
 	 *  This callback runs in SDL's mixer thread, so there's a risk
@@ -1009,7 +1013,7 @@ void CDROM_Interface_Image::CDAudioCallBack(uint16_t desired_track_frames)
 	// Guards: Bail if the request or our player is invalid
 	if (desired_track_frames == 0 || !player.cd || !track_file) {
 #ifdef DEBUG
-		LOG_MSG("CDROM: CDAudioCallBack called with one more empty dependencies:\n"
+		LOG_MSG("CDROM: CDAudioCallback called with one more empty dependencies:\n"
 		        "\t - frames to play (%" PRIuPTR ")\n"
 		        "\t - pointer to the CD object (%p)\n"
 		        "\t - pointer to the track's file (%p)\n",
@@ -1054,7 +1058,7 @@ void CDROM_Interface_Image::CDAudioCallBack(uint16_t desired_track_frames)
 	player.playedTrackFrames += decoded_track_frames;
 	if (player.playedTrackFrames >= player.totalTrackFrames) {
 #ifdef DEBUG
-		LOG_MSG("CDROM: CDAudioCallBack stopping because "
+		LOG_MSG("CDROM: CDAudioCallback stopping because "
 		"playedTrackFrames (%u) >= totalTrackFrames (%u)",
 		player.playedTrackFrames, player.totalTrackFrames);
 #endif

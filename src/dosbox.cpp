@@ -174,7 +174,7 @@ static Bitu Normal_Loop()
 				if (ret >= CB_MAX) {
 					return 0;
 				}
-				Bitu blah = (*CallBack_Handlers[ret])();
+				Bitu blah = (*Callback_Handlers[ret])();
 				if (blah) {
 					return blah;
 				}
@@ -297,7 +297,7 @@ static void increase_ticks()
 		auto ratio = (ticks.scheduled * (CPU_CyclePercUsed * 1024 / 100)) /
 		             ticks.done;
 
-		auto new_cycle_max = CPU_CycleMax;
+		auto new_cycle_max = CPU_CycleMax.load();
 
 		auto cproc = static_cast<int64_t>(CPU_CycleMax) *
 		             static_cast<int64_t>(ticks.scheduled);
@@ -417,7 +417,7 @@ static void increase_ticks()
 		// ticks.added > 15 but ticks.scheduled < 5, lower the cycles
 		// but do not reset the scheduled/done ticks to take them into
 		// account during the next auto cycle adjustment.
-		CPU_CycleMax /= 3;
+		CPU_CycleMax = CPU_CycleMax / 3;
 
 		if (CPU_CycleMax < auto_cpu_cycles_min) {
 			CPU_CycleMax = auto_cpu_cycles_min;
@@ -457,16 +457,18 @@ static void DOSBOX_UnlockSpeed( bool pressed ) {
 	if (pressed) {
 		LOG_MSG("Fast Forward ON");
 		ticks.locked = true;
+		MIXER_EnableFastForwardMode();
 
 		if (CPU_CycleAutoAdjust) {
 			autoadjust = true;
 			CPU_CycleAutoAdjust = false;
-			CPU_CycleMax /= 3;
+			CPU_CycleMax = CPU_CycleMax / 3;
 			if (CPU_CycleMax<1000) CPU_CycleMax=1000;
 		}
 	} else {
 		LOG_MSG("Fast Forward OFF");
 		ticks.locked = false;
+		MIXER_DisableFastForwardMode();
 
 		if (autoadjust) {
 			autoadjust = false;
@@ -579,7 +581,7 @@ void DOSBOX_Init()
 	PropMultiValRemain* pmulti_remain = nullptr;
 
 	// Specifies if and when a setting can be changed
-	constexpr auto always        = Property::Changeable::Always;
+	// constexpr auto always     = Property::Changeable::Always;
 	constexpr auto deprecated    = Property::Changeable::Deprecated;
 	constexpr auto only_at_start = Property::Changeable::OnlyAtStart;
 	constexpr auto when_idle     = Property::Changeable::WhenIdle;
@@ -589,15 +591,16 @@ void DOSBOX_Init()
 	/* Setup all the different modules making up DOSBox */
 
 	secprop = control->AddSection_prop("dosbox", &DOSBOX_RealInit);
-	pstring = secprop->Add_string("language", always, "");
+	pstring = secprop->Add_string("language", only_at_start, "auto");
 	pstring->Set_help(
-	        "Select a language to use: 'br', 'de', 'en', 'es', 'fr', 'it', 'nl', 'pl',\n"
-	        "or 'ru' (unset by default; this defaults to English).\n"
+	        "Select the DOS messages language:\n"
+	        "  auto:     Detects the language from the host OS (default).\n"
+	        "  <value>:  Loads a translation from the given file.\n"
 	        "Notes:\n"
-	        "  - This setting will override the 'LANG' environment variable, if set.\n"
-	        "  - The bundled 'resources/translations' directory with the executable holds\n"
-	        "    these files. Please keep it along-side the executable to support this\n"
-	        "    feature.");
+	        "  - The following language files are available:\n"
+	        "    'br', 'de', 'en', 'es', 'fr', 'it', 'nl', 'pl' and 'ru'.\n"
+	        "  - English is built-in, the rest is stored in the bundled\n"
+	        "    'resources/translations' directory.");
 
 	pstring = secprop->Add_string("machine", only_at_start, "svga_s3");
 	pstring->Set_values({"hercules",
@@ -650,7 +653,7 @@ void DOSBOX_Init()
 	secprop->AddInitFunction(&PAGING_Init);
 	secprop->AddInitFunction(&MEM_Init);
 
-	pint = secprop->Add_int("memsize", when_idle, 16);
+	pint = secprop->Add_int("memsize", only_at_start, 16);
 	pint->SetMinMax(MEM_GetMinMegabytes(), MEM_GetMaxMegabytes());
 	pint->Set_help(
 	        "Amount of memory of the emulated machine has in MB (16 by default).\n"
@@ -832,8 +835,17 @@ void DOSBOX_Init()
 	        "   4: 2 MB for the FBI and one TMU with 2 MB (default).\n"
 	        "  12: 4 MB for the FBI and two TMUs, each with 4 MB.");
 
-	pbool = secprop->Add_bool("voodoo_multithreading", only_at_start, true);
-	pbool->Set_help("Use threads to improve 3dfx Voodoo performance (enabled by default).");
+	// Deprecate the boolean Voodoo multithreading setting
+	pbool = secprop->Add_bool("voodoo_multithreading", deprecated, false);
+	pbool->Set_help("Renamed to 'voodoo_threads'");
+
+	pstring = secprop->Add_string("voodoo_threads", only_at_start, "auto");
+	pstring->Set_help(
+	        "Use threads to improve 3dfx Voodoo performance:\n"
+	        "  auto:     Use up to 8 threads based on available CPU cores (default).\n"
+	        "  <value>:  Set a specific number of threads between 1 and 16.\n"
+	        "Note: Tests show that frame rates increase up to 8 threads after which\n"
+	        "      they level off or decrease, in general.");
 
 	pbool = secprop->Add_bool("voodoo_bilinear_filtering", only_at_start, false);
 	pbool->Set_help(
@@ -851,15 +863,21 @@ void DOSBOX_Init()
 	MIXER_AddConfigSection(control);
 
 	// Configure MIDI
-	MIDI_AddConfigSection(control);
-
 #if C_FLUIDSYNTH
-	FLUID_AddConfigSection(control);
+	FSYNTH_AddConfigSection(control);
 #endif
 
 #if C_MT32EMU
 	MT32_AddConfigSection(control);
 #endif
+
+	SOUNDCANVAS_AddConfigSection(control);
+
+	// The MIDI section must be added *after* the FluidSynth, MT-32 and
+	// SoundCanvas MIDI device sections. If the MIDI section is intialised
+	// before these, these devices would be double-initialised if selected at
+	// startup time (e.g., by having `mididevice = mt32` in the config).
+	MIDI_AddConfigSection(control);
 
 #if C_DEBUG
 	secprop = control->AddSection_prop("debug", &DEBUG_Init);
@@ -886,20 +904,20 @@ void DOSBOX_Init()
 	                                   &PCSPEAKER_Init,
 	                                   changeable_at_runtime);
 
-	pstring = secprop->Add_string("pcspeaker", when_idle, "discrete");
+	pstring = secprop->Add_string("pcspeaker", when_idle, "impulse");
 	pstring->Set_help(
 	        "PC speaker emulation model:\n"
-	        "  discrete:  Waveform is created using discrete steps (default).\n"
-	        "             Works well for games that use RealSound-type effects.\n"
-	        "  impulse:   Waveform is created using sinc impulses.\n"
-	        "             Recommended for square-wave games, like Commander Keen.\n"
-	        "             While improving accuracy, it is more CPU intensive.\n"
-	        "  none/off:  Don't use the PC Speaker.");
-	pstring->Set_values({"discrete", "impulse", "none", "off"});
+	        "  impulse:   A very faithful emulation of the PC speaker's output (default).\n"
+	        "             Works with most games, but may result in garbled sound or silence\n"
+	        "             in a small number of programs.\n"
+	        "  discrete:  Legacy simplified PC speaker emulation; only use this on specific\n"
+	        "             titles that give you problems with the 'impulse' model.\n"
+	        "  none/off:  Don't emulate the PC speaker.");
+	pstring->Set_values({"impulse", "discrete", "none", "off"});
 
 	pstring = secprop->Add_string("pcspeaker_filter", when_idle, "on");
 	pstring->Set_help(
-	        "Filter for the PC Speaker output:\n"
+	        "Filter for the PC speaker output:\n"
 	        "  on:        Filter the output (default).\n"
 	        "  off:       Don't filter the output.\n"
 	        "  <custom>:  Custom filter definition; see 'sb_filter' for details.");
@@ -1181,27 +1199,41 @@ void DOSBOX_Init()
 	// DOS locale settings
 
 	secprop->AddInitFunction(&DOS_Locale_Init, changeable_at_runtime);
-	pstring = secprop->Add_string("locale_period", when_idle, "modern");
+
+	pstring = secprop->Add_string("locale_period", when_idle, "native");
 	pstring->Set_help(
-	        "Set locale epoch ('modern' by default). Historic settings (if available\n"
-	        "for the given country) try to mimic old DOS behaviour when displaying\n"
-	        "information such as dates, time, or numbers, modern ones follow current day\n"
-	        "practices for user experience more consistent with typical host systems.");
-	pstring->Set_values({"historic", "modern"});
+	        "Set locale epoch ('native' by default).\n"
+	        "  historic:  If data is available for the given country, mimic old DOS behavior\n"
+	        "             when displaying time, dates, or numbers.\n"
+	        "  modern:    Follow current day practices for user experience more consistent\n"
+	        "             with typical host systems.\n"
+	        "  native:    Re-use current host OS settings, regardless of the country set;\n"
+	        "             use 'modern' data to fill-in the gaps when the DOS locale system\n"
+	        "             is too limited to follow the desktop settings.");
+	pstring->Set_values({"historic", "modern", "native"});
 
 	pstring = secprop->Add_string("country", when_idle, "auto");
 	pstring->Set_help(
 	        "Set DOS country code ('auto' by default).\n"
 	        "This affects country-specific information such as date, time, and decimal\n"
-	        "formats. The list of supported country codes can be displayed using\n"
-	        "'--list-countries' command-line argument. If set to 'auto', the country code\n"
-	        "corresponding to the selected keyboard layout will be used.");
+	        "formats. If set to 'auto', selects the country code reflecting the host\n"
+	        "OS settings.\n"
+	        "The list of country codes can be displayed using '--list-countries'\n"
+	        "command-line argument.");
 
-	secprop->AddInitFunction(&DOS_KeyboardLayout_Init, changeable_at_runtime);
-	pstring = secprop->Add_string("keyboardlayout", when_idle, "auto");
+	pstring = secprop->Add_string("keyboardlayout", deprecated, "");
+	pstring->Set_help("Renamed to 'keyboard_layout'.");
+
+	pstring = secprop->Add_string("keyboard_layout", only_at_start, "auto");
 	pstring->Set_help(
-	        "Keyboard layout code ('auto' by default), i.e. 'us' for US English layout.\n"
-	        "Other possible values are the same as accepted by FreeDOS.");
+	        "Keyboard layout code ('auto' by default).\n"
+	        "The list of supported keyboard layout codes can be displayed using the\n"
+	        "'--list-layouts' command-line argument, e.g., 'uk' is the British English\n"
+	        "layout. The layout can be followed by the code page number, e.g., 'uk 850'\n"
+	        "selects a Western European screen font.\n"
+	        "Set to 'auto' to guess the values from the host OS settings.\n"
+	        "After startup, use the 'KEYB' command to manage keyboard layouts and code pages\n"
+	        "(run 'HELP KEYB' for details).");
 
 	// COMMAND.COM settings
 
@@ -1227,6 +1259,15 @@ void DOSBOX_Init()
 	        "File containing the list of applications and assigned DOS versions, in a\n"
 	        "tab-separated format, used by SETVER.EXE as a persistent storage\n"
 	        "(empty by default).");
+
+	secprop->AddInitFunction(&DOS_InitFileLocking, changeable_at_runtime);
+	pbool = secprop->Add_bool("file_locking", when_idle, true);
+	pbool->Set_help(
+	        "Enable file locking (SHARE.EXE emulation; enabled by default).\n"
+	        "This is required for some Windows 3.1x applications to work properly.\n"
+	        "It generally does not cause problems for DOS games except in rare cases\n"
+	        "(e.g., Astral Blur demo). If you experience crashes related to file\n"
+	        "permissions, you can try disabling this.");
 
 	// Mscdex
 	secprop->AddInitFunction(&MSCDEX_Init);
@@ -1343,7 +1384,7 @@ void DOSBOX_Init()
 	        "Important: The [autoexec] section must be the last section in the config!");
 
 	MSG_Add("CONFIGFILE_INTRO",
-	        "# This is the configuration file for " DOSBOX_PROJECT_NAME
+	        "# This is the configuration file for " DOSBOX_NAME
 	        " (%s).\n"
 	        "# Lines starting with a '#' character are comments.\n");
 

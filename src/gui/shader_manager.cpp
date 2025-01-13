@@ -197,24 +197,28 @@ std::deque<std::string> ShaderManager::GenerateShaderInventoryMessage() const
 {
 	std::deque<std::string> inventory;
 	inventory.emplace_back("");
-	inventory.emplace_back(MSG_GetRaw("DOSBOX_HELP_LIST_GLSHADERS_1"));
+	inventory.emplace_back(MSG_GetForHost("DOSBOX_HELP_LIST_GLSHADERS_1"));
 	inventory.emplace_back("");
 
 	const std::string file_prefix = "        ";
+	std::error_code ec            = {};
 
-	std::error_code ec = {};
-	for (auto& [dir, shaders] : GetFilesInResource(GlShadersDir, ".glsl")) {
+	constexpr auto OnlyRegularFiles = true;
+
+	for (auto& [dir, shaders] :
+	     get_files_in_resource(GlShadersDir, ".glsl", OnlyRegularFiles)) {
+
 		const auto dir_exists      = std_fs::is_directory(dir, ec);
 		auto shader                = shaders.begin();
 		const auto dir_has_shaders = shader != shaders.end();
 
 		const char* pattern = nullptr;
 		if (!dir_exists) {
-			pattern = MSG_GetRaw("DOSBOX_HELP_LIST_GLSHADERS_NOT_EXISTS");
+			pattern = MSG_GetForHost("DOSBOX_HELP_LIST_GLSHADERS_NOT_EXISTS");
 		} else if (!dir_has_shaders) {
-			pattern = MSG_GetRaw("DOSBOX_HELP_LIST_GLSHADERS_NO_SHADERS");
+			pattern = MSG_GetForHost("DOSBOX_HELP_LIST_GLSHADERS_NO_SHADERS");
 		} else {
-			pattern = MSG_GetRaw("DOSBOX_HELP_LIST_GLSHADERS_LIST");
+			pattern = MSG_GetForHost("DOSBOX_HELP_LIST_GLSHADERS_LIST");
 		}
 		inventory.emplace_back(format_str(pattern, dir.u8string().c_str()));
 
@@ -228,7 +232,7 @@ std::deque<std::string> ShaderManager::GenerateShaderInventoryMessage() const
 		}
 		inventory.emplace_back("");
 	}
-	inventory.emplace_back(MSG_GetRaw("DOSBOX_HELP_LIST_GLSHADERS_2"));
+	inventory.emplace_back(MSG_GetForHost("DOSBOX_HELP_LIST_GLSHADERS_2"));
 
 	return inventory;
 }
@@ -257,6 +261,12 @@ std::string ShaderManager::MapShaderName(const std::string& name) const
 	// Map shader aliases
 	if (name == "sharp") {
 		return SharpShaderName;
+
+	} else if (name == "bilinear" || name == "none") {
+		return BilinearShaderName;
+
+	} else if (name == "nearest") {
+		return "interpolation/nearest";
 	}
 
 	// Map legacy shader names
@@ -321,9 +331,9 @@ bool ShaderManager::ReadShaderSource(const std::string& shader_name, std::string
 	// Start with the name as-is and then try from resources
 	const auto candidate_paths = {std_fs::path(shader_name),
 	                              std_fs::path(shader_name + glsl_ext),
-	                              GetResourcePath(GlShadersDir, shader_name),
-	                              GetResourcePath(GlShadersDir,
-	                                              shader_name + glsl_ext)};
+	                              get_resource_path(GlShadersDir, shader_name),
+	                              get_resource_path(GlShadersDir,
+	                                                shader_name + glsl_ext)};
 
 	for (const auto& path : candidate_paths) {
 		if (std_fs::exists(path) &&
@@ -361,6 +371,9 @@ ShaderSettings ShaderManager::ParseShaderSettings(const std::string& shader_name
 
 			} else if (pragma == "force_no_pixel_doubling") {
 				settings.force_no_pixel_doubling = true;
+
+			} else if (pragma == "use_nearest_texture_filter") {
+				settings.texture_filter_mode = TextureFilterMode::Nearest;
 			}
 			++next;
 		}

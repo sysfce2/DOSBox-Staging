@@ -27,16 +27,16 @@ static const std::vector<uint8_t> static_functionality = {
     /* 0 */ 0xff,  // All modes supported #1
     /* 1 */ 0xff,  // All modes supported #2
     /* 2 */ 0x0f,  // All modes supported #3
-    /* 3 */ 0x00, 0x00, 0x00, 0x00,  // reserved
+    /* 3 */ 0x00, 0x00, 0x00, 0x00,  // Reserved
     /* 7 */ 0x07,  // 200, 350, 400 scan lines
-    /* 8 */ 0x04,  // total number of character blocks available in text modes
-    /* 9 */ 0x02,  // maximum number of active character blocks in text modes
+    /* 8 */ 0x04,  // Total number of character blocks available in text modes
+    /* 9 */ 0x02,  // Maximum number of active character blocks in text modes
     /* a */ 0xff,  // Misc Flags Everthing supported
     /* b */ 0x0e,  // Support for Display combination, intensity/blinking and video state saving/restoring
-    /* c */ 0x00,  // reserved
-    /* d */ 0x00,  // reserved
+    /* c */ 0x00,  // Reserved
+    /* d */ 0x00,  // Reserved
     /* e */ 0x00,  // Change to add new functions
-    /* f */ 0x00   // reserved
+    /* f */ 0x00   // Reserved
 };
 
 static const std::vector<uint16_t> map_offset = {
@@ -45,16 +45,23 @@ static const std::vector<uint16_t> map_offset = {
 };
 // clang-format on
 
-void INT10_LoadFont(const PhysPt _font, const bool reload, const int count,
-                    const int offset, const int map, const int height)
+static void load_font(const PhysPt _font_data, const bool reload, const int num_chars,
+                      const int first_char, const int _font_block,
+                      const int char_height, const bool load_alternate_chars)
 {
-	PhysPt ftwhere = PhysicalMake(0xa000,
-	                              map_offset[map & 0x7] +
-	                                      (uint16_t)(offset * 32));
+	constexpr auto BytesPerChar = 32;
 
-	uint16_t base = real_readw(BIOSMEM_SEG, BIOSMEM_CRTC_ADDRESS);
+	// Valid font block value range: EGA: 0-3; VGA: 0-7
+	//
+	// Source:
+	// http://www.techhelpmanual.com/157-int_10h_1110h__load_and_activate_user_defined_font.html
+	const auto font_block = (_font_block & 0x07);
 
-	bool mono = (base == VGAREG_MDA_CRTC_ADDRESS);
+	const PhysPt font_base_addr = PhysicalMake(
+	        0xa000,
+	        map_offset[font_block] + (uint16_t)(first_char * BytesPerChar));
+
+	const uint16_t crtc_base = real_readw(BIOSMEM_SEG, BIOSMEM_CRTC_ADDRESS);
 
 	// Put video adapter in planar mode
 
@@ -79,19 +86,21 @@ void INT10_LoadFont(const PhysPt _font, const bool reload, const int count,
 	IO_Write(0x3cf, 0x04);
 
 	// Load character patterns
-	auto font = _font;
+	auto font_data = _font_data;
 
-	for (auto i = 0; i < count; i++) {
-		MEM_BlockCopy(ftwhere + i * 32, font, height);
-		font += height;
+	for (auto chr = 0; chr < num_chars; ++chr) {
+		MEM_BlockCopy(font_base_addr + chr * BytesPerChar, font_data, char_height);
+		font_data += char_height;
 	}
 
-	// Load alternate 9x14 or 9x16 character patterns on VGA based on
-	// state of the clocking mode register
-	if (IS_VGA_ARCH && !vga.seq.clocking_mode.is_eight_dot_mode) {
-		while (auto chr = mem_readb(font++)) {
-			MEM_BlockCopy(ftwhere + chr * 32, font, height);
-			font += height;
+	// Load alternate 9x14 or 9x16 character patterns on VGA
+	if (load_alternate_chars) {
+		while (auto chr = mem_readb(font_data++)) {
+			MEM_BlockCopy(font_base_addr + chr * BytesPerChar,
+			              font_data,
+			              char_height);
+
+			font_data += char_height;
 		}
 	}
 
@@ -115,84 +124,83 @@ void INT10_LoadFont(const PhysPt _font, const bool reload, const int count,
 
 	// Bx000-BxFFF, odd/even on
 	IO_Write(0x3ce, 0x06);
-	IO_Write(0x3cf, mono ? 0x0a : 0x0e);
+
+	const bool monochrome = (crtc_base == VGAREG_MDA_CRTC_ADDRESS);
+	IO_Write(0x3cf, monochrome ? 0x0a : 0x0e);
 
 	// Reload tables and registers with new values based on this height
 	if (reload) {
 		// Max scanline
-		IO_Write(base, 0x9);
-		IO_Write(base + 1, (IO_Read(base + 1) & 0xe0) | (height - 1));
+		IO_Write(crtc_base, 0x9);
+		IO_Write(crtc_base + 1,
+		         (IO_Read(crtc_base + 1) & 0xe0) | (char_height - 1));
 
 		// Vertical display end
-		auto rows = CurMode->sheight / height;
-		auto vdend = rows * height * ((CurMode->sheight == 200) ? 2 : 1) - 1;
-		IO_Write(base, 0x12);
-		IO_Write(base + 1, (uint8_t)vdend);
+		const auto rows  = CurMode->sheight / char_height;
+		const auto vdend = rows * char_height *
+		                           ((CurMode->sheight == 200) ? 2 : 1) -
+		                   1;
+
+		IO_Write(crtc_base, 0x12);
+		IO_Write(crtc_base + 1, (uint8_t)vdend);
 
 		// Underline location
 		if (CurMode->mode == 7) {
-			IO_Write(base, 0x14);
-			IO_Write(base + 1,
-			         (IO_Read(base + 1) & ~0x1f) | (height - 1));
+			IO_Write(crtc_base, 0x14);
+			IO_Write(crtc_base + 1,
+			         (IO_Read(crtc_base + 1) & ~0x1f) |
+			                 (char_height - 1));
 		}
 
-		// Rows setting in bios segment
+		// Rows setting in BIOS segment
 		real_writeb(BIOSMEM_SEG, BIOSMEM_NB_ROWS, rows - 1);
-		real_writeb(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT, (uint8_t)height);
+		real_writeb(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT, (uint8_t)char_height);
 
 		// Page size
-		Bitu bios_pagesize = rows *
-		                     real_readb(BIOSMEM_SEG, BIOSMEM_NB_COLS) * 2;
+		const int bios_pagesize = rows *
+		                          real_readb(BIOSMEM_SEG, BIOSMEM_NB_COLS) *
+		                          2;
 
 		// BIOS adds extra on reload
-		bios_pagesize += 0x100;
-		real_writew(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE, bios_pagesize);
+		real_writew(BIOSMEM_SEG, BIOSMEM_PAGE_SIZE, bios_pagesize + 0x100);
 
 		// Move up one line on 14+ line fonts
-		auto cursor_height = height >= 14 ? (height - 1) : height;
+		auto cursor_height = char_height >= 14 ? (char_height - 1)
+		                                       : char_height;
 
 		INT10_SetCursorShape(cursor_height - 2, cursor_height - 1);
 	}
 }
 
+void INT10_LoadFont(const PhysPt font_data, const bool reload,
+                    const int num_chars, const int first_char,
+                    const int font_block, const int char_height)
+{
+	constexpr auto LoadAlternateChars = false;
+	load_font(font_data, reload, num_chars, first_char, font_block, char_height, LoadAlternateChars);
+}
+
 void INT10_ReloadFont()
 {
-	constexpr auto Reload   = false;
-	constexpr auto NumChars = 256;
-	constexpr auto Offset   = 0;
-	constexpr auto Map      = 0;
+	constexpr auto Reload    = false;
+	constexpr auto NumChars  = 256;
+	constexpr auto FirstChar = 0;
+	constexpr auto FontBlock = 0;
 
-	switch (CurMode->cheight) {
-	case 8:
+	const auto char_height = CurMode->cheight;
 
-		INT10_LoadFont(RealToPhysical(int10.rom.font_8_first),
-		               Reload,
-		               NumChars,
-		               Offset,
-		               Map,
-		               CurMode->cheight);
-		break;
+	const auto font_data = RealToPhysical(
+		char_height == 8  ? int10.rom.font_8_first :
+		char_height == 14 ? int10.rom.font_14 :
+		                    int10.rom.font_16
+	);
 
-	case 14:
-		INT10_LoadFont(RealToPhysical(int10.rom.font_14),
-		               Reload,
-		               NumChars,
-		               Offset,
-		               Map,
-		               CurMode->cheight);
-		break;
+	const auto is_vga_9dot_font = (IS_VGA_ARCH &&
+	                               !vga.seq.clocking_mode.is_eight_dot_mode);
 
-	case 16:
-	default:
-		constexpr auto Height = 16;
-		INT10_LoadFont(RealToPhysical(int10.rom.font_16),
-		               Reload,
-		               NumChars,
-		               Offset,
-		               Map,
-		               Height);
-		break;
-	}
+	const auto load_alternate_chars = (is_vga_9dot_font && char_height != 8);
+
+	load_font(font_data, Reload, NumChars, FirstChar, FontBlock, char_height, load_alternate_chars);
 }
 
 void INT10_SetupRomMemory(void) {
@@ -360,45 +368,58 @@ void INT10_SetupRomMemory(void) {
 	}
 }
 
-void INT10_ReloadRomFonts(void) {
+void INT10_ReloadRomFonts(void)
+{
 	// 16x8 font
-	PhysPt font16pt=RealToPhysical(int10.rom.font_16);
-	for (Bitu i=0;i<256*16;i++) {
-		phys_writeb(font16pt+i,int10_font_16[i]);
+	PhysPt font16pt = RealToPhysical(int10.rom.font_16);
+	for (Bitu i = 0; i < 256 * 16; i++) {
+		phys_writeb(font16pt + i, int10_font_16[i]);
 	}
-	phys_writeb(RealToPhysical(int10.rom.font_16_alternate),0x1d);
+	phys_writeb(RealToPhysical(int10.rom.font_16_alternate), 0x1d);
+
 	// 14x8 font
-	PhysPt font14pt=RealToPhysical(int10.rom.font_14);
-	for (Bitu i=0;i<256*14;i++) {
-		phys_writeb(font14pt+i,int10_font_14[i]);
+	PhysPt font14pt = RealToPhysical(int10.rom.font_14);
+	for (Bitu i = 0; i < 256 * 14; i++) {
+		phys_writeb(font14pt + i, int10_font_14[i]);
 	}
-	phys_writeb(RealToPhysical(int10.rom.font_14_alternate),0x1d);
+	phys_writeb(RealToPhysical(int10.rom.font_14_alternate), 0x1d);
+
 	// 8x8 fonts
-	PhysPt font8pt=RealToPhysical(int10.rom.font_8_first);
-	for (Bitu i=0;i<128*8;i++) {
-		phys_writeb(font8pt+i,int10_font_08[i]);
+	PhysPt font8pt = RealToPhysical(int10.rom.font_8_first);
+	for (Bitu i = 0; i < 128 * 8; i++) {
+		phys_writeb(font8pt + i, int10_font_08[i]);
 	}
-	font8pt=RealToPhysical(int10.rom.font_8_second);
-	for (Bitu i=0;i<128*8;i++) {
-		phys_writeb(font8pt+i,int10_font_08[i+128*8]);
+
+	font8pt = RealToPhysical(int10.rom.font_8_second);
+	for (Bitu i = 0; i < 128 * 8; i++) {
+		phys_writeb(font8pt + i, int10_font_08[i + 128 * 8]);
 	}
+
 	INT10_SetupRomMemoryChecksum();
 }
 
-void INT10_SetupRomMemoryChecksum(void) {
-	if (IS_EGAVGA_ARCH) { //EGA/VGA. Just to be safe
-		/* Sum of all bytes in rom module 256 should be 0 */
-		uint8_t sum = 0;
-		PhysPt rom_base = PhysicalMake(0xc000,0);
-		Bitu last_rombyte = 32*1024 - 1;		//32 KB romsize
-		for (Bitu i = 0;i < last_rombyte;i++)
-			sum += phys_readb(rom_base + i);	//OVERFLOW IS OKAY
-		sum = (uint8_t)((256 - (Bitu)sum)&0xff);
-		phys_writeb(rom_base + last_rombyte,sum);
+void INT10_SetupRomMemoryChecksum(void)
+{
+	// EGA/VGA. Just to be safe
+	if (IS_EGAVGA_ARCH) {
+		// Sum of all bytes in rom module 256 should be 0
+		uint8_t sum     = 0;
+		PhysPt rom_base = PhysicalMake(0xc000, 0);
+
+		// 32 KB romsize
+		Bitu last_rombyte = 32 * 1024 - 1;
+
+		for (Bitu i = 0; i < last_rombyte; i++) {
+			// Overflow is okay
+			sum += phys_readb(rom_base + i);
+		}
+		sum = (uint8_t)((256 - (Bitu)sum) & 0xff);
+
+		phys_writeb(rom_base + last_rombyte, sum);
 	}
 }
 
-
+// clang-format off
 uint8_t int10_font_08[256 * 8] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x7e, 0x81, 0xa5, 0x81, 0xbd, 0x99, 0x81, 0x7e,
@@ -1748,3 +1769,4 @@ uint8_t int10_font_16_alternate[19 * 17 + 1] = {
   0x66, 0xce, 0x96, 0x3e, 0x06, 0x06, 0x00, 0x00,
   0x00
 };
+// clang-format on

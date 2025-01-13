@@ -1,4 +1,4 @@
-DOSBox (dosbox-staging) 0.82.0-alpha Manual
+DOSBox (dosbox-staging) 0.83.0-alpha Manual
 
 ======
 INDEX:
@@ -829,9 +829,10 @@ CONFIG -get "section property"
         config -get "cpu core"
     6. To view the list of possible cpu cores:
         config -help cpu core
-    7. To change the machine type and restart:
+    7. To change the machine type, memory size, and restart:
         config -set "machine cga"
-        config -wc -r
+        config -set "memsize 1"
+        config -r
     8. To configure the autoexec section to auto-mount a directory at start:
         config -axadd "mount c c:\dosgames" "c:"
         config -wc
@@ -1718,7 +1719,7 @@ DOSBox crashes right after starting it:
   - use different values for the output= entry in your DOSBox
     configuration file
   - try to update your graphics card driver and DirectX
-  - (Linux) set the environment variable SDL_AUDIODRIVER to alsa or oss.
+  - (Linux) set the environment variable SDL_AUDIODRIVER to alsa.
 
 Running a certain game closes DOSBox, crashes with some message or hangs:
   - see if it works with a default DOSBox installation

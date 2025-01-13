@@ -2424,7 +2424,7 @@ restart_prefix:
 
 			default:
 #if DYN_LOG
-				LOG_MSG("Unhandled dual opcode 0F%02X",dual_code);
+				LOG_MSG("Unhandled dual opcode 0F%02" PRIXPTR, dual_code);
 #endif
 				goto illegalopcode;
 			}
@@ -2947,7 +2947,7 @@ restart_prefix:
 				dyn_set_eip_end();
 				dyn_reduce_cycles();
 				dyn_save_critical_regs();
-				gen_return(BR_CallBack);
+				gen_return(BR_Callback);
 				dyn_closeblock();
 				goto finish_block;
 			}
@@ -3006,7 +3006,7 @@ restart_prefix:
 			break;
 		default:
 #if DYN_LOG
-//			LOG_MSG("Dynamic unhandled opcode %X",opcode);
+//			LOG_MSG("Dynamic unhandled opcode %" PRIXPTR, opcode);
 #endif
 			goto illegalopcode;
 		}
