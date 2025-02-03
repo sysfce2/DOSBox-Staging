@@ -55,13 +55,13 @@ CPUBlock cpu      = {};
 Segments Segs     = {};
 
 // Current cycles values
-int CPU_Cycles    = 0;
-int CPU_CycleLeft = CpuCyclesRealModeDefault;
+std::atomic<int> CPU_Cycles    = 0;
+std::atomic<int> CPU_CycleLeft = CpuCyclesRealModeDefault;
 
 // Cycles settings for both "legacy" and "modern" modes
-int CPU_CycleMax      = CpuCyclesRealModeDefault;
-int CPU_CyclePercUsed = 100;
-int CPU_CycleLimit    = -1;
+std::atomic<int> CPU_CycleMax = CpuCyclesRealModeDefault;
+int CPU_CyclePercUsed         = 100;
+int CPU_CycleLimit            = -1;
 
 static int old_cycle_max       = CpuCyclesRealModeDefault;
 static bool legacy_cycles_mode = false;
@@ -2416,7 +2416,7 @@ static void cpu_increase_cycles_legacy()
 		CPU_Cycles    = 0;
 
 		if (!maybe_display_switch_to_dynamic_core_warning(CPU_CycleMax)) {
-			LOG_MSG("CPU: Fixed %d cycles", CPU_CycleMax);
+			LOG_MSG("CPU: Fixed %d cycles", CPU_CycleMax.load());
 		}
 	}
 }
@@ -2538,7 +2538,7 @@ static void cpu_decrease_cycles_legacy()
 		CPU_CycleLeft = 0;
 		CPU_Cycles    = 0;
 
-		LOG_MSG("CPU: Fixed %d cycles.", CPU_CycleMax);
+		LOG_MSG("CPU: Fixed %d cycles.", CPU_CycleMax.load());
 	}
 }
 
@@ -2600,8 +2600,6 @@ void CPU_ResetAutoAdjust()
 
 std::string CPU_GetCyclesConfigAsString()
 {
-	static const auto CyclesPerMs = " cycles/ms";
-
 	if (legacy_cycles_mode) {
 		std::string s = {};
 
@@ -2614,9 +2612,11 @@ std::string CPU_GetCyclesConfigAsString()
 				s += format_str("max %d%%", CPU_CyclePercUsed);
 			}
 		} else {
-			s += format_str("%d", CPU_CycleMax);
+			s += format_str("%d", CPU_CycleMax.load());
 		}
-		return s += CyclesPerMs;
+
+		s += " ";
+		return s += MSG_GetForHost("TITLEBAR_CYCLES_MS");
 
 	} else {
 		// Modern mode
@@ -2647,10 +2647,13 @@ std::string CPU_GetCyclesConfigAsString()
 			format_cycles(conf.real_mode);
 		}
 
-		s += CyclesPerMs;
+		s += " ";
+		s += MSG_GetForHost("TITLEBAR_CYCLES_MS");
 
 		if (modern_cycles_config.throttle && !max_mode) {
-			s += " (throttled)";
+			s += " (";
+			s += MSG_GetForHost("TITLEBAR_CYCLES_THROTTLED");
+			s += ")";
 		}
 		return s;
 	}
@@ -2916,8 +2919,9 @@ public:
 	void ConfigureCyclesLegacy(Section_prop* secprop)
 	{
 		// Sets the value if the string in within the min and max values
-		auto set_if_in_range = [](const std::string& str,
-		                          int& value,
+		// Output value is either int or std::atomic<int>
+		auto set_if_in_range = []<typename T>(const std::string& str,
+		                          T& value,
 		                          const int min_value = 1,
 		                          const int max_value = 0) {
 			std::istringstream stream(str);

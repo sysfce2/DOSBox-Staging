@@ -1,4 +1,5 @@
 name: macOS builds
+permissions:  read-all
 
 on:
   push:
@@ -33,7 +34,7 @@ jobs:
       matrix:
         conf:
           - name: Clang
-            host: macos-12
+            host: macos-13
             arch: x86_64
             needs_deps: true
             run_tests: true
@@ -48,7 +49,7 @@ jobs:
             run_tests: false # the shell_cmds_tests hang on arm64
             build_flags: -Dbuildtype=debug
             brew_path: /opt/homebrew
-            max_warnings: 42
+            max_warnings: 0
 
     steps:
       - name: Checkout repository
@@ -114,7 +115,7 @@ jobs:
     strategy:
       matrix:
         runner:
-          - host: macos-12
+          - host: macos-13
             arch: x86_64
             build_flags: -Db_lto=true
             brew_path: /usr/local/homebrew
@@ -172,7 +173,6 @@ jobs:
             ${{ matrix.runner.build_flags }} \
             -Ddefault_library=static \
             -Dwrap_mode=forcefallback \
-            -Dtry_static_libs=sdl2,sdl2_net \
             -Duse_zlib_ng=sse2,ssse3,neon \
             build
           meson compile -C build

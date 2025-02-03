@@ -138,7 +138,7 @@ CSerialModem::CSerialModem(const uint8_t port_idx, CommandLine *cmd)
 	// Otherwise the default listenport will be used
 
 	// TODO: Fix dialtones if requested
-	//mhd.chan=MIXER_AddChannel((MIXER_MixHandler)this->MODEM_CallBack,8000,"MODEM");
+	//mhd.chan=MIXER_AddChannel((MIXER_MixHandler)this->MODEM_Callback,8000,"MODEM");
 	//MIXER_Enable(mhd.chan,false);
 	//MIXER_SetMode(mhd.chan,MIXER_16MONO);
 
@@ -288,6 +288,13 @@ void CSerialModem::SendRes(const ResTypes response) {
 }
 
 bool CSerialModem::Dial(const char * host) {
+	// Close the server socket before dialing
+	waitingclientsocket.reset();
+	if (serversocket) {
+		serversocket->Close();
+		serversocket.reset();
+	}
+
 	char buf[128] = "";
 	safe_strcpy(buf, host);
 
@@ -310,7 +317,7 @@ bool CSerialModem::Dial(const char * host) {
 	clientsocket.reset(NETClientSocket::NETClientFactory(socketType,
 	                                                     destination, port));
 	if (!clientsocket->isopen) {
-		clientsocket.reset(nullptr);
+		clientsocket.reset();
 		LOG_MSG("SERIAL: Port %" PRIu8 " failed to connect.", GetPortNumber());
 		SendRes(ResNOCARRIER);
 		EnterIdleState();
@@ -378,7 +385,7 @@ void CSerialModem::Reset(){
 	plusinc = 0;
 	oldDTRstate = getDTR();
 	dtrmode = 2;
-	clientsocket.reset(nullptr);
+	clientsocket.reset();
 
 	memset(&reg,0,sizeof(reg));
 	reg[MREG_AUTOANSWER_COUNT] = 0;  // no autoanswer
@@ -401,18 +408,16 @@ void CSerialModem::EnterIdleState(){
 	ringing = false;
 	dtrofftimer = -1;
 	warmup_remain_ticks = 0;
-	clientsocket.reset(nullptr);
-	waitingclientsocket.reset(nullptr);
 
 	// get rid of everything
+	clientsocket.reset();
+	waitingclientsocket.reset();
 	if (serversocket) {
-		waitingclientsocket.reset(serversocket->Accept());
-		while (waitingclientsocket) {
-			waitingclientsocket.reset(serversocket->Accept());
-		}
+		serversocket->Close();
+		serversocket.reset();
 	}
+
 	if (listenport) {
-		serversocket.reset(nullptr);
 		serversocket.reset(NETServerSocket::NETServerFactory(socketType,
 		                                                     listenport));
 		if (!serversocket->isopen) {
@@ -420,13 +425,12 @@ void CSerialModem::EnterIdleState(){
 			        "%" PRIu16 ".",
 			        GetPortNumber(), listenport);
 
-			serversocket.reset(nullptr);
+			serversocket.reset();
 		} else
 			LOG_MSG("SERIAL: Port %" PRIu8 " modem listening on port "
 			        "%" PRIu16 " ...",
 			        GetPortNumber(), listenport);
 	}
-	waitingclientsocket.reset(nullptr);
 
 	commandmode = true;
 	CSerial::setCD(false);
@@ -438,7 +442,7 @@ void CSerialModem::EnterIdleState(){
 
 void CSerialModem::EnterConnectedState() {
 	// we don't accept further calls
-	serversocket.reset(nullptr);
+	serversocket.reset();
 	SendRes(ResCONNECT);
 	commandmode = false;
 	telClient = {}; // reset values
@@ -987,6 +991,7 @@ void CSerialModem::Timer2()
 			EnterIdleState();
 		}
 	}
+
 	// Handle incoming to the serial port
 	if (!commandmode && clientsocket && rqueue->left()) {
 		size_t usesize = rqueue->left() >= 16 ? 16 : rqueue->left();
@@ -1004,8 +1009,30 @@ void CSerialModem::Timer2()
 		}
 	}
 
+	// Discard any incoming traffic while in command mode
+	if (commandmode && clientsocket) {
+		// Read buffer size doesn't really matter, we just need big
+		// enough buffer to discard data decently quickly
+		size_t usesize = 80;
+		if (!clientsocket->ReceiveArray(tmpbuf, usesize)) {
+			SendRes(ResNOCARRIER);
+			LOG_INFO("SERIAL: No carrier on receive");
+			EnterIdleState();
+		}
+	}
+
+	// Discard any incoming traffic from the waiting client
+	if (waitingclientsocket) {
+		// Read buffer size doesn't really matter, we just need big
+		// enough buffer to discard data decently quickly
+		size_t usesize = 80;
+		if (!waitingclientsocket->ReceiveArray(tmpbuf, usesize)) {
+			EnterIdleState();
+		}
+	}
+
 	// Tick down warmup timer
-	if (clientsocket && warmup_remain_ticks) {
+	if (connected && warmup_remain_ticks) {
 		// Drop all incoming and outgoing traffic for a short period after
 		// answering a call. This is to simulate real modem behavior where
 		// the first packet is usually bad (extra data in the buffer from

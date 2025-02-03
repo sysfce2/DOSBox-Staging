@@ -23,13 +23,29 @@
 
 #include "pcspeaker_discrete.h"
 #include "pcspeaker_impulse.h"
+#include "math_utils.h"
+#include "timer.h"
 
-// The PC Speaker managed pointer
+// The PC speaker managed pointer
 std::unique_ptr<PcSpeaker> pc_speaker = {};
+
+static void PCSPEAKER_PicCallback()
+{
+	if (!pc_speaker || !pc_speaker->channel->is_enabled) {
+		return;
+	}
+	pc_speaker->frame_counter += pc_speaker->channel->GetFramesPerTick();
+	const int requested_frames = ifloor(pc_speaker->frame_counter);
+	pc_speaker->frame_counter -= static_cast<float>(requested_frames);
+	pc_speaker->PicCallback(requested_frames);
+}
 
 void PCSPEAKER_ShutDown([[maybe_unused]] Section *sec)
 {
+	MIXER_LockMixerThread();
+	TIMER_DelTickHandler(PCSPEAKER_PicCallback);
 	pc_speaker.reset();
+	MIXER_UnlockMixerThread();
 }
 
 void PCSPEAKER_Init(Section *section)
@@ -40,7 +56,7 @@ void PCSPEAKER_Init(Section *section)
 	assert(section);
 	const auto prop = static_cast<Section_prop *>(section);
 
-	// Get the user's PC Speaker model choice
+	// Get the user's PC speaker model choice
 	const std::string model_choice = prop->Get_string("pcspeaker");
 
 	const auto model_choice_has_bool = parse_bool_setting(model_choice);
@@ -49,13 +65,15 @@ void PCSPEAKER_Init(Section *section)
 		return;
 
 	} else if (model_choice == "discrete") {
+		MIXER_LockMixerThread();
 		pc_speaker = std::make_unique<PcSpeakerDiscrete>();
 
 	} else if (model_choice == "impulse") {
+		MIXER_LockMixerThread();
 		pc_speaker = std::make_unique<PcSpeakerImpulse>();
 
 	} else {
-		LOG_ERR("PCSPEAKER: Invalid PC Speaker model: %s",
+		LOG_ERR("PCSPEAKER: Invalid PC speaker model: %s",
 		        model_choice.c_str());
 		return;
 	}
@@ -81,9 +99,16 @@ void PCSPEAKER_Init(Section *section)
 
 	constexpr auto changeable_at_runtime = true;
 	section->AddDestroyFunction(&PCSPEAKER_ShutDown, changeable_at_runtime);
+
+	// Size to 2x blocksize. The mixer callback will request 1x blocksize.
+	// This provides a good size to avoid over-runs and stalls.
+	pc_speaker->output_queue.Resize(iceil(pc_speaker->channel->GetFramesPerBlock() * 2.0f));
+	TIMER_AddTickHandler(PCSPEAKER_PicCallback);
+
+	MIXER_UnlockMixerThread();
 }
 
-// PC Speaker external API, used by the PIT timer and keyboard
+// PC speaker external API, used by the PIT timer and keyboard
 void PCSPEAKER_SetCounter(const int counter, const PitMode pit_mode)
 {
 	if (pc_speaker)
@@ -100,4 +125,17 @@ void PCSPEAKER_SetType(const PpiPortB &port_b)
 {
 	if (pc_speaker)
 		pc_speaker->SetType(port_b);
+}
+
+void PCSPEAKER_NotifyLockMixer()
+{
+	if (pc_speaker) {
+		pc_speaker->output_queue.Stop();
+	}
+}
+void PCSPEAKER_NotifyUnlockMixer()
+{
+	if (pc_speaker) {
+		pc_speaker->output_queue.Start();
+	}
 }

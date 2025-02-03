@@ -34,9 +34,16 @@ CCACHE_SLOPPINESS="pch_defines,time_macros"
 > **Note**
 >
 > CMake support is currently an experimental internal-only, work-in-progress
-> feature; it's not ready for public consumption yet. Please ignore the
-> `CMakeLists.txt` files in the source tree.
-
+> feature; it's not ready for public consumption yet, but if you want to experiment:
+> 
+> **PLEASE DO NOT SUBMIT ANY BUGS OR HELP REQUESTS!**
+> 
+> You'll need vcpkg installed and your VCPKG_ROOT environment variable set to vcpkg's 
+> installed location. There are presets via CMakePresets.json for convenience. For the
+> generic `release` and `debug` presets, you'll need Ninja build installed. You should
+> then be able to run e.g. `cmake --preset=debug && cmake --build --preset=debug` to 
+> produce a debug build in the `build/debug` directory. vcpkg will automatically install
+> dependencies during the build; there is no need to explicitly run `vcpkg install`.
 
 ## OS-specific instructions
 
@@ -254,6 +261,24 @@ Concrete example:
 ``` shell
 ./build/debug/tests/bitops --gtest_filter=bitops.nominal_byte
 ```
+
+### Bisecting and building old versions
+
+To automate and ensure successful builds when bisecting or building old
+versions, run `meson setup --wipe` on your build area before every build.
+
+This updates the build area with critical metadata to match that of the
+checked out sources, such as the C++ language standard.
+
+An alias like the following can be used on macOS, Linux, and Windows MSYS
+environments to build versions 0.77 and newer:
+
+`alias build_staging='meson setup --wipe build && ninja -C build'`
+
+Prior to version 0.77 the Autotools build system was used. A build script
+available in these old versions can be used (choose one for your compiler):
+
+`./scripts/build.sh -c clang -t release` or `./scripts/build.sh -c gcc -t release`
 
 ### Build test coverage report
 

@@ -40,11 +40,11 @@ public:
 	void SetCounter(const int cntr, const PitMode pit_mode) final;
 	void SetPITControl(const PitMode pit_mode) final;
 	void SetType(const PpiPortB& port_b) final;
+	void PicCallback(const int requested_frames) final;
 
 private:
 	void AddImpulse(float index, const int16_t amplitude);
 	void AddPITOutput(const float index);
-	void ChannelCallback(int requested_frames);
 	void ForwardPIT(const float new_index);
 	float CalcImpulse(const double t) const;
 	void InitializeImpulseLUT();
@@ -56,7 +56,7 @@ private:
 	// Amplitude constants
 
 	// The impulse PWM scalar was manually adjusted to roughly match voltage
-	// levels recorded from a hardware PC Speaker
+	// levels recorded from a hardware PC speaker
 	// Ref:https://github.com/dosbox-staging/dosbox-staging/files/9494469/3.audio.samples.zip
 	static constexpr float pwm_scalar = 0.5f;
 
@@ -113,8 +113,6 @@ private:
 	std::deque<float> waveform_deque = {};
 
 	std::array<float, sinc_filter_width> impulse_lut = {};
-
-	MixerChannelPtr channel = nullptr;
 
 	PpiPortB prev_port_b = {};
 

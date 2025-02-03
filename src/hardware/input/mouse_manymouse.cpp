@@ -1,4 +1,6 @@
 /*
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *
  *  Copyright (C) 2022-2024  The DOSBox Staging Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -225,8 +227,15 @@ void ManyMouseGlue::Rescan()
 
 void ManyMouseGlue::RescanIfSafe()
 {
-	if (rescan_blocked_config)
+	if (rescan_blocked_config) {
 		return;
+	}
+
+#if defined(WIN32)
+	if (mouse_config.raw_input) {
+		return;
+	}
+#endif
 
 	ShutdownIfSafe();
 	InitIfNeeded();
@@ -240,7 +249,7 @@ bool ManyMouseGlue::ProbeForMapping(uint8_t &physical_device_idx)
 
 	// Wait a little to speedup screen update
 	constexpr uint32_t ticks_threshold = 50; // time to wait idle in PIC ticks
-	const auto pic_ticks_start = PIC_Ticks;
+	const auto pic_ticks_start = PIC_Ticks.load();
 	while (PIC_Ticks >= pic_ticks_start &&
 	       PIC_Ticks - pic_ticks_start < ticks_threshold)
 		CALLBACK_Idle();

@@ -78,7 +78,7 @@ void MOUNT::ShowUsage()
 	output.AddString(MSG_Get("PROGRAM_MOUNT_HELP_LONG"));
 #ifdef WIN32
 	output.AddString(MSG_Get("PROGRAM_MOUNT_HELP_LONG_WIN32"));
-#elif MACOSX
+#elif defined(MACOSX)
 	output.AddString(MSG_Get("PROGRAM_MOUNT_HELP_LONG_MACOSX"));
 #else
 	output.AddString(MSG_Get("PROGRAM_MOUNT_HELP_LONG_OTHER"));
@@ -415,7 +415,7 @@ void MOUNT::AddMessages() {
 	        "Mount a directory from the host OS to a drive letter.\n"
 	        "\n"
 	        "Usage:\n"
-	        "  [color=light-green]mount[reset] [color=white]DRIVE[reset] [color=light-cyan]DIRECTORY[reset] [-t TYPE] [-freesize SIZE] [-label LABEL]\n"
+	        "  [color=light-green]mount[reset] [color=white]DRIVE[reset] [color=light-cyan]DIRECTORY[reset] [-t TYPE] [-ro] [-freesize SIZE] [-label LABEL]\n"
 	        "  [color=light-green]mount[reset] -u [color=white]DRIVE[reset]  (unmounts the DRIVE's directory)\n"
 	        "\n"
 	        "Parameters:\n"

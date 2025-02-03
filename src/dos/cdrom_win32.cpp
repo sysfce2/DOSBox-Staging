@@ -281,20 +281,20 @@ bool CDROM_Interface_Win32::GetMediaTrayStatus(bool& mediaPresent,
 // LaserLock currently does not work with CDROM_Interface_Image or
 // CDROM_Interface_Ioctl either which does implement these. I could not find any
 // other game that uses this.
-bool CDROM_Interface_Win32::ReadSector(uint8_t* buffer, const bool raw,
-                                       const uint32_t sector)
+bool CDROM_Interface_Win32::ReadSector([[maybe_unused]]uint8_t* buffer, [[maybe_unused]]const bool raw,
+                                       [[maybe_unused]]const uint32_t sector)
 {
 	return false;
 }
 
-bool CDROM_Interface_Win32::ReadSectors(PhysPt buffer, const bool raw,
-                                        const uint32_t sector, const uint16_t num)
+bool CDROM_Interface_Win32::ReadSectors([[maybe_unused]]PhysPt buffer, [[maybe_unused]]const bool raw,
+                                        [[maybe_unused]]const uint32_t sector, [[maybe_unused]]const uint16_t num)
 {
 	return false;
 }
 
-bool CDROM_Interface_Win32::ReadSectorsHost(void* buffer, bool raw,
-                                            unsigned long sector, unsigned long num)
+bool CDROM_Interface_Win32::ReadSectorsHost([[maybe_unused]]void* buffer, [[maybe_unused]]bool raw,
+                                            [[maybe_unused]]unsigned long sector, [[maybe_unused]]unsigned long num)
 {
 	return false;
 }
@@ -356,7 +356,11 @@ bool CDROM_Interface_Win32::HasDataTrack() const
 std::vector<int16_t> CDROM_Interface_Win32::ReadAudio(const uint32_t sector,
                                                       const uint32_t frames_requested)
 {
-	constexpr uint32_t MaximumFramesPerCall = 55;
+	// According to testing done so far:
+	// - 55 is the maximum for SerialATA drives
+	// - 27 is the maximum for USB drives
+	// Higher values makes the IOCTL_CDROM_RAW_READ fail.
+	constexpr uint32_t MaximumFramesPerCall = 27;
 	const uint32_t num_frames = std::min(frames_requested, MaximumFramesPerCall);
 
 	std::vector<int16_t> audio_frames(num_frames * SAMPLES_PER_REDBOOK_FRAME);
@@ -370,7 +374,7 @@ std::vector<int16_t> CDROM_Interface_Win32::ReadAudio(const uint32_t sector,
 	LPVOID input_buffer      = &read_info;
 	DWORD input_buffer_size  = sizeof(read_info);
 	LPVOID output_buffer     = audio_frames.data();
-	DWORD output_buffer_size = audio_frames.size() * sizeof(int16_t);
+	DWORD output_buffer_size = static_cast<DWORD>(audio_frames.size() * sizeof(int16_t));
 	LPDWORD bytes_returned   = NULL;
 	LPOVERLAPPED overlapped  = NULL;
 

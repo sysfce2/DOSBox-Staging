@@ -69,18 +69,16 @@
 //   postfixes is highly recommended in such cases to remove ambiguity.
 //
 
-#define REDUCE_JOYSTICK_POLLING
-
 enum class RenderingBackend {
 	Texture,
 	OpenGl
 };
 
 typedef enum {
-	GFX_CallBackReset,
-	GFX_CallBackStop,
-	GFX_CallBackRedraw
-} GFX_CallBackFunctions_t;
+	GFX_CallbackReset,
+	GFX_CallbackStop,
+	GFX_CallbackRedraw
+} GFX_CallbackFunctions_t;
 
 enum class IntegerScalingMode {
 	Off,
@@ -354,7 +352,7 @@ struct ImageInfo {
 
 enum class InterpolationMode { Bilinear, NearestNeighbour };
 
-typedef void (*GFX_CallBack_t)(GFX_CallBackFunctions_t function);
+typedef void (*GFX_Callback_t)(GFX_CallbackFunctions_t function);
 
 constexpr uint8_t GFX_CAN_8      = 1 << 0;
 constexpr uint8_t GFX_CAN_15     = 1 << 1;
@@ -390,7 +388,7 @@ class Fraction;
 
 uint8_t GFX_SetSize(const int render_width_px, const int render_height_px,
                     const Fraction& render_pixel_aspect_ratio, const uint8_t flags,
-                    const VideoMode& video_mode, GFX_CallBack_t callback);
+                    const VideoMode& video_mode, GFX_Callback_t callback);
 
 void GFX_ResetScreen(void);
 void GFX_RequestExit(const bool requested);
@@ -432,9 +430,7 @@ void GFX_SetMouseRawInput(const bool requested_raw_input);
 // Detects the presence of a desktop environment or window manager
 bool GFX_HaveDesktopEnvironment();
 
-#if defined(REDUCE_JOYSTICK_POLLING)
 void MAPPER_UpdateJoysticks(void);
-#endif
 
 DosBox::Rect GFX_CalcDrawRectInPixels(const DosBox::Rect& canvas_size_px,
                                       const DosBox::Rect& render_size_px,

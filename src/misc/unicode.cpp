@@ -326,23 +326,56 @@ static std::map<uint16_t, code_page_maps_t> per_code_page_mappings = {};
 // Grapheme type implementation
 // ***************************************************************************
 
+// Check for combining characters within the supported Unicode blocks
 static bool is_combining_mark(const uint32_t code_point)
 {
+	// clang-format off
 	static constexpr std::pair<uint16_t, uint16_t> Ranges[] = {
-		// clang-format off
-		{0x0300, 0x036f}, // Combining Diacritical Marks
-		{0x0653, 0x065f}, // Arabic Combining Marks
-		// Note: Arabic Combining Marks start from 0x064b, but some are
-		// present as standalone characters in arabic code pages. To
-		// allow this, we do not recognize them as combining marks!
-		// Similarly for Spacing Modifier Letters.
-		{0x02b9, 0x02bf}, // Spacing Modifier Letters
-		{0x1ab0, 0x1aff}, // Combining Diacritical Marks Extended
-		{0x1dc0, 0x1dff}, // Combining Diacritical Marks Supplement
-		{0x20d0, 0x20ff}, // Combining Diacritical Marks for Symbols
-		{0xfe20, 0xfe2f}, // Combining Half Marks
-		// clang-format on
+		// 0x02b0 - 0x02ff     Spacing Modifier Letters
+		// Not a real combining mark, but due to engine limitations
+		// we need this definition for U+1E9A decomposition rules, and
+		// the character is not used by any DOS code page nevertheless
+		{0x02be, 0x02be},
+		// 0x0300 - 0x036f     Combining Diacritical Marks
+		{0x0300, 0x036f},
+		// 0x0400 - 0x04ff     Cyrillic
+		{0x0483, 0x0489},
+		// 0x0590 - 0x05ff     Hebrew
+		{0x0591, 0x05bd},
+		{0x05bf, 0x05bf},
+		{0x05c1, 0x05c2},
+		{0x05c4, 0x05c5},
+		{0x05c7, 0x05c7},
+		// 0x0600 - 0x06ff     Arabic
+		{0x0610, 0x061a},
+		{0x064b, 0x065f},
+		{0x0670, 0x0670},
+		{0x06d6, 0x06dc},
+		{0x06df, 0x06e4},
+		{0x06e7, 0x06e8},
+		{0x06ea, 0x06ed},
+		// 0x0e00 - 0x0e7f     Thai
+		{0x0e31, 0x0e31},
+		{0x0e34, 0x0e3a},
+		{0x0e47, 0x0e4e},
+		// 0x1ab0 - 0x1aff     Combining Diacritical Marks Extended
+		{0x1ab0, 0x1aff},
+		// 0x1dc0 - 0x1dff     Combining Diacritical Marks Supplement
+		{0x1dc0, 0x1dff},
+		// 0x20d0 - 0x20ff     Combining Diacritical Marks for Symbols
+		{0x20d0, 0x20ff},
+		// 0x2de0 - 0x2dff     Cyrillic Extended-A
+		{0x2de0, 0x2dff},
+		// 0xa640 - 0xa69f     Cyrillic Extended-B
+		{0xa66f, 0xa672},
+		{0xa674, 0xa67d},
+		{0xa69e, 0xa69f},
+		// 0xfb00 - 0xfb4f     Alphabetic Presentation Forms
+		{0xfb1e, 0xfb1e},
+		// 0xfe20 - 0xfe2f     Combining Half Marks
+		{0xfe20, 0xfe2f},
 	};
+	// clang-format on
 
 	auto in_range = [code_point](const auto& range) {
 		return code_point >= range.first && code_point <= range.second;
@@ -350,15 +383,16 @@ static bool is_combining_mark(const uint32_t code_point)
 	return std::any_of(std::begin(Ranges), std::end(Ranges), in_range);
 }
 
-Grapheme::Grapheme(const uint16_t code_point)
-        : code_point(code_point),
+Grapheme::Grapheme(const uint16_t initial_code_point)
+        : code_point(initial_code_point),
           is_empty(false)
 {
-	// It is not valid to have a combining mark
-	// as a main code point of the grapheme
-
 	if (is_combining_mark(code_point)) {
-		Invalidate();
+		// It is not valid to have a combining mark as a main code point
+		// of the grapheme - move it to the list of combining marks and
+		// put space as the main code point
+		AddMark(initial_code_point);
+		code_point = ' ';
 	}
 }
 
@@ -526,12 +560,15 @@ static bool is_control_code(const uint16_t value)
 	return (value < ControlCodeThreshold) || (value == ControlCodeDelete);
 }
 
-static std::optional<uint16_t> screen_code_to_wide(const uint8_t byte,
-                                                   const DosStringConvertMode convert_mode)
+static std::optional<uint16_t> control_code_to_wide(const uint8_t byte,
+                                                    const DosStringConvertMode convert_mode)
 {
-	if (convert_mode == DosStringConvertMode::WithControlCodes ||
-	    convert_mode == DosStringConvertMode::NoSpecialCharacters) {
+
+	if (convert_mode == DosStringConvertMode::NoSpecialCharacters) {
 		return {};
+	}
+	if (convert_mode == DosStringConvertMode::WithControlCodes) {
+		return byte;
 	}
 
 	assert(convert_mode == DosStringConvertMode::ScreenCodesOnly);
@@ -998,7 +1035,7 @@ static wide_string dos_to_wide(const std::string& str,
 				mappings.grapheme_to_dos[byte].PushInto(str_out);
 			}
 		} else if (is_control_code(byte)) {
-			const auto wide = screen_code_to_wide(byte, convert_mode);
+			const auto wide = control_code_to_wide(byte, convert_mode);
 			if (wide) {
 				str_out.push_back(*wide);
 			} else {
@@ -1991,7 +2028,7 @@ static bool construct_mapping(const uint16_t code_page)
 	if (!config_mapping.extends_file.empty()) {
 		map_dos_to_grapheme_t mapping_file;
 
-		if (!import_mapping_code_page(GetResourcePath(config_mapping.extends_dir),
+		if (!import_mapping_code_page(get_resource_path(config_mapping.extends_dir),
 		                              config_mapping.extends_file,
 		                              mapping_file)) {
 			return false;
@@ -2079,7 +2116,7 @@ static void load_config_if_needed()
 
 	static bool config_loaded = false;
 	if (!config_loaded) {
-		const auto path_root = GetResourcePath(dir_name_mapping);
+		const auto path_root = get_resource_path(dir_name_mapping);
 		import_decomposition(path_root);
 		import_mapping_ascii(path_root);
 		import_mapping_case(path_root);
@@ -2134,8 +2171,8 @@ static std::string utf8_to_dos_common(const std::string& str,
 {
 	load_config_if_needed();
 
-	const auto tmp = utf8_to_wide(str);
-	return wide_to_dos(tmp, convert_mode, fallback, code_page);
+	const auto wide = utf8_to_wide(str);
+	return wide_to_dos(wide, convert_mode, fallback, code_page);
 }
 
 std::string utf8_to_dos(const std::string& str,
@@ -2165,8 +2202,8 @@ static std::string dos_to_utf8_common(const std::string& str,
 {
 	load_config_if_needed();
 
-	const auto tmp = dos_to_wide(str, convert_mode, code_page);
-	return wide_to_utf8(tmp);
+	const auto wide = dos_to_wide(str, convert_mode, code_page);
+	return wide_to_utf8(wide);
 }
 
 std::string dos_to_utf8(const std::string& str,
@@ -2182,8 +2219,51 @@ std::string dos_to_utf8(const std::string& str,
 	return dos_to_utf8_common(str, convert_mode, get_custom_code_page(code_page));
 }
 
-static std::string lowercase_dos_common(const std::string& str,
-                                        const uint16_t code_page)
+std::string fs_utf8_to_dos_437(const std::string& str)
+{
+	constexpr uint16_t CodePage = 437;
+
+	load_config_if_needed();
+	if (!prepare_code_page(CodePage)) {
+		return {};
+	}
+	assert(per_code_page_mappings.contains(CodePage));
+
+	const auto mapping = per_code_page_mappings.at(CodePage).dos_to_grapheme_normalized;
+
+	std::string str_out = {};
+	for (const auto code_point : utf8_to_wide(str)) {
+		if (is_control_code(code_point)) {
+			// Not valid for file/directory name
+			return {};
+		}
+
+		if (code_point < DecodeThresholdNonAscii) {
+			// 7-bit ASCII character
+			str_out.push_back(static_cast<char>(code_point));
+			continue;
+		}
+
+		if (!mapping.contains(code_point)) {
+			// Not a valid character for our code page
+			return {};
+		}
+
+		str_out.push_back(mapping.at(code_point));
+	}
+
+	str_out.shrink_to_fit();
+	return str_out;
+}
+
+std::string dos_437_to_fs_utf8(const std::string& str)
+{
+	constexpr uint16_t CodePage = 437;
+
+	return dos_to_utf8(str, DosStringConvertMode::NoSpecialCharacters, CodePage);
+}
+
+static std::string lowercase_dos_common(const std::string& str, const uint16_t code_page)
 {
 	load_config_if_needed();
 
@@ -2236,4 +2316,26 @@ std::string uppercase_dos(const std::string& str)
 std::string uppercase_dos(const std::string& str, const uint16_t code_page)
 {
 	return uppercase_dos_common(str, get_custom_code_page(code_page));
+}
+
+size_t length_utf8(const std::string& str)
+{
+	// TODO: Provide more efficient implementation;
+	// this will require UTF-8 decoder refactoring
+
+	constexpr uint16_t BasicCodePage = 437;
+
+	return utf8_to_dos(str,
+	                   DosStringConvertMode::NoSpecialCharacters,
+	                   UnicodeFallback::Simple,
+	                   BasicCodePage)
+	        .length();
+}
+
+bool is_code_page_equal(const uint16_t code_page1, const uint16_t code_page2)
+{
+	load_config_if_needed();
+
+	return deduplicate_code_page(code_page1) ==
+	       deduplicate_code_page(code_page2);
 }
